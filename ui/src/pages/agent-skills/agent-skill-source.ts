@@ -1,4 +1,4 @@
-import { Boxes, Folder, Github, Link2, Bullpen, type LucideIcon } from "lucide-react";
+import { Boxes, Folder, Github, Link2, Paperclip, type LucideIcon } from "lucide-react";
 import type { CompanySkillListItem } from "@bullpen/shared";
 
 export interface AgentSkillSourceMeta {
@@ -103,7 +103,7 @@ export function buildAgentSkillSourceMeta(skill: SourceSkill): AgentSkillSourceM
   }
 
   if (skill.sourceBadge === "bullpen") {
-    return { icon: Bullpen, label: skill.sourceLabel?.trim() || "Bullpen managed" };
+    return { icon: Paperclip, label: skill.sourceLabel?.trim() || "Bullpen managed" };
   }
 
   if (skill.sourceBadge === "catalog" || skill.sourceType === "catalog") {
