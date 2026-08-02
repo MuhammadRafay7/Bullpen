@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@bullpen/plugin-sdk": "workspace:*",
-    "@pierre/diffs": "^1.2.11"
+    "@pierre/diffs": "^1.2.12"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",
