@@ -20,7 +20,7 @@ import type {
   CompanySkillUpdateRequest,
   CompanySkillUpdateStatus,
   CompanySkillVersion,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { companySkillsApi } from "../api/companySkills";
 import { foldersApi } from "../api/folders";
 import { agentsApi } from "../api/agents";
@@ -144,7 +144,7 @@ import {
   ExternalLink,
   FlaskConical,
   MoreHorizontal,
-  Paperclip,
+  Bullpen,
   Pause,
   Pencil,
   Pin,
@@ -163,7 +163,7 @@ import {
   X,
   XOctagon,
 } from "lucide-react";
-import type { FolderListItem, FolderListResult } from "@paperclipai/shared";
+import type { FolderListItem, FolderListResult } from "@bullpen/shared";
 
 type SkillTreeNode = {
   name: string;
@@ -269,8 +269,8 @@ function sourceMeta(sourceBadge: CompanySkillSourceBadge, sourceLabel: string | 
       return { icon: Link2, label: sourceLabel ?? "URL", managedLabel: "URL managed" };
     case "local":
       return { icon: Folder, label: sourceLabel ?? "Folder", managedLabel: "Folder managed" };
-    case "paperclip":
-      return { icon: Paperclip, label: sourceLabel ?? "Paperclip", managedLabel: "Paperclip managed" };
+    case "bullpen":
+      return { icon: Bullpen, label: sourceLabel ?? "Bullpen", managedLabel: "Bullpen managed" };
     default:
       return { icon: Boxes, label: sourceLabel ?? "Catalog", managedLabel: "Catalog managed" };
   }
@@ -347,7 +347,7 @@ function classifySource(skill: {
   catalogKind?: "bundled" | "optional" | null;
   metadata?: Record<string, unknown> | null;
 }): SourceFilter {
-  if (skill.sourceBadge === "paperclip") return "company";
+  if (skill.sourceBadge === "bullpen") return "company";
   if (skill.sourceType === "local_path" && !skill.sourceBadge.toString().includes("github")) {
     return "company";
   }
@@ -501,7 +501,7 @@ function CompatChip({ compatibility }: { compatibility: CompanySkillCompatibilit
     unknown: {
       icon: HelpCircle,
       label: "Unknown format",
-      tooltip: "Paperclip could not validate this skill as Agent Skills markdown. Install at your own risk.",
+      tooltip: "Bullpen could not validate this skill as Agent Skills markdown. Install at your own risk.",
       className: "border-yellow-500/40 bg-yellow-500/10 text-yellow-800 dark:text-yellow-200",
     },
     invalid: {
@@ -709,7 +709,7 @@ function buildDiscoveryCards(
       catalogRef: entry.id,
       name: entry.name,
       slug: entry.slug,
-      author: entry.packageName ?? "Paperclip",
+      author: entry.packageName ?? "Bullpen",
       version: discoveryVersionLabel({ packageVersion: entry.packageVersion ?? null, sourceRef: null }, required),
       tagline: null,
       description: entry.description,
@@ -4319,7 +4319,7 @@ export function CompanySkills() {
       pushToast({
         tone: "success",
         title: skill.forkedFromSkillId ? "Skill fork created" : "Skill created",
-        body: `${skill.name} is now editable in the Paperclip workspace.`,
+        body: `${skill.name} is now editable in the Bullpen workspace.`,
       });
     },
     onError: (error) => {
@@ -5024,7 +5024,7 @@ export function CompanySkills() {
   const studioTitle = studioForkFromId ? "Fork skill" : "Create a new skill";
   const studioDescription = studioForkFromId
     ? "Review the fork metadata and create an editable company copy."
-    : "Create an editable company skill in the Paperclip workspace.";
+    : "Create an editable company skill in the Bullpen workspace.";
   return (
     <>
       {policyDenial.denial ? (
@@ -5369,7 +5369,7 @@ export function CompanySkills() {
           onMoveSelected={showInstalledFolders ? (folderId) => void moveSelectedSkills(folderId) : undefined}
           onCreateFolderAndMoveSelected={showInstalledFolders ? () => openCreateFolder(selectedSkillIds) : undefined}
           onClearSelected={showInstalledFolders ? () => setSelectedSkillIds([]) : undefined}
-          folderNudgeStorageKey={showInstalledFolders ? `paperclip:skills-folder-nudge:${selectedCompanyId ?? "none"}` : undefined}
+          folderNudgeStorageKey={showInstalledFolders ? `bullpen:skills-folder-nudge:${selectedCompanyId ?? "none"}` : undefined}
         />
       ) : activeView === "installed" && selectedSkillId ? (
         <SkillDetailPage

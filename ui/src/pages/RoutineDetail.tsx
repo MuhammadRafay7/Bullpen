@@ -65,9 +65,9 @@ import type {
   RoutineDetail as RoutineDetailType,
   RoutineEnvConfig,
   RoutineVariable,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 
-const LAST_SECTION_STORAGE_KEY = "paperclip.routineLastSection";
+const LAST_SECTION_STORAGE_KEY = "bullpen.routineLastSection";
 
 export function buildRoutineProjectOptions(
   projects: ReadonlyArray<{ id: string; name: string; description?: string | null; archivedAt?: Date | string | null }>,
@@ -412,7 +412,7 @@ export function RoutineDetail() {
       }
       pushToast({
         title: "Failed to save routine",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not save the routine.",
+        body: mutationError instanceof Error ? mutationError.message : "Bullpen could not save the routine.",
         tone: "error",
       });
     },
@@ -446,7 +446,7 @@ export function RoutineDetail() {
     onError: (runError) => {
       pushToast({
         title: "Routine run failed",
-        body: runError instanceof Error ? runError.message : "Paperclip could not start the routine run.",
+        body: runError instanceof Error ? runError.message : "Bullpen could not start the routine run.",
         tone: "error",
       });
     },
@@ -468,7 +468,7 @@ export function RoutineDetail() {
     onError: (statusError) => {
       pushToast({
         title: "Failed to update routine",
-        body: statusError instanceof Error ? statusError.message : "Paperclip could not update the routine.",
+        body: statusError instanceof Error ? statusError.message : "Bullpen could not update the routine.",
         tone: "error",
       });
     },
@@ -507,7 +507,7 @@ export function RoutineDetail() {
     onError: (triggerError) => {
       pushToast({
         title: "Failed to add trigger",
-        body: triggerError instanceof Error ? triggerError.message : "Paperclip could not create the trigger.",
+        body: triggerError instanceof Error ? triggerError.message : "Bullpen could not create the trigger.",
         tone: "error",
       });
     },
@@ -526,7 +526,7 @@ export function RoutineDetail() {
     onError: (triggerError) => {
       pushToast({
         title: "Failed to update trigger",
-        body: triggerError instanceof Error ? triggerError.message : "Paperclip could not update the trigger.",
+        body: triggerError instanceof Error ? triggerError.message : "Bullpen could not update the trigger.",
         tone: "error",
       });
     },
@@ -545,7 +545,7 @@ export function RoutineDetail() {
     onError: (triggerError) => {
       pushToast({
         title: "Failed to delete trigger",
-        body: triggerError instanceof Error ? triggerError.message : "Paperclip could not delete the trigger.",
+        body: triggerError instanceof Error ? triggerError.message : "Bullpen could not delete the trigger.",
         tone: "error",
       });
     },
@@ -566,7 +566,7 @@ export function RoutineDetail() {
     onError: (triggerError) => {
       pushToast({
         title: "Failed to rotate webhook secret",
-        body: triggerError instanceof Error ? triggerError.message : "Paperclip could not rotate the webhook secret.",
+        body: triggerError instanceof Error ? triggerError.message : "Bullpen could not rotate the webhook secret.",
         tone: "error",
       });
     },

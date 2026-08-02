@@ -16,12 +16,12 @@ import {
   toolProfileBindings,
   toolProfileEntries,
   toolProfiles,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
-import { buildPaperclipRuntimeMcpServers } from "../services/heartbeat.js";
+import { buildBullpenRuntimeMcpServers } from "../services/heartbeat.js";
 
 const embeddedPostgresSupport = await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
@@ -29,16 +29,16 @@ const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : 
 describeEmbeddedPostgres("heartbeat runtime MCP servers", () => {
   let db!: ReturnType<typeof createDb>;
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
-  const originalApiUrl = process.env.PAPERCLIP_API_URL;
+  const originalApiUrl = process.env.BULLPEN_API_URL;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-runtime-mcp-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-heartbeat-runtime-mcp-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
   afterEach(async () => {
-    if (originalApiUrl === undefined) delete process.env.PAPERCLIP_API_URL;
-    else process.env.PAPERCLIP_API_URL = originalApiUrl;
+    if (originalApiUrl === undefined) delete process.env.BULLPEN_API_URL;
+    else process.env.BULLPEN_API_URL = originalApiUrl;
     await db.delete(toolMcpGatewayTokens);
     await db.delete(activityLog);
     await db.delete(toolAccessAuditEvents);
@@ -59,7 +59,7 @@ describeEmbeddedPostgres("heartbeat runtime MCP servers", () => {
   });
 
   it("provisions one gateway per installed connection and mints short-lived run tokens", async () => {
-    process.env.PAPERCLIP_API_URL = "https://paperclip.example.test";
+    process.env.BULLPEN_API_URL = "https://bullpen.example.test";
     const [company] = await db.insert(companies).values({
       name: `Runtime MCP ${randomUUID()}`,
       issuePrefix: `RM${randomUUID().slice(0, 5).toUpperCase()}`,
@@ -128,14 +128,14 @@ describeEmbeddedPostgres("heartbeat runtime MCP servers", () => {
     });
 
     const before = Date.now();
-    const first = await buildPaperclipRuntimeMcpServers({ db, agent: agent!, runId: randomUUID() });
-    const second = await buildPaperclipRuntimeMcpServers({ db, agent: agent!, runId: randomUUID() });
+    const first = await buildBullpenRuntimeMcpServers({ db, agent: agent!, runId: randomUUID() });
+    const second = await buildBullpenRuntimeMcpServers({ db, agent: agent!, runId: randomUUID() });
 
     expect(first).toHaveLength(1);
     expect(first[0]).toMatchObject({
       name: "Installed MCP",
       connectionId: installedConnection!.id,
-      url: expect.stringMatching(/^https:\/\/paperclip\.example\.test\/api\/tool-gateway\/gateways\/.+\/mcp$/),
+      url: expect.stringMatching(/^https:\/\/bullpen\.example\.test\/api\/tool-gateway\/gateways\/.+\/mcp$/),
       token: expect.stringMatching(/^pcgw_/),
     });
     expect(first.some((server) => server.connectionId === uninstalledConnection!.id)).toBe(false);
@@ -213,7 +213,7 @@ describeEmbeddedPostgres("heartbeat runtime MCP servers", () => {
       contextSnapshot: {},
     });
 
-    const servers = await buildPaperclipRuntimeMcpServers({ db, agent: agent!, runId });
+    const servers = await buildBullpenRuntimeMcpServers({ db, agent: agent!, runId });
 
     expect(servers).toEqual([]);
     const [activity] = await db

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { AttentionFeed, AttentionItem, AttentionSourceKind } from "@paperclipai/shared";
+import type { AttentionFeed, AttentionItem, AttentionSourceKind } from "@bullpen/shared";
 import {
   ATTENTION_GROUP_BY_KEY,
   ATTENTION_GROUP_BY_OPTIONS,
@@ -207,7 +207,7 @@ describe("attentionTaskRef", () => {
         kind: "issue",
         id: "i1",
         companyId: "c1",
-        title: "Update primary paperclip instance",
+        title: "Update primary bullpen instance",
         identifier: "PAP-23",
         status: "blocked",
         href: "/PAP/issues/PAP-23",

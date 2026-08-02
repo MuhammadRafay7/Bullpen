@@ -3,10 +3,10 @@ import express, { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { and, count as countFn, eq } from "drizzle-orm";
 import { z } from "zod";
-import type { Db } from "@paperclipai/db";
-import { agents as agentsTable } from "@paperclipai/db";
-import type { CompanyPortabilityImportResult } from "@paperclipai/shared";
-import { readZipArchive } from "@paperclipai/shared/portability-zip";
+import type { Db } from "@bullpen/db";
+import { agents as agentsTable } from "@bullpen/db";
+import type { CompanyPortabilityImportResult } from "@bullpen/shared";
+import { readZipArchive } from "@bullpen/shared/portability-zip";
 import {
   DEFAULT_FEEDBACK_DATA_SHARING_TERMS_VERSION,
   companyArtifactsQuerySchema,
@@ -19,7 +19,7 @@ import {
   feedbackVoteValueSchema,
   updateCompanyBrandingSchema,
   updateCompanySchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { badRequest, forbidden, unprocessable } from "../errors.js";
 import { PORTABLE_ZIP_UPLOAD_LIMIT_BYTES } from "../http/body-limits.js";
 import { validate } from "../middleware/validate.js";
@@ -170,15 +170,15 @@ async function resolveImportPayload(req: Request, res: Response): Promise<unknow
 }
 
 /**
- * Async job opt-in. Cloud tenants set the `x-paperclip-cloud-async-import`
+ * Async job opt-in. Cloud tenants set the `x-bullpen-cloud-async-import`
  * header server-side (they are not a browser, so it is never stripped). Board
  * browsers cannot use that header — the Cloud harness proxy strips every
- * inbound `x-paperclip-cloud-*` header as anti-spoofing — so they opt in with
+ * inbound `x-bullpen-cloud-*` header as anti-spoofing — so they opt in with
  * the proxy-safe `?async=1` query parameter instead. Either signal enters the
  * async path.
  */
 function wantsAsyncImport(req: Request) {
-  return req.query.async === "1" || req.header("x-paperclip-cloud-async-import") === "1";
+  return req.query.async === "1" || req.header("x-bullpen-cloud-async-import") === "1";
 }
 
 export function companyRoutes(db: Db, storage?: StorageService) {
@@ -805,8 +805,8 @@ interface ImportedCompanyActivityContext {
 function cloudTenantRequestKey(req: Request) {
   return [
     req.actor.userId ?? "",
-    req.header("x-paperclip-cloud-stack-id")?.trim() ?? "",
-    req.header("x-paperclip-cloud-paperclip-company-id")?.trim() ?? "",
+    req.header("x-bullpen-cloud-stack-id")?.trim() ?? "",
+    req.header("x-bullpen-cloud-bullpen-company-id")?.trim() ?? "",
   ].join(":");
 }
 

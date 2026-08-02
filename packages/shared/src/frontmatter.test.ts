@@ -90,8 +90,8 @@ describe("parseFrontmatterMarkdown", () => {
       "metadata:",
       "  sources:",
       "    - kind: github-dir",
-      "      repo: paperclipai/paperclip",
-      "      path: skills/paperclip",
+      "      repo: bullpen/bullpen",
+      "      path: skills/bullpen",
       "---",
       "",
       "Body",
@@ -102,8 +102,8 @@ describe("parseFrontmatterMarkdown", () => {
         sources: [
           {
             kind: "github-dir",
-            repo: "paperclipai/paperclip",
-            path: "skills/paperclip",
+            repo: "bullpen/bullpen",
+            path: "skills/bullpen",
           },
         ],
       },
@@ -170,8 +170,8 @@ describe("stringifyFrontmatter", () => {
         metadata: {
           source: {
             kind: "github-dir",
-            repo: "paperclipai/paperclip",
-            path: "skills/paperclip",
+            repo: "bullpen/bullpen",
+            path: "skills/bullpen",
           },
         },
       },
@@ -252,7 +252,7 @@ describe("joinFrontmatterBlock", () => {
       "---\ndescription: >\n  folded\n  text\n---\nBody with comment: value\n",
       "# just markdown, no frontmatter\n",
       "---\nunterminated frontmatter\nstill body",
-      "---\nmetadata:\n  author: Paperclip\n  # comment stays\n---\nbody\n",
+      "---\nmetadata:\n  author: Bullpen\n  # comment stays\n---\nbody\n",
     ];
     for (const raw of samples) {
       expect(joinFrontmatterBlock(splitFrontmatterBlock(raw))).toBe(raw);
@@ -293,7 +293,7 @@ describe("analyzeFrontmatterBlock", () => {
       "  - Read",
       "  - Grep",
       "metadata:",
-      "  author: Paperclip",
+      "  author: Bullpen",
       "  version: 2",
     ].join("\n");
     const result = analyzeFrontmatterBlock(raw);

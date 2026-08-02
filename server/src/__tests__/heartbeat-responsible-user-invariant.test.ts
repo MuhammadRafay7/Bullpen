@@ -14,7 +14,7 @@ import {
   heartbeatRuns,
   issueComments,
   issues,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -84,7 +84,7 @@ describeEmbeddedPostgres("heartbeat responsible-user invariant", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-responsible-user-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-heartbeat-responsible-user-");
     db = createDb(tempDb.connectionString);
     heartbeat = heartbeatService(db);
   }, 20_000);
@@ -123,7 +123,7 @@ describeEmbeddedPostgres("heartbeat responsible-user invariant", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `R${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       defaultResponsibleUserId: ownerUserId,
     });

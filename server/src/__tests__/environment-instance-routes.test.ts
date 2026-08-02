@@ -103,7 +103,7 @@ function createEnvironment(overrides: Record<string, unknown> = {}) {
     status: "active" as const,
     config: {},
     envVars: {},
-    metadata: { managedByPaperclip: true },
+    metadata: { managedByBullpen: true },
     createdAt: now,
     updatedAt: now,
     ...overrides,

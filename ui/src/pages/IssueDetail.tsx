@@ -184,7 +184,7 @@ import {
   MoreHorizontal,
   MoreVertical,
   PauseCircle,
-  Paperclip,
+  Bullpen,
   PlayCircle,
   Plus,
   Repeat,
@@ -217,7 +217,7 @@ import {
   type IssueTreeControlMode,
   type WorkspaceFileRef,
   workspaceFileRefSchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 
 type StopAndFinalizeRunError = Error & {
   runCancelledBeforeStatusUpdateFailed?: boolean;
@@ -3447,10 +3447,10 @@ export function IssueDetail() {
     const handleOpenFileViewer = () => {
       setFileViewerPromptOpen(true);
     };
-    window.addEventListener("paperclip:open-file-viewer", handleOpenFileViewer as EventListener);
+    window.addEventListener("bullpen:open-file-viewer", handleOpenFileViewer as EventListener);
     return () => {
       window.removeEventListener(
-        "paperclip:open-file-viewer",
+        "bullpen:open-file-viewer",
         handleOpenFileViewer as EventListener,
       );
     };
@@ -4109,7 +4109,7 @@ export function IssueDetail() {
           attachmentDragActive && "border-primary bg-primary/5",
         )}
       >
-        <Paperclip className="h-3.5 w-3.5 mr-1.5" />
+        <Bullpen className="h-3.5 w-3.5 mr-1.5" />
         {uploadAttachment.isPending || importMarkdownDocument.isPending ? "Uploading..." : (
           <>
             <span className="hidden sm:inline">Upload attachment</span>
@@ -4686,7 +4686,7 @@ export function IssueDetail() {
             mutedIssueIds={mutedChildIssueIds}
             issueBadgeById={childPauseBadgeById}
             projectId={issue.projectId ?? undefined}
-            viewStateKey={`paperclip:issue-detail:${issue.id}:subissues-view`}
+            viewStateKey={`bullpen:issue-detail:${issue.id}:subissues-view`}
             issueLinkState={resolvedIssueDetailState ?? location.state}
             searchFilters={{ descendantOf: issue.id, includeBlockedBy: true }}
             searchWithinLoadedIssues
@@ -4934,7 +4934,7 @@ export function IssueDetail() {
               currentUserId={currentUserId}
               userLabelMap={userLabelMap}
               userProfileMap={userProfileMap}
-              draftKey={`paperclip:issue-comment-draft:${issue.id}`}
+              draftKey={`bullpen:issue-comment-draft:${issue.id}`}
               reassignOptions={commentReassignOptions}
               currentAssigneeValue={actualAssigneeValue}
               suggestedAssigneeValue={suggestedAssigneeValue}

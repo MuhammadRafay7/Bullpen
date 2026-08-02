@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, isNull, lte, ne, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   agents,
   approvals,
@@ -28,8 +28,8 @@ import {
   toolProfileEntries,
   toolProfiles,
   toolStdioCommandTemplates,
-} from "@paperclipai/db";
-import type { ToolRunContext } from "@paperclipai/plugin-sdk";
+} from "@bullpen/db";
+import type { ToolRunContext } from "@bullpen/plugin-sdk";
 import type {
   CreateToolMcpGateway,
   CreateToolMcpGatewayToken,
@@ -49,7 +49,7 @@ import type {
   ToolMcpGatewayTokenCreated,
   ToolMcpGatewayWithTokens,
   UpdateToolMcpGateway,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import type { AgentToolDescriptor, PluginToolDispatcher } from "./plugin-tool-dispatcher.js";
 import { logActivity, type LogActivityInput } from "./activity-log.js";
 import { secretService } from "./secrets.js";
@@ -113,9 +113,9 @@ export type ToolGatewayProviderType =
   | "mcp_stdio_fixture"
   | "mcp_remote_http"
   | "mcp_local_stdio"
-  | "paperclip_self"
-  | "paperclip_plugin"
-  | "paperclip_virtual";
+  | "bullpen_self"
+  | "bullpen_plugin"
+  | "bullpen_virtual";
 
 export interface ConnectedMcpGatewayMetadata {
   applicationId: string;
@@ -260,8 +260,8 @@ type LocalStdioRuntimeTemplate = {
 };
 
 const BUILTIN_LOCAL_STDIO_RUNTIME_TEMPLATES: Record<string, Omit<LocalStdioRuntimeTemplate, "templateId">> = {
-  "paperclip.google-sheets": {
-    command: "paperclip-google-sheets-mcp-server",
+  "bullpen.google-sheets": {
+    command: "bullpen-google-sheets-mcp-server",
     args: [],
     envKeys: [
       "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON",
@@ -269,12 +269,12 @@ const BUILTIN_LOCAL_STDIO_RUNTIME_TEMPLATES: Record<string, Omit<LocalStdioRunti
       "GOOGLE_SHEETS_ALLOWED_SPREADSHEET_IDS",
     ],
   },
-  "paperclip.echo-calculator-time": {
+  "bullpen.echo-calculator-time": {
     command: null,
     args: [],
     envKeys: [],
   },
-  "paperclip.synthetic-todo-kv": {
+  "bullpen.synthetic-todo-kv": {
     command: null,
     args: [],
     envKeys: [],
@@ -292,11 +292,11 @@ const sensitivePassthroughHeaderNames = new Set([
   "proxy-authorization",
   "cookie",
   "set-cookie",
-  "x-paperclip-tool-gateway-token",
+  "x-bullpen-tool-gateway-token",
 ]);
 
 function isSensitivePassthroughHeader(name: string) {
-  return name.startsWith("x-paperclip-")
+  return name.startsWith("x-bullpen-")
     || sensitivePassthroughHeaderNames.has(name)
     || sensitivePassthroughHeaderPattern.test(name);
 }
@@ -368,20 +368,20 @@ function mcpGatewayProtocolLimits(
 ): McpGatewayProtocolLimitOptions {
   const envDefaults: McpGatewayProtocolLimitOptions = {
     authFailures: {
-      windowMs: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_AUTH_FAILURE_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.authFailures.windowMs),
-      max: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_AUTH_FAILURE_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.authFailures.max),
+      windowMs: positiveInt(process.env.BULLPEN_MCP_GATEWAY_AUTH_FAILURE_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.authFailures.windowMs),
+      max: positiveInt(process.env.BULLPEN_MCP_GATEWAY_AUTH_FAILURE_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.authFailures.max),
     },
     gatewayRequests: {
-      windowMs: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_REQUEST_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.gatewayRequests.windowMs),
-      max: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_REQUEST_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.gatewayRequests.max),
+      windowMs: positiveInt(process.env.BULLPEN_MCP_GATEWAY_REQUEST_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.gatewayRequests.windowMs),
+      max: positiveInt(process.env.BULLPEN_MCP_GATEWAY_REQUEST_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.gatewayRequests.max),
     },
     tokenRequests: {
-      windowMs: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_TOKEN_REQUEST_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.tokenRequests.windowMs),
-      max: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_TOKEN_REQUEST_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.tokenRequests.max),
+      windowMs: positiveInt(process.env.BULLPEN_MCP_GATEWAY_TOKEN_REQUEST_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.tokenRequests.windowMs),
+      max: positiveInt(process.env.BULLPEN_MCP_GATEWAY_TOKEN_REQUEST_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.tokenRequests.max),
     },
     sessionSetup: {
-      windowMs: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_SESSION_SETUP_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.sessionSetup.windowMs),
-      max: positiveInt(process.env.PAPERCLIP_MCP_GATEWAY_SESSION_SETUP_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.sessionSetup.max),
+      windowMs: positiveInt(process.env.BULLPEN_MCP_GATEWAY_SESSION_SETUP_WINDOW_MS, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.sessionSetup.windowMs),
+      max: positiveInt(process.env.BULLPEN_MCP_GATEWAY_SESSION_SETUP_LIMIT, DEFAULT_MCP_GATEWAY_PROTOCOL_LIMITS.sessionSetup.max),
     },
   };
   return {
@@ -407,7 +407,7 @@ function safeHeaderValue(headers: Record<string, string | string[] | undefined> 
 }
 
 function safeClientMetadata(headers: Record<string, string | string[] | undefined> | undefined) {
-  const clientName = safeHeaderValue(headers, "x-paperclip-client-name", 120)
+  const clientName = safeHeaderValue(headers, "x-bullpen-client-name", 120)
     ?? safeHeaderValue(headers, "mcp-client-name", 120)
     ?? null;
   const correlationId = safeHeaderValue(headers, "x-request-id", 120)
@@ -649,29 +649,29 @@ const BUILTIN_TOOLS: ToolGatewayDescriptor[] = [
     risk: "write",
   },
   {
-    name: "paperclip-self:list_my_issues",
-    displayName: "List my Paperclip issues",
-    description: "Paperclip self-MCP read fixture that lists the authenticated agent's current issues.",
+    name: "bullpen-self:list_my_issues",
+    displayName: "List my Bullpen issues",
+    description: "Bullpen self-MCP read fixture that lists the authenticated agent's current issues.",
     parametersSchema: {
       type: "object",
       properties: { limit: { type: "number" } },
       additionalProperties: false,
     },
-    pluginId: "paperclip-self",
-    providerType: "paperclip_self",
+    pluginId: "bullpen-self",
+    providerType: "bullpen_self",
     risk: "read",
   },
   {
-    name: "paperclip-self:get_issue_context",
+    name: "bullpen-self:get_issue_context",
     displayName: "Get issue context",
-    description: "Paperclip self-MCP read fixture that returns scoped issue context and plan document metadata.",
+    description: "Bullpen self-MCP read fixture that returns scoped issue context and plan document metadata.",
     parametersSchema: {
       type: "object",
       properties: { issueId: { type: "string" } },
       additionalProperties: false,
     },
-    pluginId: "paperclip-self",
-    providerType: "paperclip_self",
+    pluginId: "bullpen-self",
+    providerType: "bullpen_self",
     risk: "read",
   },
   {
@@ -705,7 +705,7 @@ const BUILTIN_TOOLS: ToolGatewayDescriptor[] = [
 const VIRTUAL_SEARCH_TOOLS: ToolGatewayDescriptor = {
   name: "search_tools",
   displayName: "Search available tools",
-  description: "Search the tools available through this Paperclip gateway without loading every target tool into the tool list.",
+  description: "Search the tools available through this Bullpen gateway without loading every target tool into the tool list.",
   parametersSchema: {
     type: "object",
     properties: {
@@ -714,15 +714,15 @@ const VIRTUAL_SEARCH_TOOLS: ToolGatewayDescriptor = {
     },
     additionalProperties: false,
   },
-  pluginId: "paperclip-gateway",
-  providerType: "paperclip_virtual",
+  pluginId: "bullpen-gateway",
+  providerType: "bullpen_virtual",
   risk: "read",
 };
 
 const VIRTUAL_RUN_TOOL: ToolGatewayDescriptor = {
   name: "run_tool",
   displayName: "Run a selected tool",
-  description: "Run a target tool by name after Paperclip applies the target tool's profile, policy, approval, and rate-limit checks.",
+  description: "Run a target tool by name after Bullpen applies the target tool's profile, policy, approval, and rate-limit checks.",
   parametersSchema: {
     type: "object",
     properties: {
@@ -732,8 +732,8 @@ const VIRTUAL_RUN_TOOL: ToolGatewayDescriptor = {
     required: ["tool"],
     additionalProperties: false,
   },
-  pluginId: "paperclip-gateway",
-  providerType: "paperclip_virtual",
+  pluginId: "bullpen-gateway",
+  providerType: "bullpen_virtual",
   risk: "write",
 };
 
@@ -834,7 +834,7 @@ export function createToolGatewayService(
   function pluginTools(): ToolGatewayDescriptor[] {
     return (pluginToolDispatcher?.listToolsForAgent() ?? []).map((tool) => ({
       ...tool,
-      providerType: "paperclip_plugin" as const,
+      providerType: "bullpen_plugin" as const,
       risk: inferToolRisk(tool.name),
     }));
   }
@@ -1651,7 +1651,7 @@ export function createToolGatewayService(
         kind: "request_confirmation",
         idempotencyKey: `tool-action:${actionRequest.id}`,
         title: "Approve tool action",
-        summary: `${input.tool.name} requires approval before Paperclip will execute it.`,
+        summary: `${input.tool.name} requires approval before Bullpen will execute it.`,
         continuationPolicy: "wake_assignee",
         payload: {
           version: 1,
@@ -1833,7 +1833,7 @@ export function createToolGatewayService(
     const hasOnDemandTargets = connectedTools.some(isOnDemandRemoteTool);
     const virtualTools = hasOnDemandTargets ? VIRTUAL_TOOLS : [];
     const tool = [...allTools(), ...connectedTools, ...virtualTools]
-      .filter((candidate) => session.agentId || (candidate.providerType !== "paperclip_self" && candidate.providerType !== "paperclip_plugin"))
+      .filter((candidate) => session.agentId || (candidate.providerType !== "bullpen_self" && candidate.providerType !== "bullpen_plugin"))
       .find((candidate) => candidate.name === toolName);
     if (!tool) {
       throw new ToolGatewayHttpError(404, `Tool "${toolName}" not found`, "tool_not_found", { tool: toolName });
@@ -1906,7 +1906,7 @@ export function createToolGatewayService(
     const allConnectedTools = await connectedMcpToolsForCompany(session.companyId);
     const onDemandTargets = allConnectedTools.filter(isOnDemandRemoteTool);
     const tools = [...allTools(), ...allConnectedTools.filter((tool) => !isOnDemandRemoteTool(tool))].filter(
-      (tool) => session.agentId || (tool.providerType !== "paperclip_self" && tool.providerType !== "paperclip_plugin"),
+      (tool) => session.agentId || (tool.providerType !== "bullpen_self" && tool.providerType !== "bullpen_plugin"),
     );
     const decisions = await Promise.all(tools.map(async (tool) => {
       const decision = await policyService.decide(policyInputForTool({ session, tool }));
@@ -1978,9 +1978,9 @@ export function createToolGatewayService(
       };
     }
 
-    if (tool.name === "paperclip-self:list_my_issues") {
+    if (tool.name === "bullpen-self:list_my_issues") {
       if (!session.agentId) {
-        throw new ToolGatewayHttpError(403, "Paperclip self tools require an agent-scoped gateway session", "agent_context_required");
+        throw new ToolGatewayHttpError(403, "Bullpen self tools require an agent-scoped gateway session", "agent_context_required");
       }
       const limit = Math.max(1, Math.min(50, Number(params.limit ?? 10) || 10));
       const rows = await db
@@ -2002,9 +2002,9 @@ export function createToolGatewayService(
       };
     }
 
-    if (tool.name === "paperclip-self:get_issue_context") {
+    if (tool.name === "bullpen-self:get_issue_context") {
       if (!session.agentId) {
-        throw new ToolGatewayHttpError(403, "Paperclip self tools require an agent-scoped gateway session", "agent_context_required");
+        throw new ToolGatewayHttpError(403, "Bullpen self tools require an agent-scoped gateway session", "agent_context_required");
       }
       const issueId = typeof params.issueId === "string" ? params.issueId : session.issueId;
       if (!issueId) {
@@ -2224,7 +2224,7 @@ export function createToolGatewayService(
     };
     for (const key of policy.metadataHeaders) {
       const value = values[key];
-      if (value) headers[`x-paperclip-${key.replace(/_/g, "-")}`] = value;
+      if (value) headers[`x-bullpen-${key.replace(/_/g, "-")}`] = value;
     }
     return headers;
   }
@@ -2712,7 +2712,7 @@ export function createToolGatewayService(
       await request("initialize", {
         protocolVersion: "2024-11-05",
         capabilities: {},
-        clientInfo: { name: "paperclip-tool-gateway", version: "0.3.1" },
+        clientInfo: { name: "bullpen-tool-gateway", version: "0.3.1" },
       });
       child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized", params: {} })}\n`);
       return await request("tools/call", {
@@ -2930,7 +2930,7 @@ export function createToolGatewayService(
       .set({
         status: "awaiting_approval",
         errorCode: "elicitation_required",
-        errorMessage: "Remote MCP tool requested elicitation; Paperclip created an issue interaction for the response.",
+        errorMessage: "Remote MCP tool requested elicitation; Bullpen created an issue interaction for the response.",
         updatedAt: now,
       })
       .where(eq(toolInvocations.id, input.invocationId));
@@ -3018,7 +3018,7 @@ export function createToolGatewayService(
       credentialHeaders,
       callerHeaders,
     });
-    const requestId = `paperclip-tool-${randomUUID()}`;
+    const requestId = `bullpen-tool-${randomUUID()}`;
     const execution: RemoteHttpExecutionAudit = {
       transport: "mcp_remote",
       request: {
@@ -3204,7 +3204,7 @@ export function createToolGatewayService(
         client: "cursor",
         label: "Cursor",
         config: { mcpServers: { [gateway.name]: { url: endpoint, headers: { Authorization: `Bearer ${bearerPlaceholder}` } } } },
-        notes: ["Use the full Paperclip origin before the endpoint path."],
+        notes: ["Use the full Bullpen origin before the endpoint path."],
       },
       {
         client: "claude_desktop",
@@ -3228,7 +3228,7 @@ export function createToolGatewayService(
         client: "opencode",
         label: "OpenCode",
         config: { mcp: { [gateway.name]: { url: endpoint, headers: { Authorization: `Bearer ${bearerPlaceholder}` } } } },
-        notes: ["Use the full Paperclip origin before the endpoint path."],
+        notes: ["Use the full Bullpen origin before the endpoint path."],
       },
     ];
   }
@@ -4242,7 +4242,7 @@ export function createToolGatewayService(
         ? (await executeRemoteHttpTool(session, tool, parameters, executionTimeoutMs, invocation.id)).result
         : tool.providerType === "mcp_local_stdio"
           ? (await executeLocalStdioTool(session, tool, parameters, executionTimeoutMs)).result
-          : tool.providerType !== "paperclip_plugin"
+          : tool.providerType !== "bullpen_plugin"
             ? await runWithTimeout(executeBuiltinTool(session, tool, parameters), executionTimeoutMs)
             : (() => { throw new ToolGatewayHttpError(409, "Plugin actions cannot execute outside their originating run", "approved_execution_unsupported"); })();
       const resultValidation = validateToolContent({
@@ -5356,7 +5356,7 @@ export function createToolGatewayService(
       let virtualToolName: string | null = null;
       let requestedParameters: unknown = input.parameters ?? {};
 
-      if (tool.name === "search_tools" && tool.providerType === "paperclip_virtual") {
+      if (tool.name === "search_tools" && tool.providerType === "bullpen_virtual") {
         const argumentValidation = validateToolContent({
           value: requestedParameters,
           direction: "arguments",
@@ -5377,7 +5377,7 @@ export function createToolGatewayService(
           agentId: session.agentId,
           issueId: session.issueId,
           runId: session.runId,
-          providerType: "paperclip_virtual",
+          providerType: "bullpen_virtual",
           upstreamToolName: "search_tools",
           riskLevel: "read",
           toolName: "search_tools",
@@ -5433,7 +5433,7 @@ export function createToolGatewayService(
         };
       }
 
-      if (tool.name === "run_tool" && tool.providerType === "paperclip_virtual") {
+      if (tool.name === "run_tool" && tool.providerType === "bullpen_virtual") {
         const { targetToolName, targetParameters } = virtualRunToolInput(requestedParameters);
         const targetTool = await findToolForSession(session, targetToolName);
         if (!isOnDemandRemoteTool(targetTool)) {
@@ -5778,7 +5778,7 @@ export function createToolGatewayService(
 
       try {
         const executionTimeoutMs = timeoutMs(input.timeoutMs);
-        if (tool.providerType === "paperclip_plugin" && (!session.agentId || !session.runId)) {
+        if (tool.providerType === "bullpen_plugin" && (!session.agentId || !session.runId)) {
           throw new ToolGatewayHttpError(403, "Plugin tools require an agent run context", "agent_context_required");
         }
         const connectedMcpExecution =
@@ -5790,7 +5790,7 @@ export function createToolGatewayService(
         const result =
           connectedMcpExecution
             ? connectedMcpExecution.result
-            : tool.providerType === "paperclip_plugin"
+            : tool.providerType === "bullpen_plugin"
             ? await runWithTimeout(
                 pluginToolDispatcher!.executeTool(
                   tool.name,
@@ -6001,7 +6001,7 @@ export function createToolGatewayService(
 
       const tool = findStaticTool(input.tool);
 
-      if (tool.providerType !== "paperclip_plugin") {
+      if (tool.providerType !== "bullpen_plugin") {
         throw new ToolGatewayHttpError(404, `Tool "${input.tool}" is not a plugin tool`, "tool_not_found");
       }
 

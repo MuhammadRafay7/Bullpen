@@ -41,7 +41,7 @@ This starts:
 
 `pnpm dev:once` auto-applies pending local migrations by default before starting the dev server.
 
-`pnpm dev` and `pnpm dev:once` are now idempotent for the current repo and instance: if the matching Paperclip dev runner is already alive, Paperclip reports the existing process instead of starting a duplicate.
+`pnpm dev` and `pnpm dev:once` are now idempotent for the current repo and instance: if the matching Bullpen dev runner is already alive, Bullpen reports the existing process instead of starting a duplicate.
 
 Issue execution may also use project execution workspace policies and workspace runtime services for per-project worktrees, preview servers, and managed dev commands. Configure those through the project workspace/runtime surfaces rather than starting long-running unmanaged processes when a task needs a reusable service.
 
@@ -54,7 +54,7 @@ pnpm storybook
 pnpm build-storybook
 ```
 
-These run the `@paperclipai/ui` Storybook on port `6006` and build the static output to `ui/storybook-static/`.
+These run the `@bullpen/ui` Storybook on port `6006` and build the static output to `ui/storybook-static/`.
 
 The Storybook visual regression suite uses external PNG baselines instead of
 committed screenshots:
@@ -90,9 +90,9 @@ The board UI ships its own sans-serif webfont assets in `ui/public/fonts/`.
 `ui/src/index.css` declares Inter v4.1 variable regular and italic faces and wires
 the Tailwind `font-sans` token to those bundled files before system fallbacks.
 Linux screenshot or Storybook capture jobs should not install host Inter packages
-or inject external font CSS to make Paperclip text render correctly.
+or inject external font CSS to make Bullpen text render correctly.
 
-Font assets live in Vite's public directory so `pnpm --filter @paperclipai/ui build`
+Font assets live in Vite's public directory so `pnpm --filter @bullpen/ui build`
 emits them under `ui/dist/fonts/`. The server package copies the same output into
 `server/ui-dist/fonts/` through `scripts/prepare-server-ui-dist.sh`.
 
@@ -107,12 +107,12 @@ pnpm dev:stop
 
 ## Hot-Restart Deploys
 
-Primary-instance rebuilds that restart `paperclip.service` can request one-shot live-run adoption instead of using the normal graceful shutdown drain. Before restarting the service, write the marker from the newly staged app with the current service PID:
+Primary-instance rebuilds that restart `bullpen.service` can request one-shot live-run adoption instead of using the normal graceful shutdown drain. Before restarting the service, write the marker from the newly staged app with the current service PID:
 
 ```sh
-old_main_pid="$(systemctl show paperclip.service -p MainPID --value)"
-pnpm --filter @paperclipai/server exec tsx ../scripts/request-hot-restart.ts --server-pid "$old_main_pid"
-systemctl restart paperclip.service
+old_main_pid="$(systemctl show bullpen.service -p MainPID --value)"
+pnpm --filter @bullpen/server exec tsx ../scripts/request-hot-restart.ts --server-pid "$old_main_pid"
+systemctl restart bullpen.service
 ```
 
 The staged command records the target server's boot identity and operating
@@ -122,12 +122,12 @@ identities let a later request reclaim an abandoned marker after the operating
 system recycles the numeric PID. Older markers stay compatible and use process
 start metadata when available. When OS metadata is unavailable, the current
 server's health-reported boot time can still prove that a legacy marker predates
-the process now using its PID. Paperclip refuses to create a new request without
+the process now using its PID. Bullpen refuses to create a new request without
 at least one identity source. Supported-platform process probes fail explicitly
 instead of silently treating a live PID as either the original owner or a
 recycled process when identity cannot be established.
 
-Use `--drain-required` only when the deploy intentionally requires the old terminate-and-retry behavior. Without that flag, the old server verifies that the marker targets its own PID, snapshots currently running heartbeat run IDs and child PIDs, and skips the shutdown drain so eligible detached local-agent processes can keep running. On startup the new server writes `$PAPERCLIP_HOME/instances/${PAPERCLIP_INSTANCE_ID:-default}/hot-restart-report.json` with `previousServerPid`, `newServerPid`, `previousServerVersion`, `newServerVersion`, `adoptedRunIds`, `finalizedWhileDownRunIds`, `lostRunIds`, and per-run classifications before the normal orphan reaper runs.
+Use `--drain-required` only when the deploy intentionally requires the old terminate-and-retry behavior. Without that flag, the old server verifies that the marker targets its own PID, snapshots currently running heartbeat run IDs and child PIDs, and skips the shutdown drain so eligible detached local-agent processes can keep running. On startup the new server writes `$BULLPEN_HOME/instances/${BULLPEN_INSTANCE_ID:-default}/hot-restart-report.json` with `previousServerPid`, `newServerPid`, `previousServerVersion`, `newServerVersion`, `adoptedRunIds`, `finalizedWhileDownRunIds`, `lostRunIds`, and per-run classifications before the normal orphan reaper runs.
 
 The request command records the preflight set of running heartbeat IDs and writes
 an instance-scoped marker plus a PID-targeted legacy home-root handoff marker.
@@ -147,10 +147,10 @@ made adoptable retroactively. Cross that version boundary once with the normal
 drain-and-retry path:
 
 ```sh
-old_main_pid="$(systemctl show paperclip.service -p MainPID --value)"
-pnpm --filter @paperclipai/server exec tsx ../scripts/request-hot-restart.ts \
+old_main_pid="$(systemctl show bullpen.service -p MainPID --value)"
+pnpm --filter @bullpen/server exec tsx ../scripts/request-hot-restart.ts \
   --server-pid "$old_main_pid" --drain-required
-systemctl restart paperclip.service
+systemctl restart bullpen.service
 ```
 
 After the fixed server starts, wait for the replacement `codex_local` heartbeat
@@ -158,9 +158,9 @@ to spawn, then confirm its run record has an identity (use an authenticated API
 request in authenticated mode):
 
 ```sh
-PAPERCLIP_API_BASE="${PAPERCLIP_API_URL:-http://127.0.0.1:3100}"
-PAPERCLIP_API_BASE="${PAPERCLIP_API_BASE%/api}"
-curl -fsS "$PAPERCLIP_API_BASE/api/heartbeat-runs/$RUN_ID" \
+BULLPEN_API_BASE="${BULLPEN_API_URL:-http://127.0.0.1:3100}"
+BULLPEN_API_BASE="${BULLPEN_API_BASE%/api}"
+curl -fsS "$BULLPEN_API_BASE/api/heartbeat-runs/$RUN_ID" \
   | jq -e '.status == "running" and (.processPid != null or .processGroupId != null)'
 ```
 
@@ -171,7 +171,7 @@ explicit outcome for the run that was live before restart:
 ```sh
 jq -e --arg run "$RUN_ID" \
   '(.lostRunIds | length) == 0 and ((.adoptedRunIds + .finalizedWhileDownRunIds) | index($run) != null)' \
-  "$PAPERCLIP_HOME/hot-restart-report.json"
+  "$BULLPEN_HOME/hot-restart-report.json"
 ```
 
 An alive child appears in `adoptedRunIds`; a child that completed during the
@@ -190,7 +190,7 @@ account, and use the setup screen to claim the first instance admin from the
 browser. The CLI fallback remains:
 
 ```sh
-pnpm paperclipai auth bootstrap-ceo
+pnpm bullpen auth bootstrap-ceo
 ```
 
 For Tailscale-only reachability on a detected tailnet address:
@@ -209,7 +209,7 @@ pnpm dev --authenticated-private
 Allow additional private hostnames (for example custom Tailscale hostnames):
 
 ```sh
-pnpm paperclipai allowed-hostname dotta-macbook-pro
+pnpm bullpen allowed-hostname dotta-macbook-pro
 ```
 
 ## Test Commands
@@ -242,12 +242,12 @@ For normal issue work, start with the smallest targeted check that proves the ch
 For a first-time local install, you can bootstrap and run in one command:
 
 ```sh
-pnpm paperclipai run
+pnpm bullpen run
 ```
 
 > **Note: private npm registry `.npmrc` + first-run onboarding**
 >
-> The first-run experience often starts with `npx paperclipai onboard --yes` (before you have a repo checkout). If your global `~/.npmrc` sets `registry` to a private registry (for example GitHub Packages), `npx` may try to resolve `paperclipai` from that private registry and fail with `E404`.
+> The first-run experience often starts with `npx bullpen onboard --yes` (before you have a repo checkout). If your global `~/.npmrc` sets `registry` to a private registry (for example GitHub Packages), `npx` may try to resolve `bullpen` from that private registry and fail with `E404`.
 >
 > Diagnostic:
 >
@@ -258,27 +258,27 @@ pnpm paperclipai run
 > Workaround (cross-platform; force the public npm registry for this command):
 >
 > ```sh
-> npx --registry https://registry.npmjs.org paperclipai onboard --yes
+> npx --registry https://registry.npmjs.org bullpen onboard --yes
 > ```
 
-`paperclipai run` does:
+`bullpen run` does:
 
 1. auto-onboard if config is missing
-2. `paperclipai doctor` with repair enabled
+2. `bullpen doctor` with repair enabled
 3. starts the server when checks pass
 
 ## Docker Quickstart (No local Node install)
 
-Build and run Paperclip in Docker:
+Build and run Bullpen in Docker:
 
 ```sh
-docker build -t paperclip-local .
-docker run --name paperclip \
+docker build -t bullpen-local .
+docker run --name bullpen \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e PAPERCLIP_HOME=/paperclip \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
-  paperclip-local
+  -e BULLPEN_HOME=/bullpen \
+  -v "$(pwd)/data/docker-bullpen:/bullpen" \
+  bullpen-local
 ```
 
 Or use Compose:
@@ -298,7 +298,7 @@ For a separate review-oriented container that keeps `codex`/`claude` login state
 Every local install keeps runtime state directly under the selected instance root:
 
 ```text
-~/.paperclip/instances/default/                  # instance root
+~/.bullpen/instances/default/                  # instance root
   config.json                                    # runtime config
   .env                                           # instance env file
   db/                                            # embedded PostgreSQL data
@@ -313,19 +313,19 @@ Every local install keeps runtime state directly under the selected instance roo
                                                    # per-agent codex_local home
 ```
 
-`PAPERCLIP_HOME` and `PAPERCLIP_INSTANCE_ID` override the home root and instance id respectively. `paperclipai onboard` echoes the resolved values in its banner (`Local home: <home> | instance: <id> | config: <path>`) so you can confirm where state will land before continuing.
+`BULLPEN_HOME` and `BULLPEN_INSTANCE_ID` override the home root and instance id respectively. `bullpen onboard` echoes the resolved values in its banner (`Local home: <home> | instance: <id> | config: <path>`) so you can confirm where state will land before continuing.
 
 ## Database in Dev (Auto-Handled)
 
 For local development, leave `DATABASE_URL` unset.
 The server will automatically use embedded PostgreSQL and persist data at:
 
-- `~/.paperclip/instances/default/db`
+- `~/.bullpen/instances/default/db`
 
 Override home or instance:
 
 ```sh
-PAPERCLIP_HOME=/custom/path PAPERCLIP_INSTANCE_ID=dev pnpm paperclipai run
+BULLPEN_HOME=/custom/path BULLPEN_INSTANCE_ID=dev pnpm bullpen run
 ```
 
 No Docker or external database is required for this mode.
@@ -334,12 +334,12 @@ No Docker or external database is required for this mode.
 
 For local development, the default storage provider is `local_disk`, which persists uploaded images/attachments at:
 
-- `~/.paperclip/instances/default/data/storage`
+- `~/.bullpen/instances/default/data/storage`
 
 Configure storage provider/settings:
 
 ```sh
-pnpm paperclipai configure --section storage
+pnpm bullpen configure --section storage
 ```
 
 ## Agent Artifact Uploads
@@ -348,10 +348,10 @@ When an agent generates a file that a board user or reviewer should inspect as
 a deliverable, attach it to the issue before marking the task complete. Do not
 rely on a local workspace path as the only access path.
 
-Use the helper bundled with the Paperclip skill from the repo root:
+Use the helper bundled with the Bullpen skill from the repo root:
 
 ```sh
-skills/paperclip/scripts/paperclip-upload-artifact.sh dist/demo.mp4 \
+skills/bullpen/scripts/bullpen-upload-artifact.sh dist/demo.mp4 \
   --title "Demo video render" \
   --summary "MP4 render for board review"
 ```
@@ -359,7 +359,7 @@ skills/paperclip/scripts/paperclip-upload-artifact.sh dist/demo.mp4 \
 For WebM output:
 
 ```sh
-skills/paperclip/scripts/paperclip-upload-artifact.sh out/walkthrough.webm \
+skills/bullpen/scripts/bullpen-upload-artifact.sh out/walkthrough.webm \
   --title "Walkthrough video" \
   --summary "WebM walkthrough render"
 ```
@@ -374,48 +374,48 @@ that file, not as the main completion path for deliverables.
 
 ## Default Agent Workspaces
 
-When a local agent run has no resolved project/session workspace, Paperclip falls back to an agent home workspace under the instance root:
+When a local agent run has no resolved project/session workspace, Bullpen falls back to an agent home workspace under the instance root:
 
-- `~/.paperclip/instances/default/workspaces/<agent-id>`
+- `~/.bullpen/instances/default/workspaces/<agent-id>`
 
-This path honors `PAPERCLIP_HOME` and `PAPERCLIP_INSTANCE_ID` in non-default setups.
+This path honors `BULLPEN_HOME` and `BULLPEN_INSTANCE_ID` in non-default setups.
 
-For `codex_local`, Paperclip assigns new and updated agents an isolated Codex home under the instance root and blocks shared host/company Codex homes:
+For `codex_local`, Bullpen assigns new and updated agents an isolated Codex home under the instance root and blocks shared host/company Codex homes:
 
-- `~/.paperclip/instances/default/companies/<company-id>/agents/<agent-id>/codex-home`
+- `~/.bullpen/instances/default/companies/<company-id>/agents/<agent-id>/codex-home`
 
-Paperclip also persists an empty `OPENAI_API_KEY` override for those agents so a host-level `OPENAI_API_KEY` cannot leak into Codex runs through process inheritance. If an operator explicitly configures `adapterConfig.env.CODEX_HOME`, it must not point at the shared company `codex-home`, `$CODEX_HOME`, or `~/.codex`.
+Bullpen also persists an empty `OPENAI_API_KEY` override for those agents so a host-level `OPENAI_API_KEY` cannot leak into Codex runs through process inheritance. If an operator explicitly configures `adapterConfig.env.CODEX_HOME`, it must not point at the shared company `codex-home`, `$CODEX_HOME`, or `~/.codex`.
 
 If the `codex` CLI is not installed or not on `PATH`, `codex_local` agent runs fail at execution time with a clear adapter error. Quota polling uses a short-lived `codex app-server` subprocess: when `codex` cannot be spawned, that provider reports `ok: false` in aggregated quota results and the API server keeps running (it must not exit on a missing binary).
 
-Local adapters require their corresponding CLI/session setup on the machine running Paperclip. External adapters are installed through the adapter/plugin flow and should not require hardcoded imports in `server/` or `ui/`.
+Local adapters require their corresponding CLI/session setup on the machine running Bullpen. External adapters are installed through the adapter/plugin flow and should not require hardcoded imports in `server/` or `ui/`.
 
 ## Config Freshness
 
 Agent, project, environment, secret, skill, and workspace config edits are sampled at the next run boundary. A heartbeat that is already running finishes with the config it started with.
 
-When effective run config changes, Paperclip may intentionally skip a saved adapter session, refresh persisted workspace runtime config, replace a reused execution workspace, or avoid reusing a sandbox/environment lease. Fresh execution can lose adapter-specific session, workspace, or sandbox state; correctness of the next run's config takes priority over continuity. Plain environment values affect freshness through value hashes; run result JSON and workspace operation logs expose only the non-sensitive freshness decision categories, without storing secret values, full env maps, provider credentials, or private path details.
+When effective run config changes, Bullpen may intentionally skip a saved adapter session, refresh persisted workspace runtime config, replace a reused execution workspace, or avoid reusing a sandbox/environment lease. Fresh execution can lose adapter-specific session, workspace, or sandbox state; correctness of the next run's config takes priority over continuity. Plain environment values affect freshness through value hashes; run result JSON and workspace operation logs expose only the non-sensitive freshness decision categories, without storing secret values, full env maps, provider credentials, or private path details.
 
 ## Worktree-local Instances
 
-When developing from multiple git worktrees, do not point two Paperclip servers at the same embedded PostgreSQL data directory.
+When developing from multiple git worktrees, do not point two Bullpen servers at the same embedded PostgreSQL data directory.
 
-Instead, create a repo-local Paperclip config plus an isolated instance for the worktree:
+Instead, create a repo-local Bullpen config plus an isolated instance for the worktree:
 
 ```sh
-paperclipai worktree init
+bullpen worktree init
 # or create the git worktree and initialize it in one step:
-pnpm paperclipai worktree:make paperclip-pr-432
+pnpm bullpen worktree:make bullpen-pr-432
 ```
 
 This command:
 
-- writes repo-local files at `.paperclip/config.json` and `.paperclip/.env`
-- creates an isolated instance under `~/.paperclip-worktrees/instances/<worktree-id>/`
+- writes repo-local files at `.bullpen/config.json` and `.bullpen/.env`
+- creates an isolated instance under `~/.bullpen-worktrees/instances/<worktree-id>/`
 - when run inside a linked git worktree, mirrors the effective git hooks into that worktree's private git dir
 - picks a free app port and embedded PostgreSQL port
 - disables automatic database backups for the isolated instance
-- by default seeds the isolated DB in `minimal` mode from the current effective Paperclip instance/config (repo-local worktree config when present, otherwise the default instance) via a logical SQL snapshot
+- by default seeds the isolated DB in `minimal` mode from the current effective Bullpen instance/config (repo-local worktree config when present, otherwise the default instance) via a logical SQL snapshot
 
 Seed modes:
 
@@ -423,46 +423,46 @@ Seed modes:
 - `full` makes a full logical clone of the source instance
 - `--no-seed` creates an empty isolated instance
 
-Seeded worktree instances quarantine copied live execution by default for both `minimal` and `full` seeds. During restore, Paperclip disables copied agent timer heartbeats, resets copied `running` agents to `idle`, blocks and unassigns copied agent-owned `in_progress` issues, and unassigns copied agent-owned `todo`/`in_review` issues. This keeps a freshly booted worktree from starting agents for work already owned by the source instance. Pass `--preserve-live-work` only when you intentionally want the isolated worktree to resume copied assignments.
+Seeded worktree instances quarantine copied live execution by default for both `minimal` and `full` seeds. During restore, Bullpen disables copied agent timer heartbeats, resets copied `running` agents to `idle`, blocks and unassigns copied agent-owned `in_progress` issues, and unassigns copied agent-owned `todo`/`in_review` issues. This keeps a freshly booted worktree from starting agents for work already owned by the source instance. Pass `--preserve-live-work` only when you intentionally want the isolated worktree to resume copied assignments.
 
-After `worktree init`, both the server and the CLI auto-load the repo-local `.paperclip/.env` when run inside that worktree, so normal commands like `pnpm dev`, `paperclipai doctor`, and `paperclipai db:backup` stay scoped to the worktree instance.
+After `worktree init`, both the server and the CLI auto-load the repo-local `.bullpen/.env` when run inside that worktree, so normal commands like `pnpm dev`, `bullpen doctor`, and `bullpen db:backup` stay scoped to the worktree instance.
 
-`pnpm dev` now fails fast in a linked git worktree when `.paperclip/.env` is missing, instead of silently booting against the default instance/port. If that happens, run `paperclipai worktree init` in the worktree first.
+`pnpm dev` now fails fast in a linked git worktree when `.bullpen/.env` is missing, instead of silently booting against the default instance/port. If that happens, run `bullpen worktree init` in the worktree first.
 
 Provisioned git worktrees also pause seeded routines that still have enabled schedule triggers in the isolated worktree database by default. This prevents copied daily/cron routines from firing unexpectedly inside the new workspace instance during development without disabling webhook/API-only routines.
 
 That repo-local env also sets:
 
-- `PAPERCLIP_IN_WORKTREE=true`
-- `PAPERCLIP_DB_BACKUP_ENABLED=false`
-- `PAPERCLIP_WORKTREE_NAME=<worktree-name>`
-- `PAPERCLIP_WORKTREE_COLOR=<hex-color>`
+- `BULLPEN_IN_WORKTREE=true`
+- `BULLPEN_DB_BACKUP_ENABLED=false`
+- `BULLPEN_WORKTREE_NAME=<worktree-name>`
+- `BULLPEN_WORKTREE_COLOR=<hex-color>`
 
 The server/UI use those values for worktree-specific branding such as the top banner and dynamically colored favicon.
-Authenticated worktree servers also use the `PAPERCLIP_INSTANCE_ID` value to scope Better Auth cookie names.
+Authenticated worktree servers also use the `BULLPEN_INSTANCE_ID` value to scope Better Auth cookie names.
 Browser cookies are shared by host rather than port, so this prevents logging into one `127.0.0.1:<port>` worktree from replacing another worktree server's session cookie.
 
-When Paperclip closes a server-managed git worktree, it also reclaims the isolated instance referenced by that worktree's repo-local `.paperclip/.env`. New server-managed worktrees use a collision-resistant instance id derived from the resolved absolute worktree path. Cleanup requires that exact id, stops a running embedded PostgreSQL process, and then removes the instance directory. The deletion guard only accepts canonical instance paths below `PAPERCLIP_WORKTREES_DIR/instances/`; legacy or mismatched ids, pointers to the default/live Paperclip home, and all other locations are logged and left untouched.
+When Bullpen closes a server-managed git worktree, it also reclaims the isolated instance referenced by that worktree's repo-local `.bullpen/.env`. New server-managed worktrees use a collision-resistant instance id derived from the resolved absolute worktree path. Cleanup requires that exact id, stops a running embedded PostgreSQL process, and then removes the instance directory. The deletion guard only accepts canonical instance paths below `BULLPEN_WORKTREES_DIR/instances/`; legacy or mismatched ids, pointers to the default/live Bullpen home, and all other locations are logged and left untouched.
 
 Print shell exports explicitly when needed:
 
 ```sh
-paperclipai worktree env
+bullpen worktree env
 # or:
-eval "$(paperclipai worktree env)"
+eval "$(bullpen worktree env)"
 ```
 
 ### Worktree CLI Reference
 
-**`pnpm paperclipai worktree init [options]`** — Create repo-local config/env and an isolated instance for the current worktree.
+**`pnpm bullpen worktree init [options]`** — Create repo-local config/env and an isolated instance for the current worktree.
 
 | Option | Description |
 |---|---|
 | `--name <name>` | Display name used to derive the instance id |
 | `--instance <id>` | Explicit isolated instance id |
-| `--home <path>` | Home root for worktree instances (default: `~/.paperclip-worktrees`) |
+| `--home <path>` | Home root for worktree instances (default: `~/.bullpen-worktrees`) |
 | `--from-config <path>` | Source config.json to seed from |
-| `--from-data-dir <path>` | Source PAPERCLIP_HOME used when deriving the source config |
+| `--from-data-dir <path>` | Source BULLPEN_HOME used when deriving the source config |
 | `--from-instance <id>` | Source instance id (default: `default`) |
 | `--server-port <port>` | Preferred server port |
 | `--db-port <port>` | Preferred embedded Postgres port |
@@ -473,34 +473,34 @@ eval "$(paperclipai worktree env)"
 Examples:
 
 ```sh
-paperclipai worktree init --no-seed
-paperclipai worktree init --seed-mode full
-paperclipai worktree init --from-instance default
-paperclipai worktree init --from-data-dir ~/.paperclip
-paperclipai worktree init --force
+bullpen worktree init --no-seed
+bullpen worktree init --seed-mode full
+bullpen worktree init --from-instance default
+bullpen worktree init --from-data-dir ~/.bullpen
+bullpen worktree init --force
 ```
 
 Repair an already-created repo-managed worktree and reseed its isolated instance from the main default install. Point `--from-config` at the instance config:
 
 ```sh
-cd /path/to/paperclip/.paperclip/worktrees/PAP-884-ai-commits-component
-pnpm paperclipai worktree init --force --seed-mode minimal \
+cd /path/to/bullpen/.bullpen/worktrees/PAP-884-ai-commits-component
+pnpm bullpen worktree init --force --seed-mode minimal \
   --name PAP-884-ai-commits-component \
-  --from-config ~/.paperclip/instances/default/config.json
+  --from-config ~/.bullpen/instances/default/config.json
 ```
 
-That rewrites the worktree-local `.paperclip/config.json` + `.paperclip/.env`, recreates the isolated instance under `~/.paperclip-worktrees/instances/<worktree-id>/`, and preserves the git worktree contents themselves.
+That rewrites the worktree-local `.bullpen/config.json` + `.bullpen/.env`, recreates the isolated instance under `~/.bullpen-worktrees/instances/<worktree-id>/`, and preserves the git worktree contents themselves.
 
 For an already-created worktree where you want the CLI to decide whether to rebuild missing worktree metadata or just reseed the isolated DB, use `worktree repair`.
 
-**`pnpm paperclipai worktree repair [options]`** — Repair the current linked worktree by default, or create/repair a named linked worktree under `.paperclip/worktrees/` when `--branch` is provided. The command never targets the primary checkout unless you explicitly pass `--branch`.
+**`pnpm bullpen worktree repair [options]`** — Repair the current linked worktree by default, or create/repair a named linked worktree under `.bullpen/worktrees/` when `--branch` is provided. The command never targets the primary checkout unless you explicitly pass `--branch`.
 
 | Option | Description |
 |---|---|
-| `--branch <name>` | Existing branch/worktree selector to repair, or a branch name to create under `.paperclip/worktrees` |
-| `--home <path>` | Home root for worktree instances (default: `~/.paperclip-worktrees`) |
+| `--branch <name>` | Existing branch/worktree selector to repair, or a branch name to create under `.bullpen/worktrees` |
+| `--home <path>` | Home root for worktree instances (default: `~/.bullpen-worktrees`) |
 | `--from-config <path>` | Source config.json to seed from |
-| `--from-data-dir <path>` | Source `PAPERCLIP_HOME` used when deriving the source config |
+| `--from-data-dir <path>` | Source `BULLPEN_HOME` used when deriving the source config |
 | `--from-instance <id>` | Source instance id when deriving the source config (default: `default`) |
 | `--seed-mode <mode>` | Seed profile: `minimal` or `full` (default: `minimal`) |
 | `--no-seed` | Repair metadata only when bootstrapping a missing worktree config |
@@ -509,25 +509,25 @@ For an already-created worktree where you want the CLI to decide whether to rebu
 Examples:
 
 ```sh
-# From inside a linked worktree, rebuild missing .paperclip metadata and reseed it from the default instance.
-cd /path/to/paperclip/.paperclip/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
-pnpm paperclipai worktree repair
+# From inside a linked worktree, rebuild missing .bullpen metadata and reseed it from the default instance.
+cd /path/to/bullpen/.bullpen/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
+pnpm bullpen worktree repair
 
-# From the primary checkout, create or repair a linked worktree for a branch under .paperclip/worktrees/.
-cd /path/to/paperclip
-pnpm paperclipai worktree repair --branch PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
+# From the primary checkout, create or repair a linked worktree for a branch under .bullpen/worktrees/.
+cd /path/to/bullpen
+pnpm bullpen worktree repair --branch PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
 ```
 
-For an already-created worktree where you want to keep the existing repo-local config/env and only overwrite the isolated database, use `worktree reseed` instead. Stop the target worktree's Paperclip server first so the command can replace the DB safely.
+For an already-created worktree where you want to keep the existing repo-local config/env and only overwrite the isolated database, use `worktree reseed` instead. Stop the target worktree's Bullpen server first so the command can replace the DB safely.
 
-**`pnpm paperclipai worktree reseed [options]`** — Re-seed an existing worktree-local instance from another Paperclip instance or worktree while preserving the target worktree's current config, ports, and instance identity.
+**`pnpm bullpen worktree reseed [options]`** — Re-seed an existing worktree-local instance from another Bullpen instance or worktree while preserving the target worktree's current config, ports, and instance identity.
 
 | Option | Description |
 |---|---|
 | `--from <worktree>` | Source worktree path, directory name, branch name, or `current` |
 | `--to <worktree>` | Target worktree path, directory name, branch name, or `current` (defaults to `current`) |
 | `--from-config <path>` | Source config.json to seed from |
-| `--from-data-dir <path>` | Source `PAPERCLIP_HOME` used when deriving the source config |
+| `--from-data-dir <path>` | Source `BULLPEN_HOME` used when deriving the source config |
 | `--from-instance <id>` | Source instance id when deriving the source config |
 | `--seed-mode <mode>` | Seed profile: `minimal` or `full` (default: `full`) |
 | `--yes` | Skip the destructive confirmation prompt |
@@ -537,29 +537,29 @@ Examples:
 
 ```sh
 # From the main repo, reseed a worktree from the current default/master instance.
-cd /path/to/paperclip
-pnpm paperclipai worktree reseed \
+cd /path/to/bullpen
+pnpm bullpen worktree reseed \
   --from current \
   --to PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat \
   --seed-mode full \
   --yes
 
 # From inside a worktree, reseed it from the default instance config.
-cd /path/to/paperclip/.paperclip/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
-pnpm paperclipai worktree reseed \
+cd /path/to/bullpen/.bullpen/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
+pnpm bullpen worktree reseed \
   --from-instance default \
   --seed-mode full
 ```
 
-**`pnpm paperclipai worktree:make <name> [options]`** — Create `~/NAME` as a git worktree, then initialize an isolated Paperclip instance inside it. This combines `git worktree add` with `worktree init` in a single step.
+**`pnpm bullpen worktree:make <name> [options]`** — Create `~/NAME` as a git worktree, then initialize an isolated Bullpen instance inside it. This combines `git worktree add` with `worktree init` in a single step.
 
 | Option | Description |
 |---|---|
 | `--start-point <ref>` | Remote ref to base the new branch on (e.g. `origin/main`) |
 | `--instance <id>` | Explicit isolated instance id |
-| `--home <path>` | Home root for worktree instances (default: `~/.paperclip-worktrees`) |
+| `--home <path>` | Home root for worktree instances (default: `~/.bullpen-worktrees`) |
 | `--from-config <path>` | Source config.json to seed from |
-| `--from-data-dir <path>` | Source PAPERCLIP_HOME used when deriving the source config |
+| `--from-data-dir <path>` | Source BULLPEN_HOME used when deriving the source config |
 | `--from-instance <id>` | Source instance id (default: `default`) |
 | `--server-port <port>` | Preferred server port |
 | `--db-port <port>` | Preferred embedded Postgres port |
@@ -570,12 +570,12 @@ pnpm paperclipai worktree reseed \
 Examples:
 
 ```sh
-pnpm paperclipai worktree:make paperclip-pr-432
-pnpm paperclipai worktree:make my-feature --start-point origin/main
-pnpm paperclipai worktree:make experiment --no-seed
+pnpm bullpen worktree:make bullpen-pr-432
+pnpm bullpen worktree:make my-feature --start-point origin/main
+pnpm bullpen worktree:make experiment --no-seed
 ```
 
-**`pnpm paperclipai worktree env [options]`** — Print shell exports for the current worktree-local Paperclip instance.
+**`pnpm bullpen worktree env [options]`** — Print shell exports for the current worktree-local Bullpen instance.
 
 | Option | Description |
 |---|---|
@@ -585,16 +585,16 @@ pnpm paperclipai worktree:make experiment --no-seed
 Examples:
 
 ```sh
-pnpm paperclipai worktree env
-pnpm paperclipai worktree env --json
-eval "$(pnpm paperclipai worktree env)"
+pnpm bullpen worktree env
+pnpm bullpen worktree env --json
+eval "$(pnpm bullpen worktree env)"
 ```
 
-For project execution worktrees, Paperclip can also run a project-defined provision command after it creates or reuses an isolated git worktree. Configure this on the project's execution workspace policy (`workspaceStrategy.provisionCommand`). The command runs inside the derived worktree and receives `PAPERCLIP_WORKSPACE_*`, `PAPERCLIP_PROJECT_ID`, `PAPERCLIP_AGENT_ID`, and `PAPERCLIP_ISSUE_*` environment variables so each repo can bootstrap itself however it wants.
+For project execution worktrees, Bullpen can also run a project-defined provision command after it creates or reuses an isolated git worktree. Configure this on the project's execution workspace policy (`workspaceStrategy.provisionCommand`). The command runs inside the derived worktree and receives `BULLPEN_WORKSPACE_*`, `BULLPEN_PROJECT_ID`, `BULLPEN_AGENT_ID`, and `BULLPEN_ISSUE_*` environment variables so each repo can bootstrap itself however it wants.
 
 ## App-Shipped Skills Catalog
 
-The Paperclip app ships a curated catalog of company skills out of the box. The
+The Bullpen app ships a curated catalog of company skills out of the box. The
 catalog is a workspace package at `packages/skills-catalog`:
 
 ```text
@@ -610,24 +610,24 @@ packages/skills-catalog/
 ```
 
 Server and CLI import the generated manifest; they do not crawl repository
-paths at request time. Root `skills/` remains reserved for Paperclip runtime
+paths at request time. Root `skills/` remains reserved for Bullpen runtime
 skills and is not part of the catalog.
 
 Validate the catalog without writing the manifest:
 
 ```sh
-pnpm --filter @paperclipai/skills-catalog validate
+pnpm --filter @bullpen/skills-catalog validate
 ```
 
 Regenerate `generated/catalog.json` after editing any catalog `SKILL.md`,
 frontmatter, file inventory, category, or slug:
 
 ```sh
-pnpm --filter @paperclipai/skills-catalog build:manifest
+pnpm --filter @bullpen/skills-catalog build:manifest
 ```
 
 The package's `build` script runs `build:manifest` and then `tsc`; tests live
-under `pnpm --filter @paperclipai/skills-catalog test`. Validation fails when:
+under `pnpm --filter @bullpen/skills-catalog test`. Validation fails when:
 
 - a catalog entry is not under `catalog/bundled/<category>/<slug>` or
   `catalog/optional/<category>/<slug>`
@@ -644,7 +644,7 @@ only), `assets` (other non-script files), or `scripts_executables` (any
 executable script). The build contract is documented in
 `doc/plans/2026-05-26-skills-cli-catalog-contract.md`.
 
-CI runs `pnpm --filter @paperclipai/skills-catalog validate` and the package's
+CI runs `pnpm --filter @bullpen/skills-catalog validate` and the package's
 vitest suite, so always regenerate the manifest in the same commit as the
 catalog change.
 
@@ -667,13 +667,13 @@ packages/teams-catalog/
 Validate without writing the manifest:
 
 ```sh
-pnpm --filter @paperclipai/teams-catalog validate
+pnpm --filter @bullpen/teams-catalog validate
 ```
 
 Regenerate `generated/catalog.json` after editing catalog team files:
 
 ```sh
-pnpm --filter @paperclipai/teams-catalog build:manifest
+pnpm --filter @bullpen/teams-catalog build:manifest
 ```
 
 Team install/preview APIs enforce source policy. External skill sources require
@@ -699,7 +699,7 @@ Expected:
 To wipe local dev data and start fresh:
 
 ```sh
-rm -rf ~/.paperclip/instances/default/db
+rm -rf ~/.bullpen/instances/default/db
 pnpm dev
 ```
 
@@ -709,46 +709,46 @@ If you set `DATABASE_URL`, the server will use that instead of embedded PostgreS
 
 ## Automatic DB Backups
 
-Paperclip can run automatic logical database backups on a timer. These backups cover
+Bullpen can run automatic logical database backups on a timer. These backups cover
 non-system database schemas, including migration history and plugin-owned database
 schemas. Defaults:
 
 - enabled
 - every 60 minutes
 - retain 30 days
-- backup dir: `~/.paperclip/instances/default/data/backups`
+- backup dir: `~/.bullpen/instances/default/data/backups`
 
 Automatic backups are disabled for isolated worktree instances created with
-`paperclipai worktree init` or `paperclipai worktree:make`. Existing worktree
+`bullpen worktree init` or `bullpen worktree:make`. Existing worktree
 configs are migrated to the disabled setting when their server next starts. The
 main/default instance keeps the normal enabled-by-default behavior.
 
 Configure these in:
 
 ```sh
-pnpm paperclipai configure --section database
+pnpm bullpen configure --section database
 ```
 
 Run a one-off backup manually:
 
 ```sh
-pnpm paperclipai db:backup
+pnpm bullpen db:backup
 # or:
 pnpm db:backup
 ```
 
 Environment overrides:
 
-- `PAPERCLIP_DB_BACKUP_ENABLED=true|false`
-- `PAPERCLIP_DB_BACKUP_INTERVAL_MINUTES=<minutes>`
-- `PAPERCLIP_DB_BACKUP_RETENTION_DAYS=<days>`
-- `PAPERCLIP_DB_BACKUP_DIR=/absolute/or/~/path`
-- `PAPERCLIP_DB_BACKUP_MAX_AGE_HOURS=<hours>` controls the `/api/health`
+- `BULLPEN_DB_BACKUP_ENABLED=true|false`
+- `BULLPEN_DB_BACKUP_INTERVAL_MINUTES=<minutes>`
+- `BULLPEN_DB_BACKUP_RETENTION_DAYS=<days>`
+- `BULLPEN_DB_BACKUP_DIR=/absolute/or/~/path`
+- `BULLPEN_DB_BACKUP_MAX_AGE_HOURS=<hours>` controls the `/api/health`
   stale-backup warning threshold
-- `PAPERCLIP_DB_BACKUP_ALERT_FILE=/path/to/failure-marker` lets external cron
+- `BULLPEN_DB_BACKUP_ALERT_FILE=/path/to/failure-marker` lets external cron
   wrappers surface the last failed backup in `/api/health`
 
-Without `PAPERCLIP_DB_BACKUP_ALERT_FILE`, health checks look for
+Without `BULLPEN_DB_BACKUP_ALERT_FILE`, health checks look for
 `db-backup-to-s3.failure` in the backup directory, beside the backup directory,
 and in the default sibling `health/` directory.
 
@@ -760,15 +760,15 @@ those providers are enabled.
 
 Agent env vars now support secret references. By default, secret values are stored with local encryption and only secret refs are persisted in agent config.
 
-- Default local key path: `~/.paperclip/instances/default/secrets/master.key`
-- Override key material directly: `PAPERCLIP_SECRETS_MASTER_KEY`
-- Override key file path: `PAPERCLIP_SECRETS_MASTER_KEY_FILE`
+- Default local key path: `~/.bullpen/instances/default/secrets/master.key`
+- Override key material directly: `BULLPEN_SECRETS_MASTER_KEY`
+- Override key file path: `BULLPEN_SECRETS_MASTER_KEY_FILE`
 - Back up the key file and database together; either one alone is not enough to restore local encrypted secrets.
 
 Strict mode (recommended outside local trusted machines):
 
 ```sh
-PAPERCLIP_SECRETS_STRICT_MODE=true
+BULLPEN_SECRETS_STRICT_MODE=true
 ```
 
 When strict mode is enabled, sensitive env keys (for example `*_API_KEY`, `*_TOKEN`, `*_SECRET`) must use secret references instead of inline plain values.
@@ -776,9 +776,9 @@ Authenticated deployments default strict mode on unless explicitly overridden.
 
 CLI configuration support:
 
-- `pnpm paperclipai onboard` writes a default `secrets` config section (`local_encrypted`, strict mode off, key file path set) and creates a local key file when needed.
-- `pnpm paperclipai configure --section secrets` lets you update provider/strict mode/key path and creates the local key file when needed.
-- `pnpm paperclipai doctor` validates secrets adapter configuration, can create a missing local key file with `--repair`, and reports missing AWS Secrets Manager bootstrap env when that provider is selected.
+- `pnpm bullpen onboard` writes a default `secrets` config section (`local_encrypted`, strict mode off, key file path set) and creates a local key file when needed.
+- `pnpm bullpen configure --section secrets` lets you update provider/strict mode/key path and creates the local key file when needed.
+- `pnpm bullpen doctor` validates secrets adapter configuration, can create a missing local key file with `--repair`, and reports missing AWS Secrets Manager bootstrap env when that provider is selected.
 - Provider health is available at `GET /api/companies/:companyId/secret-providers/health` and reports local key permission warnings plus backup guidance.
 
 Per-company provider vaults are configured in the board UI under
@@ -799,7 +799,7 @@ pnpm secrets:migrate-inline-env --apply # apply migration
 Company deletion is intended as a dev/debug capability and can be disabled at runtime:
 
 ```sh
-PAPERCLIP_ENABLE_COMPANY_DELETION=false
+BULLPEN_ENABLE_COMPANY_DELETION=false
 ```
 
 Default behavior:
@@ -809,27 +809,27 @@ Default behavior:
 
 ## CLI Client Operations
 
-Paperclip CLI now includes client-side control-plane commands in addition to setup commands.
+Bullpen CLI now includes client-side control-plane commands in addition to setup commands.
 
 Quick examples:
 
 ```sh
-pnpm paperclipai issue list --company-id <company-id>
-pnpm paperclipai issue create --company-id <company-id> --title "Investigate checkout conflict"
-pnpm paperclipai issue update <issue-id> --status in_progress --comment "Started triage"
+pnpm bullpen issue list --company-id <company-id>
+pnpm bullpen issue create --company-id <company-id> --title "Investigate checkout conflict"
+pnpm bullpen issue update <issue-id> --status in_progress --comment "Started triage"
 ```
 
 Set defaults once with context profiles:
 
 ```sh
-pnpm paperclipai context set --api-base http://localhost:3100 --company-id <company-id>
+pnpm bullpen context set --api-base http://localhost:3100 --company-id <company-id>
 ```
 
 Then run commands without repeating flags:
 
 ```sh
-pnpm paperclipai issue list
-pnpm paperclipai dashboard get
+pnpm bullpen issue list
+pnpm bullpen dashboard get
 ```
 
 See full command reference in `doc/CLI.md`.
@@ -844,7 +844,7 @@ The board UI generates agent onboarding prompts from the add-agent modal (`+` in
 - `GET /api/invites/:token/onboarding` returns onboarding manifest details (registration endpoint, claim endpoint template, skill install hints).
 - `GET /api/invites/:token/onboarding.txt` returns a plain-text onboarding doc intended for both human operators and agents (llm.txt-style handoff), including optional inviter message and suggested network host candidates.
 - `GET /api/skills/index` lists available skill documents.
-- `GET /api/skills/paperclip` returns the Paperclip heartbeat skill markdown.
+- `GET /api/skills/bullpen` returns the Bullpen heartbeat skill markdown.
 
 Hermes gateway agents use this same generic agent invite flow with
 `adapterType=hermes_gateway` and `agentDefaultsPayload.apiBaseUrl` /
@@ -871,12 +871,12 @@ What it validates:
 Required permissions:
 
 - This script performs board-governed actions (create invite, approve join, wakeup another agent).
-- In authenticated mode, run with board auth via `PAPERCLIP_AUTH_HEADER` or `PAPERCLIP_COOKIE`.
+- In authenticated mode, run with board auth via `BULLPEN_AUTH_HEADER` or `BULLPEN_COOKIE`.
 
 Optional auth flags (for authenticated mode):
 
-- `PAPERCLIP_AUTH_HEADER` (for example `Bearer ...`)
-- `PAPERCLIP_COOKIE` (session cookie header value)
+- `BULLPEN_AUTH_HEADER` (for example `Bearer ...`)
+- `BULLPEN_COOKIE` (session cookie header value)
 
 ## OpenClaw Docker UI One-Command Script
 
@@ -899,11 +899,11 @@ Model behavior for this smoke script:
 
 State behavior for this smoke script:
 
-- defaults to isolated config dir `~/.openclaw-paperclip-smoke`
+- defaults to isolated config dir `~/.openclaw-bullpen-smoke`
 - resets smoke agent state each run by default (`OPENCLAW_RESET_STATE=1`) to avoid stale provider/auth drift
 
 Networking behavior for this smoke script:
 
-- auto-detects and prints a Paperclip host URL reachable from inside OpenClaw Docker
-- default container-side host alias is `host.docker.internal` (override with `PAPERCLIP_HOST_FROM_CONTAINER` / `PAPERCLIP_HOST_PORT`)
-- if Paperclip rejects container hostnames in authenticated/private mode, allow `host.docker.internal` via `pnpm paperclipai allowed-hostname host.docker.internal` and restart Paperclip
+- auto-detects and prints a Bullpen host URL reachable from inside OpenClaw Docker
+- default container-side host alias is `host.docker.internal` (override with `BULLPEN_HOST_FROM_CONTAINER` / `BULLPEN_HOST_PORT`)
+- if Bullpen rejects container hostnames in authenticated/private mode, allow `host.docker.internal` via `pnpm bullpen allowed-hostname host.docker.internal` and restart Bullpen

@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ThemeProvider, useTheme } from "./ThemeContext";
 
-const THEME_STORAGE_KEY = "paperclip.theme";
+const THEME_STORAGE_KEY = "bullpen.theme";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -53,13 +53,17 @@ function installMatchMedia(initialMatches: boolean): FakeMediaQueryList {
 describe("ThemeContext", () => {
   let container: HTMLDivElement;
   let observedTheme: "light" | "dark" | null = null;
+  let observedPreference: "light" | "dark" | "system" | null = null;
   let setTheme: ((theme: "light" | "dark") => void) | null = null;
+  let setPreference: ((preference: "light" | "dark" | "system") => void) | null = null;
   let toggleTheme: (() => void) | null = null;
 
   function Probe() {
     const ctx = useTheme();
     observedTheme = ctx.theme;
+    observedPreference = ctx.preference;
     setTheme = ctx.setTheme;
+    setPreference = ctx.setPreference;
     toggleTheme = ctx.toggleTheme;
     return null;
   }
@@ -69,7 +73,9 @@ describe("ThemeContext", () => {
     document.documentElement.className = "";
     document.documentElement.style.colorScheme = "";
     observedTheme = null;
+    observedPreference = null;
     setTheme = null;
+    setPreference = null;
     toggleTheme = null;
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -146,6 +152,72 @@ describe("ThemeContext", () => {
     });
     expect(observedTheme).toBe("dark");
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("returns to following the OS when the preference is set back to system", () => {
+    window.localStorage.setItem(THEME_STORAGE_KEY, "light");
+    const mql = installMatchMedia(true);
+
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        <ThemeProvider>
+          <Probe />
+        </ThemeProvider>,
+      );
+    });
+
+    expect(observedPreference).toBe("light");
+    expect(mql.listenerCount()).toBe(0);
+
+    act(() => {
+      setPreference?.("system");
+    });
+
+    // Re-adopts the OS mode immediately rather than waiting for a change event.
+    expect(observedPreference).toBe("system");
+    expect(observedTheme).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    // The stored key is cleared so a reload also falls back to the OS.
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+    expect(mql.listenerCount()).toBe(1);
+
+    act(() => {
+      mql.dispatch(false);
+    });
+    expect(observedTheme).toBe("light");
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("reports preference alongside the resolved theme", () => {
+    document.documentElement.classList.add("dark");
+    installMatchMedia(true);
+
+    const root = createRoot(container);
+    act(() => {
+      root.render(
+        <ThemeProvider>
+          <Probe />
+        </ThemeProvider>,
+      );
+    });
+
+    expect(observedPreference).toBe("system");
+    expect(observedTheme).toBe("dark");
+
+    act(() => {
+      toggleTheme?.();
+    });
+    expect(observedPreference).toBe("light");
+    expect(observedTheme).toBe("light");
 
     act(() => {
       root.unmount();

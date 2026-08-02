@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { generateKeyPairSync, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { Db } from "@paperclipai/db";
-import { agents as agentsTable, companies, heartbeatRuns, issues as issuesTable, projects as projectsTable } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
+import { agents as agentsTable, companies, heartbeatRuns, issues as issuesTable, projects as projectsTable } from "@bullpen/db";
 import { and, desc, eq, inArray, not, sql } from "drizzle-orm";
 import {
   agentSkillSyncSchema,
@@ -28,13 +28,13 @@ import {
   updateAgentSchema,
   supportedEnvironmentDriversForAdapter,
   LOW_TRUST_REVIEW_PRESET,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
-  resolvePaperclipInstanceRootForAdapter,
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
-} from "@paperclipai/adapter-utils/server-utils";
-import { trackAgentCreated } from "@paperclipai/shared/telemetry";
+  resolveBullpenInstanceRootForAdapter,
+  readBullpenSkillSyncPreference,
+  writeBullpenSkillSyncPreference,
+} from "@bullpen/adapter-utils/server-utils";
+import { trackAgentCreated } from "@bullpen/shared/telemetry";
 import { validate } from "../middleware/validate.js";
 import {
   agentService,
@@ -63,12 +63,12 @@ import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import { environmentService } from "../services/environments.js";
 import { resolveEnvironmentExecutionTarget } from "../services/environment-execution-target.js";
 import { environmentRuntimeService } from "../services/environment-runtime.js";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterExecutionTarget } from "@bullpen/adapter-utils/execution-target";
 import type {
   AdapterEnvironmentCheck,
   AdapterEnvironmentTestResult,
   AdapterModelProfileDefinition,
-} from "@paperclipai/adapter-utils";
+} from "@bullpen/adapter-utils";
 import { skillVersionSelectionMap } from "../services/runtime-skill-selections.js";
 import { secretService } from "../services/secrets.js";
 import { authorizationDeniedDetails } from "../services/authorization.js";
@@ -89,12 +89,12 @@ import {
   isTruthyRuntimeEnvValue,
   resolveWorktreeRunExecutionActivationState,
 } from "../services/instance-settings.js";
-import { runClaudeLogin } from "@paperclipai/adapter-claude-local/server";
-import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
-import { requireOpenCodeModelId } from "@paperclipai/adapter-opencode-local/server";
+import { runClaudeLogin } from "@bullpen/adapter-claude-local/server";
+import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX } from "@bullpen/adapter-codex-local";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@bullpen/adapter-cursor-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL } from "@bullpen/adapter-gemini-local";
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@bullpen/adapter-opencode-local";
+import { requireOpenCodeModelId } from "@bullpen/adapter-opencode-local/server";
 import {
   loadDefaultAgentInstructionsBundle,
   resolveDefaultAgentInstructionsBundleRole,
@@ -133,8 +133,8 @@ function readLiveRunsQueryInt(value: unknown, max: number, fallback = 0) {
 function readRunIssueId(context: Record<string, unknown> | null) {
   const directIssueId = context?.issueId;
   if (typeof directIssueId === "string" && isUuidLike(directIssueId)) return directIssueId;
-  const paperclipIssue = readObject(context?.paperclipIssue);
-  const nestedIssueId = paperclipIssue?.id;
+  const bullpenIssue = readObject(context?.bullpenIssue);
+  const nestedIssueId = bullpenIssue?.id;
   return typeof nestedIssueId === "string" && isUuidLike(nestedIssueId) ? nestedIssueId : null;
 }
 
@@ -199,7 +199,7 @@ export function agentRoutes(
   const companySkills = companySkillService(db);
   const workspaceOperations = workspaceOperationService(db);
   const instanceSettings = instanceSettingsService(db);
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.BULLPEN_SECRETS_STRICT_MODE === "true";
 
   async function assertAgentEnvironmentSelection(
     companyId: string,
@@ -245,7 +245,7 @@ export function agentRoutes(
    * Resolve the execution target the adapter should run its test probes against.
    *
    * - No environmentId / local environment → returns a local target so the
-   *   adapter probes the Paperclip host (legacy behavior).
+   *   adapter probes the Bullpen host (legacy behavior).
    * - SSH environment → builds an SSH execution target from the environment
    *   config so the adapter probes the remote box. No lease is required:
    *   the SSH spec is fully derived from the saved environment config.
@@ -575,7 +575,7 @@ export function agentRoutes(
       "template_ref_kind",
     ]);
     const detailParts = [
-      `paperclipLeaseId=${input.lease.id}`,
+      `bullpenLeaseId=${input.lease.id}`,
       input.lease.providerLeaseId ? `providerLeaseId=${input.lease.providerLeaseId}` : null,
       provider ? `provider=${provider}` : null,
       sandboxId ? `sandboxId=${sandboxId}` : null,
@@ -1268,9 +1268,9 @@ export function agentRoutes(
   }
 
   function codexLocalAgentHome(companyId: string, agentId: string): string {
-    const instanceRoot = resolvePaperclipInstanceRootForAdapter({
-      homeDir: asNonEmptyString(process.env.PAPERCLIP_HOME) ?? undefined,
-      instanceId: asNonEmptyString(process.env.PAPERCLIP_INSTANCE_ID) ?? undefined,
+    const instanceRoot = resolveBullpenInstanceRootForAdapter({
+      homeDir: asNonEmptyString(process.env.BULLPEN_HOME) ?? undefined,
+      instanceId: asNonEmptyString(process.env.BULLPEN_INSTANCE_ID) ?? undefined,
       env: process.env,
     });
     return path.resolve(instanceRoot, "companies", companyId, "agents", agentId, "codex-home");
@@ -1601,7 +1601,7 @@ export function agentRoutes(
       materializeMissing?: boolean;
     } = {},
   ) {
-    const preference = readPaperclipSkillSyncPreference(config);
+    const preference = readBullpenSkillSyncPreference(config);
     const betaSkillsEnabled = (await instanceSettings.getExperimental()).enableBetaSkills === true;
     const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(companyId, {
       materializeMissing: options.materializeMissing
@@ -1612,7 +1612,7 @@ export function agentRoutes(
     });
     return {
       ...config,
-      paperclipRuntimeSkills: runtimeSkillEntries,
+      bullpenRuntimeSkills: runtimeSkillEntries,
     };
   }
 
@@ -1661,7 +1661,7 @@ export function agentRoutes(
     const desiredSkills = desiredSkillEntries.map((entry) => entry.key);
 
     return {
-      adapterConfig: writePaperclipSkillSyncPreference(adapterConfig, desiredSkillEntries),
+      adapterConfig: writeBullpenSkillSyncPreference(adapterConfig, desiredSkillEntries),
       desiredSkills,
       desiredSkillEntries,
       runtimeSkillEntries,
@@ -1889,7 +1889,7 @@ export function agentRoutes(
 
     const adapter = findActiveServerAdapter(agent.adapterType);
     if (!adapter?.listSkills) {
-      const preference = readPaperclipSkillSyncPreference(
+      const preference = readBullpenSkillSyncPreference(
         agent.adapterConfig as Record<string, unknown>,
       );
       const desiredSkillEntries = preference.desiredSkillEntries.filter(
@@ -1972,7 +1972,7 @@ export function agentRoutes(
       );
       const runtimeSkillConfig = {
         ...runtimeConfig,
-        paperclipRuntimeSkills: runtimeSkillEntries,
+        bullpenRuntimeSkills: runtimeSkillEntries,
       };
       const snapshot = adapter?.syncSkills
         ? await adapter.syncSkills({
@@ -2187,7 +2187,7 @@ export function agentRoutes(
     const worktreeActivation = await resolveWorktreeRunExecutionActivationState({
       getExperimental: () => instanceSettingsService(db).getExperimental(),
     });
-    const isWorktreeRuntime = isTruthyRuntimeEnvValue(process.env.PAPERCLIP_IN_WORKTREE);
+    const isWorktreeRuntime = isTruthyRuntimeEnvValue(process.env.BULLPEN_IN_WORKTREE);
     const eligibleRows = !isWorktreeRuntime
       ? rows
       : worktreeActivation.armed

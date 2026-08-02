@@ -1,4 +1,4 @@
-import type { IssueAttachment } from "@paperclipai/shared";
+import type { IssueAttachment } from "@bullpen/shared";
 import { isVideoLikeOutput } from "./issue-output";
 
 const GENERIC_ATTACHMENT_CONTENT_TYPES = new Set([

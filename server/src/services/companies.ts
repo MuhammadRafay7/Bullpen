@@ -1,5 +1,5 @@
 import { and, count, eq, gte, inArray, isNull, lt, notInArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   companies,
   companyLogos,
@@ -32,7 +32,7 @@ import {
   routineTriggers,
   routineRevisions,
   routines,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import { notFound, unprocessable } from "../errors.js";
 import { environmentService } from "./environments.js";
 import { heartbeatService } from "./heartbeat.js";

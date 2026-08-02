@@ -18,6 +18,7 @@ const mockInstanceSettingsApi = vi.hoisted(() => ({
   getExperimental: vi.fn(),
 }));
 const mockToggleTheme = vi.hoisted(() => vi.fn());
+const mockSetPreference = vi.hoisted(() => vi.fn());
 const mockSetSidebarOpen = vi.hoisted(() => vi.fn());
 
 vi.mock("@/api/auth", () => ({
@@ -48,6 +49,8 @@ vi.mock("../context/SidebarContext", () => ({
 vi.mock("../context/ThemeContext", () => ({
   useTheme: () => ({
     theme: "dark",
+    preference: "dark",
+    setPreference: mockSetPreference,
     toggleTheme: mockToggleTheme,
   }),
 }));
@@ -139,15 +142,15 @@ describe("SidebarAccountMenu", () => {
     expect(feedbackAnchor).not.toBeNull();
     expect(feedbackAnchor?.getAttribute("target")).toBe("_blank");
 
-    // Feedback appears after Documentation and before the theme toggle
+    // Feedback appears after Documentation and before the appearance control
     const menuText = document.body.querySelector('[data-slot="popover-content"]')?.textContent ?? "";
     const docsPos = menuText.indexOf("Documentation");
     const feedbackPos = menuText.indexOf("Feedback");
-    const themePos = menuText.indexOf("Switch to");
+    const themePos = menuText.indexOf("Appearance");
     expect(docsPos).toBeLessThan(feedbackPos);
     expect(feedbackPos).toBeLessThan(themePos);
 
-    expect(document.body.textContent).toContain("Paperclip v1.2.3");
+    expect(document.body.textContent).toContain("Bullpen v1.2.3");
     expect(document.body.textContent).toContain("jane@example.com");
     expect(document.body.querySelector('[data-slot="popover-content"]')?.className)
       .toContain("w-(--sz-277px)");
@@ -203,7 +206,7 @@ describe("SidebarAccountMenu", () => {
     });
     await flushReact();
 
-    expect(document.body.textContent).toContain("feature/source-build-labelPaperclip 518fc71");
+    expect(document.body.textContent).toContain("feature/source-build-labelBullpen 518fc71");
     expect(document.body.textContent).not.toContain("2026.626.0+58.git.518fc71ce");
     expect(document.body.querySelector('a[href="https://github.com/paperclipai/paperclip/tree/feature%2Fsource-build-label"]')?.textContent).toBe(
       "feature/source-build-label",

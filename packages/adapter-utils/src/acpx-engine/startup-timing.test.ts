@@ -191,7 +191,7 @@ describe("measureStartupStep", () => {
       throw new Error("sink failed");
     });
 
-    const result = await measureStartupStep({ onEvent }, now, "bridge.paperclip", async () => {
+    const result = await measureStartupStep({ onEvent }, now, "bridge.bullpen", async () => {
       t = 17;
       return "value";
     });
@@ -222,7 +222,7 @@ describe("measureStartupStep", () => {
     const now = () => 0;
 
     await expect(
-      measureStartupStep({}, now, "bridge.paperclip", async () => "value"),
+      measureStartupStep({}, now, "bridge.bullpen", async () => "value"),
     ).resolves.toBe("value");
   });
 

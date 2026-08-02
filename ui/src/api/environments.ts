@@ -10,7 +10,7 @@ import type {
   FinishEnvironmentCustomImageSetupSession,
   StartEnvironmentCustomImageSetupSession,
   CreateEnvironmentCustomImageTerminalSessionToken,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { api } from "./client";
 
 export interface EnvironmentCustomImageOverview {

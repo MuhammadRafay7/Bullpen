@@ -1,6 +1,6 @@
-# Releasing Paperclip
+# Releasing Bullpen
 
-Maintainer runbook for shipping Paperclip across npm, GitHub, and the website-facing changelog surface.
+Maintainer runbook for shipping Bullpen across npm, GitHub, and the website-facing changelog surface.
 
 The release model is now commit-driven:
 
@@ -11,7 +11,7 @@ The release model is now commit-driven:
 
 ## Versioning Model
 
-Paperclip uses calendar versions that still fit semver syntax:
+Bullpen uses calendar versions that still fit semver syntax:
 
 - stable: `YYYY.MDD.P`
 - canary: `YYYY.MDD.P-canary.N`
@@ -35,7 +35,7 @@ Important constraints:
 Every stable release has four separate surfaces:
 
 1. **Verification** — the exact git SHA passes typecheck, tests, and build
-2. **npm** — `paperclipai` and public workspace packages are published
+2. **npm** — `bullpen` and public workspace packages are published
 3. **GitHub** — the stable release gets a git tag and GitHub Release
 4. **Website / announcements** — the stable changelog is published externally and announced
 
@@ -64,18 +64,18 @@ It:
 - computes the canary version for the current UTC date
 - publishes workspace packages dependency-first under npm dist-tag `canary`
 - waits for each package version to become registry-visible before continuing
-- publishes the user-facing `paperclipai` package last, so `paperclipai@canary` does not advance before the full package set exists
+- publishes the user-facing `bullpen` package last, so `bullpen@canary` does not advance before the full package set exists
 - verifies that `canary` resolves to the just-published version and that published internal dependencies exist on npm
-- installs `paperclipai@canary` into a clean temporary prefix as the final npm gate
+- installs `bullpen@canary` into a clean temporary prefix as the final npm gate
 - fails by default if npm leaves `latest` pointing at a canary; use `--allow-canary-latest` only when that state is intentional
 - creates a git tag `canary/vYYYY.MDD.P-canary.N`
 
 Users install canaries with:
 
 ```bash
-npx paperclipai@canary onboard
+npx bullpen@canary onboard
 # or
-npx paperclipai@canary onboard --data-dir "$(mktemp -d /tmp/paperclip-canary.XXXXXX)"
+npx bullpen@canary onboard --data-dir "$(mktemp -d /tmp/bullpen-canary.XXXXXX)"
 ```
 
 ### Stable
@@ -151,7 +151,7 @@ Recommended local generation flow:
 
 ```bash
 VERSION="$(./scripts/release.sh stable --date 2026-03-18 --print-version)"
-claude --print --output-format stream-json --verbose --dangerously-skip-permissions --model claude-opus-4-6 "Use the release-changelog skill to draft or update releases/v${VERSION}.md for Paperclip. Read doc/RELEASING.md and .agents/skills/release-changelog/SKILL.md, then generate the stable changelog for v${VERSION} from commits since the last stable tag. Do not create a canary changelog."
+claude --print --output-format stream-json --verbose --dangerously-skip-permissions --model claude-opus-4-6 "Use the release-changelog skill to draft or update releases/v${VERSION}.md for Bullpen. Read doc/RELEASING.md and .agents/skills/release-changelog/SKILL.md, then generate the stable changelog for v${VERSION} from commits since the last stable tag. Do not create a canary changelog."
 ```
 
 The repo intentionally does not run this through GitHub Actions because:
@@ -165,32 +165,32 @@ The repo intentionally does not run this through GitHub Actions because:
 For a canary:
 
 ```bash
-PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+BULLPEN_VERSION=canary ./scripts/docker-onboard-smoke.sh
 ```
 
 For the current stable:
 
 ```bash
-PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+BULLPEN_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Useful isolated variants:
 
 ```bash
-HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
-HOST_PORT=3233 DATA_DIR=./data/release-smoke-stable PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary BULLPEN_VERSION=canary ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3233 DATA_DIR=./data/release-smoke-stable BULLPEN_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Automated browser smoke is also available:
 
 ```bash
-gh workflow run release-smoke.yml -f paperclip_version=canary
-gh workflow run release-smoke.yml -f paperclip_version=latest
+gh workflow run release-smoke.yml -f bullpen_version=canary
+gh workflow run release-smoke.yml -f bullpen_version=latest
 ```
 
 Minimum checks:
 
-- `npx paperclipai@canary onboard` installs
+- `npx bullpen@canary onboard` installs
 - onboarding completes without crashes
 - authenticated login works with the smoke credentials
 - the browser lands in onboarding on a fresh instance

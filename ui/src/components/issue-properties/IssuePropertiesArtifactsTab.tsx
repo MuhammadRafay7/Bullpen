@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Issue } from "@paperclipai/shared";
-import { Paperclip } from "lucide-react";
+import type { Issue } from "@bullpen/shared";
+import { Bullpen } from "lucide-react";
 import { issuesApi } from "@/api/issues";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -46,7 +46,7 @@ export function IssuePropertiesArtifactsTab({ issue }: IssuePropertiesArtifactsT
             rel="noreferrer"
             className="flex items-center gap-2 rounded-md border border-border bg-card/50 px-2.5 py-1.5 text-sm hover:bg-accent/50"
           >
-            <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <Bullpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate">{a.originalFilename ?? a.objectKey}</span>
             <span className="shrink-0 text-(length:--text-micro) text-muted-foreground">{formatBytes(a.byteSize)}</span>
           </a>

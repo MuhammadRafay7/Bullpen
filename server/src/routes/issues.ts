@@ -3,7 +3,7 @@ import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { and, asc, desc, eq, inArray, isNull, notInArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   activityLog,
   agents,
@@ -25,7 +25,7 @@ import {
   pipelineStages,
   pipelines,
   projectWorkspaces,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   addIssueCommentSchema,
   acceptIssueThreadInteractionSchema,
@@ -94,8 +94,8 @@ import {
   type SourceTrustMetadata,
   type SuccessfulRunHandoffState,
   type WorkspaceRuntimeService,
-} from "@paperclipai/shared";
-import { trackAgentTaskCompleted } from "@paperclipai/shared/telemetry";
+} from "@bullpen/shared";
+import { trackAgentTaskCompleted } from "@bullpen/shared/telemetry";
 import { getTelemetryClient } from "../telemetry.js";
 import type { StorageService } from "../storage/types.js";
 import { validate } from "../middleware/validate.js";
@@ -394,7 +394,7 @@ function resolveAttachmentResponseContentType(input: {
   return inferVideoContentTypeFromFilename(input.originalFilename) ?? storedContentType;
 }
 
-function requiresPaperclipAttachmentMetadata(input: {
+function requiresBullpenAttachmentMetadata(input: {
   type?: unknown;
   provider?: unknown;
 }, fallback?: {
@@ -403,7 +403,7 @@ function requiresPaperclipAttachmentMetadata(input: {
 }) {
   const type = typeof input.type === "string" ? input.type : fallback?.type ?? null;
   const provider = typeof input.provider === "string" ? input.provider : fallback?.provider ?? null;
-  return type === "artifact" && provider === "paperclip";
+  return type === "artifact" && provider === "bullpen";
 }
 
 const attachmentArtifactMetadataInputSchema = z.object({
@@ -2471,7 +2471,7 @@ async function coordinateIssueListGet(input: {
         identicalInFlightCount,
         windowMs: now - existing.startedAt,
         referer: safeRefererPath(input.req),
-        visibilityHint: input.req.header("x-paperclip-tab-visible") ?? null,
+        visibilityHint: input.req.header("x-bullpen-tab-visible") ?? null,
       };
       logger.warn(event, "request_storm_detected");
       input.diagnostics?.onStormDetected?.(event);
@@ -2560,7 +2560,7 @@ function logIssueListRequest(input: {
       cacheStatus: input.cacheStatus,
       etagOutcome: input.etagOutcome,
       referer: safeRefererPath(input.req),
-      visibilityHint: input.req.header("x-paperclip-tab-visible") ?? null,
+      visibilityHint: input.req.header("x-bullpen-tab-visible") ?? null,
     }, "safe authenticated GET observed");
   });
 }
@@ -2702,10 +2702,10 @@ export function issueRoutes(
       ? run.contextSnapshot as Record<string, unknown>
       : null;
     if (!context || !readNonEmptyString(context.executionWorkspaceId)) return null;
-    const paperclipIssue = context.paperclipIssue && typeof context.paperclipIssue === "object"
-      ? context.paperclipIssue as Record<string, unknown>
+    const bullpenIssue = context.bullpenIssue && typeof context.bullpenIssue === "object"
+      ? context.bullpenIssue as Record<string, unknown>
       : null;
-    return readNonEmptyString(context.issueId) ?? readNonEmptyString(paperclipIssue?.id);
+    return readNonEmptyString(context.issueId) ?? readNonEmptyString(bullpenIssue?.id);
   }
 
   async function resolveAgentTrustForIssue(
@@ -3184,7 +3184,7 @@ export function issueRoutes(
     };
   }
 
-  async function canonicalizePaperclipArtifactMetadata(input: {
+  async function canonicalizeBullpenArtifactMetadata(input: {
     issue: { id: string; companyId: string };
     metadata: Record<string, unknown> | null | undefined;
   }) {
@@ -4058,12 +4058,12 @@ export function issueRoutes(
     if (!run) return null;
 
     const context = readObject(run.contextSnapshot);
-    const paperclipWake = readObject(context.paperclipWake);
-    const recovery = readObject(paperclipWake.recovery);
+    const bullpenWake = readObject(context.bullpenWake);
+    const recovery = readObject(bullpenWake.recovery);
     const wakeReason = typeof context.wakeReason === "string"
       ? context.wakeReason
-      : typeof paperclipWake.reason === "string"
-        ? paperclipWake.reason
+      : typeof bullpenWake.reason === "string"
+        ? bullpenWake.reason
         : null;
     if (wakeReason !== "source_scoped_recovery_action") return null;
 
@@ -5034,7 +5034,7 @@ export function issueRoutes(
       },
     });
 
-    res.setHeader("X-Paperclip-Request-Cache", coordinated.cacheStatus);
+    res.setHeader("X-Bullpen-Request-Cache", coordinated.cacheStatus);
     if (!coordinated.response) {
       const body = {
         error: "Too many concurrent issue-list requests for this actor/client",
@@ -6613,8 +6613,8 @@ export function issueRoutes(
     const createdByRunId = await resolveWorkProductCreatedByRunId(req, res, issue.companyId, req.body, "create");
     if (createdByRunId === undefined) return;
     createInput.createdByRunId = createdByRunId;
-    if (requiresPaperclipAttachmentMetadata(createInput)) {
-      createInput.metadata = await canonicalizePaperclipArtifactMetadata({
+    if (requiresBullpenAttachmentMetadata(createInput)) {
+      createInput.metadata = await canonicalizeBullpenArtifactMetadata({
         issue,
         metadata: req.body.metadata ?? null,
       });
@@ -6733,7 +6733,7 @@ export function issueRoutes(
           issueId: issue.id,
           projectId: issue.projectId ?? null,
           type: "artifact",
-          provider: "paperclip",
+          provider: "bullpen",
           externalId: req.body.sourceArtifactId,
           title: req.body.title,
           status: "approved",
@@ -6803,13 +6803,13 @@ export function issueRoutes(
     const createdByRunId = await resolveWorkProductCreatedByRunId(req, res, existing.companyId, req.body, "update");
     if (createdByRunId === undefined && Object.prototype.hasOwnProperty.call(req.body, "createdByRunId")) return;
     if (createdByRunId !== undefined) patch.createdByRunId = createdByRunId;
-    if (requiresPaperclipAttachmentMetadata(patch, existing)) {
+    if (requiresBullpenAttachmentMetadata(patch, existing)) {
       if (patch.metadata !== undefined) {
-        patch.metadata = await canonicalizePaperclipArtifactMetadata({
+        patch.metadata = await canonicalizeBullpenArtifactMetadata({
           issue,
           metadata: patch.metadata ?? null,
         });
-      } else if (!requiresPaperclipAttachmentMetadata(existing)) {
+      } else if (!requiresBullpenAttachmentMetadata(existing)) {
         res.status(422).json({ error: "Attachment-backed artifact metadata is required" });
         return;
       }

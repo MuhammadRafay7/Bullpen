@@ -7,7 +7,7 @@ import type {
   InstanceExperimentalSettings as InstanceExperimentalSettingsPayload,
   InstanceExperimentalSettingsWithManaged,
   IssueGraphLivenessAutoRecoveryPreview,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InstanceExperimentalSettings } from "./InstanceExperimentalSettings";
 import { queryKeys } from "../lib/queryKeys";
@@ -119,7 +119,7 @@ const WORKTREE_RUN_EXECUTION_TOGGLE_SELECTOR =
   'button[aria-label="Toggle worktree run execution setting"]';
 
 function setWorktreeRuntimeMeta(enabled: boolean) {
-  const name = "paperclip-worktree-enabled";
+  const name = "bullpen-worktree-enabled";
   let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
   if (enabled) {
     if (!meta) {
@@ -134,7 +134,7 @@ function setWorktreeRuntimeMeta(enabled: boolean) {
 }
 
 function setWorktreeInstanceIdMeta(instanceId: string | null) {
-  const name = "paperclip-instance-id";
+  const name = "bullpen-instance-id";
   let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
   if (instanceId) {
     if (!meta) {
@@ -482,7 +482,7 @@ describe("InstanceExperimentalSettings — Conference Room Chat card (PAP-11233)
     await renderPage();
 
     expect(container.textContent).toContain("Built-in Agents");
-    expect(container.textContent).toContain("Show Paperclip-managed built-in agent surfaces");
+    expect(container.textContent).toContain("Show Bullpen-managed built-in agent surfaces");
 
     const toggle = container.querySelector<HTMLButtonElement>(BUILT_IN_AGENTS_TOGGLE_SELECTOR);
     expect(toggle?.getAttribute("aria-checked")).toBe("false");
@@ -502,7 +502,7 @@ describe("InstanceExperimentalSettings — Conference Room Chat card (PAP-11233)
     await renderPage();
 
     expect(container.textContent).toContain("Beta skills");
-    expect(container.textContent).toContain("pin beta releases of the Paperclip core skill");
+    expect(container.textContent).toContain("pin beta releases of the Bullpen core skill");
 
     const toggle = container.querySelector<HTMLButtonElement>(BETA_SKILLS_TOGGLE_SELECTOR);
     expect(toggle?.getAttribute("aria-checked")).toBe("false");
@@ -694,7 +694,7 @@ describe("InstanceExperimentalSettings — Conference Room Chat card (PAP-11233)
 });
 
 describe("InstanceExperimentalSettings — cloud-managed keys", () => {
-  const MANAGED_BADGE_TEXT = "Managed by Paperclip Cloud";
+  const MANAGED_BADGE_TEXT = "Managed by Bullpen Cloud";
 
   let container: HTMLDivElement;
   let root: Root | null = null;
@@ -739,7 +739,7 @@ describe("InstanceExperimentalSettings — cloud-managed keys", () => {
       ...defaultExperimentalSettings(),
       enableApps: true,
       managedKeys: {
-        enableApps: { managed: true, managedBy: "paperclip-cloud" },
+        enableApps: { managed: true, managedBy: "bullpen-cloud" },
       },
     });
 
@@ -767,7 +767,7 @@ describe("InstanceExperimentalSettings — cloud-managed keys", () => {
     await renderPage({
       ...defaultExperimentalSettings(),
       managedKeys: {
-        enableSummaries: { managed: true, managedBy: "paperclip-cloud" },
+        enableSummaries: { managed: true, managedBy: "bullpen-cloud" },
       },
     });
 
@@ -785,7 +785,7 @@ describe("InstanceExperimentalSettings — cloud-managed keys", () => {
       enableSummaries: true,
       enableStatusCards: true,
       managedKeys: {
-        enableStatusCards: { managed: true, managedBy: "paperclip-cloud" },
+        enableStatusCards: { managed: true, managedBy: "bullpen-cloud" },
       },
     });
 
@@ -801,7 +801,7 @@ describe("InstanceExperimentalSettings — cloud-managed keys", () => {
     await renderPage({
       ...defaultExperimentalSettings(),
       managedKeys: {
-        enableIssueGraphLivenessAutoRecovery: { managed: true, managedBy: "paperclip-cloud" },
+        enableIssueGraphLivenessAutoRecovery: { managed: true, managedBy: "bullpen-cloud" },
       },
     });
 
@@ -832,7 +832,7 @@ describe("InstanceExperimentalSettings — cloud-managed keys", () => {
       ...settings,
       enableIssueGraphLivenessAutoRecovery: true,
       managedKeys: {
-        enableIssueGraphLivenessAutoRecovery: { managed: true, managedBy: "paperclip-cloud" },
+        enableIssueGraphLivenessAutoRecovery: { managed: true, managedBy: "bullpen-cloud" },
       },
     };
     await act(() => {

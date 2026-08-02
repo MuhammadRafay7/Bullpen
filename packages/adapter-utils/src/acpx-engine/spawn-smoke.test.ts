@@ -15,7 +15,7 @@ afterEach(async () => {
 });
 
 it("spawns a real Node ACP agent with per-session env on this platform", async () => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-acpx-spawn-smoke-"));
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-acpx-spawn-smoke-"));
   tempRoots.push(root);
   const stateDir = path.join(root, "state");
   const logs: string[] = [];
@@ -31,7 +31,7 @@ it("spawns a real Node ACP agent with per-session env on this platform", async (
       mode: "oneshot",
       stateDir,
       cwd: repoRoot,
-      env: { PAPERCLIP_ACPX_SPAWN_SMOKE: "spawn-ok" },
+      env: { BULLPEN_ACPX_SPAWN_SMOKE: "spawn-ok" },
     },
     context: {},
     onLog: async (_stream: string, text: string) => logs.push(text),
@@ -43,7 +43,7 @@ it("spawns a real Node ACP agent with per-session env on this platform", async (
   await expect(fs.access(path.join(stateDir, "wrappers"))).rejects.toThrow();
   const stderr = await fs.readFile(path.join(stateDir, "run-stderr", "spawn-smoke.log"), "utf8");
   expect(stderr).toContain("nes/close");
-  expect(stderr).toContain("paperclip-acp-echo-agent started");
+  expect(stderr).toContain("bullpen-acp-echo-agent started");
 });
 
 it("captures the Node error shape for a host-invalid spawn cwd", async () => {
@@ -52,7 +52,7 @@ it("captures the Node error shape for a host-invalid spawn cwd", async () => {
   // `chdir`s into it. The command itself (`process.execPath`) is valid, so the
   // failure is unambiguously the missing cwd — the exact condition acpx hits
   // when it host-spawns the relay proxy with the in-sandbox `remoteCwd`.
-  const missingCwd = path.join(os.tmpdir(), "paperclip-acpx-missing-spawn-cwd", "nested", "does-not-exist");
+  const missingCwd = path.join(os.tmpdir(), "bullpen-acpx-missing-spawn-cwd", "nested", "does-not-exist");
 
   const err = await new Promise<NodeJS.ErrnoException>((resolve, reject) => {
     const child = spawn(process.execPath, ["-e", "0"], {

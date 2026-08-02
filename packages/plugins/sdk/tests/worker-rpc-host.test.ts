@@ -32,7 +32,7 @@ describe("isWorkerEntrypoint", () => {
   });
 
   function createTempRoot(): string {
-    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-sdk-worker-"));
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-sdk-worker-"));
     tempRoots.push(tempRoot);
     return tempRoot;
   }
@@ -118,12 +118,12 @@ describe("worker performAction context", () => {
     try {
       await expect(callWorker("initialize", {
         manifest: {
-          id: "paperclip.test-worker-context",
+          id: "bullpen.test-worker-context",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Worker Context Test",
           description: "Test plugin",
-          author: "Paperclip",
+          author: "Bullpen",
           categories: ["automation"],
           capabilities: [],
           entrypoints: {},
@@ -193,7 +193,7 @@ describe("worker invocation scope propagation", () => {
       const id = `host-${nextRequestId++}`;
       const request = {
         ...createRequest(method, params, id),
-        ...(invocation ? { paperclipInvocation: invocation } : {}),
+        ...(invocation ? { bullpenInvocation: invocation } : {}),
       };
       const result = new Promise<unknown>((resolve, reject) => {
         pending.set(id, (response) => {
@@ -219,7 +219,7 @@ describe("worker invocation scope propagation", () => {
       if (!isJsonRpcRequest(message)) return;
       if (message.method !== "companies.get") return;
 
-      const invocationId = (message as { paperclipInvocationId?: string }).paperclipInvocationId ?? "";
+      const invocationId = (message as { bullpenInvocationId?: string }).bullpenInvocationId ?? "";
       const requestedCompanyId = (message.params as { companyId?: string }).companyId;
       const allowedCompanyId = invocationCompanies.get(invocationId);
       nestedInvocationIds.push(invocationId);
@@ -244,12 +244,12 @@ describe("worker invocation scope propagation", () => {
     try {
       await callWorker("initialize", {
         manifest: {
-          id: "paperclip.scope-test",
+          id: "bullpen.scope-test",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Scope test",
           description: "Scope test",
-          author: "Paperclip",
+          author: "Bullpen",
           categories: ["automation"],
           capabilities: ["companies.read"],
           entrypoints: { worker: "dist/worker.js" },
@@ -342,12 +342,12 @@ describe("worker configChanged cross-tenant guard", () => {
     async function initialize() {
       await callWorker("initialize", {
         manifest: {
-          id: "paperclip.config-guard-test",
+          id: "bullpen.config-guard-test",
           apiVersion: 1,
           version: "1.0.0",
           displayName: "Config Guard Test",
           description: "Test plugin",
-          author: "Paperclip",
+          author: "Bullpen",
           categories: ["automation"],
           capabilities: [],
           entrypoints: {},

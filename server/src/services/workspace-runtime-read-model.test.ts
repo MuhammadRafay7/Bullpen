@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { workspaceRuntimeServices } from "@paperclipai/db";
+import { workspaceRuntimeServices } from "@bullpen/db";
 import { describe, expect, it } from "vitest";
 import { selectConfiguredRuntimeServiceRows } from "./workspace-runtime-read-model.js";
 
@@ -23,7 +23,7 @@ function runtimeServiceRow(
     lifecycle: "shared",
     reuseKey: randomUUID(),
     command: "pnpm dev",
-    cwd: "/tmp/paperclip",
+    cwd: "/tmp/bullpen",
     port: null,
     url: null,
     provider: "local_process",

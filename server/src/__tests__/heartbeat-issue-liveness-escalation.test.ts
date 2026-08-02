@@ -23,7 +23,7 @@ import {
   projects,
   projectWorkspaces,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -45,9 +45,9 @@ vi.mock("../telemetry.ts", () => ({
   getTelemetryClient: () => ({ track: vi.fn() }),
 }));
 
-vi.mock("@paperclipai/shared/telemetry", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/shared/telemetry")>(
-    "@paperclipai/shared/telemetry",
+vi.mock("@bullpen/shared/telemetry", async () => {
+  const actual = await vi.importActual<typeof import("@bullpen/shared/telemetry")>(
+    "@bullpen/shared/telemetry",
   );
   return {
     ...actual,
@@ -86,7 +86,7 @@ describeEmbeddedPostgres("heartbeat issue graph liveness escalation", () => {
   let db: ReturnType<typeof createDb>;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-heartbeat-issue-liveness-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-heartbeat-issue-liveness-");
     db = createDb(tempDb.connectionString);
   }, 30_000);
 
@@ -153,7 +153,7 @@ describeEmbeddedPostgres("heartbeat issue graph liveness escalation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -245,7 +245,7 @@ describeEmbeddedPostgres("heartbeat issue graph liveness escalation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -999,7 +999,7 @@ describeEmbeddedPostgres("heartbeat issue graph liveness escalation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });

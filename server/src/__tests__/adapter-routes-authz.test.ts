@@ -84,7 +84,7 @@ function registerRouteMocks() {
 }
 
 const EXTERNAL_ADAPTER_TYPE = "external_admin_test";
-const EXTERNAL_PACKAGE_NAME = "paperclip-external-adapter";
+const EXTERNAL_PACKAGE_NAME = "bullpen-external-adapter";
 let adapterRoutes: typeof import("../routes/adapters.js").adapterRoutes;
 let errorHandler: typeof import("../middleware/index.js").errorHandler;
 let registerServerAdapter: typeof import("../adapters/registry.js").registerServerAdapter;
@@ -264,7 +264,7 @@ describe.sequential("adapter management route authorization", () => {
     unregisterServerAdapter(EXTERNAL_ADAPTER_TYPE);
     setOverridePaused("claude_local", false);
     mocks.listAdapterPlugins.mockImplementation(() => [...mocks.externalRecords.values()]);
-    mocks.getAdapterPluginsDir.mockReturnValue("/tmp/paperclip-adapter-route-authz-test");
+    mocks.getAdapterPluginsDir.mockReturnValue("/tmp/bullpen-adapter-route-authz-test");
     mocks.getDisabledAdapterTypes.mockReturnValue([]);
     mocks.setAdapterDisabled.mockReturnValue(true);
     mocks.buildExternalAdapters.mockResolvedValue([]);
@@ -343,10 +343,10 @@ describe.sequential("adapter management route authorization", () => {
 
   describe("cloud-managed adapter code install floor", () => {
     beforeEach(() => {
-      process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+      process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
     });
     afterEach(() => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN;
     });
 
     it.each(["install", "reinstall"] as const)(

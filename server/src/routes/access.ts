@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 import { Router } from "express";
 import type { Request } from "express";
 import { and, desc, eq, gt, inArray, isNotNull, isNull, lte, ne, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   assets,
   agentApiKeys,
@@ -27,7 +27,7 @@ import {
   invites,
   joinRequests,
   principalPermissionGrants,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   acceptInviteSchema,
   createCliAuthChallengeSchema,
@@ -46,8 +46,8 @@ import {
   updateUserCompanyAccessSchema,
   PERMISSION_KEYS,
   isUuidLike,
-} from "@paperclipai/shared";
-import type { DeploymentExposure, DeploymentMode, HumanCompanyMembershipRole, PermissionKey } from "@paperclipai/shared";
+} from "@bullpen/shared";
+import type { DeploymentExposure, DeploymentMode, HumanCompanyMembershipRole, PermissionKey } from "@bullpen/shared";
 import {
   forbidden,
   conflict,
@@ -172,8 +172,8 @@ function isSafeSkillName(skillName: string): boolean {
   return /^[a-z0-9][a-z0-9._-]*$/.test(skillName);
 }
 
-/** Resolve the Paperclip repo skills directory (built-in / managed skills). */
-function resolvePaperclipSkillsDir(): string | null {
+/** Resolve the Bullpen repo skills directory (built-in / managed skills). */
+function resolveBullpenSkillsDir(): string | null {
   const moduleDir = path.dirname(fileURLToPath(import.meta.url));
   const candidates = [
     path.resolve(moduleDir, "../../skills"),         // published
@@ -212,7 +212,7 @@ function parseSkillFrontmatter(markdown: string): { description: string } {
 interface AvailableSkill {
   name: string;
   description: string;
-  isPaperclipManaged: boolean;
+  isBullpenManaged: boolean;
 }
 
 /** Discover all available Claude Code skills from CLAUDE_HOME or ~/.claude. */
@@ -226,14 +226,14 @@ function resolveClaudeSkillsDir(): string {
 
 function listAvailableSkills(): AvailableSkill[] {
   const claudeSkillsDir = resolveClaudeSkillsDir();
-  const paperclipSkillsDir = resolvePaperclipSkillsDir();
+  const bullpenSkillsDir = resolveBullpenSkillsDir();
 
-  // Build set of Paperclip-managed skill names
-  const paperclipSkillNames = new Set<string>();
-  if (paperclipSkillsDir) {
+  // Build set of Bullpen-managed skill names
+  const bullpenSkillNames = new Set<string>();
+  if (bullpenSkillsDir) {
     try {
-      for (const entry of fs.readdirSync(paperclipSkillsDir, { withFileTypes: true })) {
-        if (entry.isDirectory()) paperclipSkillNames.add(entry.name);
+      for (const entry of fs.readdirSync(bullpenSkillsDir, { withFileTypes: true })) {
+        if (entry.isDirectory()) bullpenSkillNames.add(entry.name);
       }
     } catch { /* skip */ }
   }
@@ -254,17 +254,17 @@ function listAvailableSkills(): AvailableSkill[] {
       skills.push({
         name: entry.name,
         description,
-        isPaperclipManaged: paperclipSkillNames.has(entry.name),
+        isBullpenManaged: bullpenSkillNames.has(entry.name),
       });
     }
   } catch { /* Claude skills directory doesn't exist */ }
 
-  if (paperclipSkillsDir) {
+  if (bullpenSkillsDir) {
     const existingNames = new Set(skills.map((skill) => skill.name));
     try {
-      for (const entry of fs.readdirSync(paperclipSkillsDir, { withFileTypes: true })) {
+      for (const entry of fs.readdirSync(bullpenSkillsDir, { withFileTypes: true })) {
         if (!entry.isDirectory() || entry.name.startsWith(".") || existingNames.has(entry.name)) continue;
-        const skillMdPath = path.join(paperclipSkillsDir, entry.name, "SKILL.md");
+        const skillMdPath = path.join(bullpenSkillsDir, entry.name, "SKILL.md");
         let description = "";
         try {
           const md = fs.readFileSync(skillMdPath, "utf8");
@@ -273,10 +273,10 @@ function listAvailableSkills(): AvailableSkill[] {
         skills.push({
           name: entry.name,
           description,
-          isPaperclipManaged: true,
+          isBullpenManaged: true,
         });
       }
-    } catch { /* skip Paperclip skills directory */ }
+    } catch { /* skip Bullpen skills directory */ }
   }
 
   skills.sort((a, b) => a.name.localeCompare(b.name));
@@ -524,7 +524,7 @@ function generateEd25519PrivateKeyPem(): string {
 export function buildJoinDefaultsPayloadForAccept(input: {
   adapterType: string | null;
   defaultsPayload: unknown;
-  paperclipApiUrl?: unknown;
+  bullpenApiUrl?: unknown;
   inboundOpenClawAuthHeader?: string | null;
   inboundOpenClawTokenHeader?: string | null;
 }): unknown {
@@ -536,9 +536,9 @@ export function buildJoinDefaultsPayloadForAccept(input: {
     ? { ...(input.defaultsPayload as Record<string, unknown>) }
     : ({} as Record<string, unknown>);
 
-  if (!nonEmptyTrimmedString(merged.paperclipApiUrl)) {
-    const legacyPaperclipApiUrl = nonEmptyTrimmedString(input.paperclipApiUrl);
-    if (legacyPaperclipApiUrl) merged.paperclipApiUrl = legacyPaperclipApiUrl;
+  if (!nonEmptyTrimmedString(merged.bullpenApiUrl)) {
+    const legacyBullpenApiUrl = nonEmptyTrimmedString(input.bullpenApiUrl);
+    if (legacyBullpenApiUrl) merged.bullpenApiUrl = legacyBullpenApiUrl;
   }
   const mergedHeaders = normalizeHeaderMap(merged.headers) ?? {};
 
@@ -680,8 +680,8 @@ function summarizeOpenClawGatewayDefaultsForLog(defaultsPayload: unknown) {
     present: Boolean(defaults),
     keys: defaults ? Object.keys(defaults).sort() : [],
     url: defaults ? nonEmptyTrimmedString(defaults.url) : null,
-    paperclipApiUrl: defaults
-      ? nonEmptyTrimmedString(defaults.paperclipApiUrl)
+    bullpenApiUrl: defaults
+      ? nonEmptyTrimmedString(defaults.bullpenApiUrl)
       : null,
     headerKeys: headers ? Object.keys(headers).sort() : [],
     sessionKeyStrategy: defaults
@@ -767,7 +767,7 @@ export function normalizeAgentDefaultsForJoin(input: {
               code: "hermes_gateway_dashboard_root_mapped",
               level: "info",
               message: `Default Hermes dashboard root mapped to API base ${apiBaseUrl.toString()}`,
-              hint: "Hermes dashboard and /chat routes are browser UI routes. Paperclip gateway calls use /api/health and /api/v1/runs.",
+              hint: "Hermes dashboard and /chat routes are browser UI routes. Bullpen gateway calls use /api/health and /api/v1/runs.",
             });
           }
           if (apiBaseUrl.protocol === "http:" && !isLoopbackHost(apiBaseUrl.hostname)) {
@@ -1013,35 +1013,35 @@ export function normalizeAgentDefaultsForJoin(input: {
     }
   }
 
-  const rawPaperclipApiUrl =
-    typeof defaults.paperclipApiUrl === "string"
-      ? defaults.paperclipApiUrl.trim()
+  const rawBullpenApiUrl =
+    typeof defaults.bullpenApiUrl === "string"
+      ? defaults.bullpenApiUrl.trim()
       : "";
-  if (rawPaperclipApiUrl) {
+  if (rawBullpenApiUrl) {
     try {
-      const parsedPaperclipApiUrl = new URL(rawPaperclipApiUrl);
+      const parsedBullpenApiUrl = new URL(rawBullpenApiUrl);
       if (
-        parsedPaperclipApiUrl.protocol !== "http:" &&
-        parsedPaperclipApiUrl.protocol !== "https:"
+        parsedBullpenApiUrl.protocol !== "http:" &&
+        parsedBullpenApiUrl.protocol !== "https:"
       ) {
         diagnostics.push({
-          code: "openclaw_gateway_paperclip_api_url_protocol",
+          code: "openclaw_gateway_bullpen_api_url_protocol",
           level: "warn",
-          message: `paperclipApiUrl must use http:// or https:// (got ${parsedPaperclipApiUrl.protocol}).`
+          message: `bullpenApiUrl must use http:// or https:// (got ${parsedBullpenApiUrl.protocol}).`
         });
       } else {
-        normalized.paperclipApiUrl = parsedPaperclipApiUrl.toString();
+        normalized.bullpenApiUrl = parsedBullpenApiUrl.toString();
         diagnostics.push({
-          code: "openclaw_gateway_paperclip_api_url_configured",
+          code: "openclaw_gateway_bullpen_api_url_configured",
           level: "info",
-          message: `paperclipApiUrl set to ${parsedPaperclipApiUrl.toString()}`
+          message: `bullpenApiUrl set to ${parsedBullpenApiUrl.toString()}`
         });
       }
     } catch {
       diagnostics.push({
-        code: "openclaw_gateway_paperclip_api_url_invalid",
+        code: "openclaw_gateway_bullpen_api_url_invalid",
         level: "warn",
-        message: `Invalid paperclipApiUrl: ${rawPaperclipApiUrl}`
+        message: `Invalid bullpenApiUrl: ${rawBullpenApiUrl}`
       });
     }
   }
@@ -1606,7 +1606,7 @@ function buildOnboardingDiscoveryDiagnostics(input: {
       code: "openclaw_onboarding_api_loopback",
       level: "warn",
       message:
-        "Onboarding URL resolves to loopback hostname. Remote OpenClaw agents cannot reach localhost on your Paperclip host.",
+        "Onboarding URL resolves to loopback hostname. Remote OpenClaw agents cannot reach localhost on your Bullpen host.",
       hint: "Use a reachable hostname/IP (for example Tailscale hostname, Docker host alias, or public domain)."
     });
   }
@@ -1619,7 +1619,7 @@ function buildOnboardingDiscoveryDiagnostics(input: {
     diagnostics.push({
       code: "openclaw_onboarding_private_loopback_bind",
       level: "warn",
-      message: "Paperclip is bound to loopback in authenticated/private mode.",
+      message: "Bullpen is bound to loopback in authenticated/private mode.",
       hint: "Use a reachable private bind mode such as `pnpm dev --bind lan` or `pnpm dev --bind tailnet` for private-network onboarding."
     });
   }
@@ -1636,7 +1636,7 @@ function buildOnboardingDiscoveryDiagnostics(input: {
       code: "openclaw_onboarding_private_host_not_allowed",
       level: "warn",
       message: `Onboarding host "${apiHost}" is not in allowed hostnames for authenticated/private mode.`,
-      hint: `Run pnpm paperclipai allowed-hostname ${apiHost}`
+      hint: `Run pnpm bullpen allowed-hostname ${apiHost}`
     });
   }
 
@@ -1701,7 +1701,7 @@ function buildInviteOnboardingManifest(
   }
 ) {
   const baseUrl = requestBaseUrl(req);
-  const skillPath = `/api/invites/${token}/skills/paperclip`;
+  const skillPath = `/api/invites/${token}/skills/bullpen`;
   const skillUrl = baseUrl ? `${baseUrl}${skillPath}` : skillPath;
   const registrationEndpointPath = `/api/invites/${token}/accept`;
   const registrationEndpointUrl = baseUrl
@@ -1733,7 +1733,7 @@ function buildInviteOnboardingManifest(
     ),
     onboarding: {
       instructions:
-        "Join as an external Paperclip agent, save your one-time claim secret, wait for board approval, then claim your Paperclip API key through the standard claim endpoint. Use requestType='agent', include your agentName and capabilities, and set adapterType plus agentDefaultsPayload for your runtime when applicable. Hermes Gateway agents must use adapterType='hermes_gateway', start a clean Hermes install with API_SERVER_ENABLED=true and a fresh API_SERVER_KEY, then run `hermes gateway run --replace --accept-hooks`. Put the Hermes gateway URL in agentDefaultsPayload.apiBaseUrl, put the exact API_SERVER_KEY value in agentDefaultsPayload.apiKey, and put the reachable Paperclip base URL in agentDefaultsPayload.paperclipApiUrl. If you use the default Hermes dashboard root or /chat URL on port 9119, Paperclip maps it to /api automatically. OpenClaw Gateway agents must use adapterType='openclaw_gateway', set agentDefaultsPayload.url to a ws:// or wss:// gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token.",
+        "Join as an external Bullpen agent, save your one-time claim secret, wait for board approval, then claim your Bullpen API key through the standard claim endpoint. Use requestType='agent', include your agentName and capabilities, and set adapterType plus agentDefaultsPayload for your runtime when applicable. Hermes Gateway agents must use adapterType='hermes_gateway', start a clean Hermes install with API_SERVER_ENABLED=true and a fresh API_SERVER_KEY, then run `hermes gateway run --replace --accept-hooks`. Put the Hermes gateway URL in agentDefaultsPayload.apiBaseUrl, put the exact API_SERVER_KEY value in agentDefaultsPayload.apiKey, and put the reachable Bullpen base URL in agentDefaultsPayload.bullpenApiUrl. If you use the default Hermes dashboard root or /chat URL on port 9119, Bullpen maps it to /api automatically. OpenClaw Gateway agents must use adapterType='openclaw_gateway', set agentDefaultsPayload.url to a ws:// or wss:// gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token.",
       inviteMessage: extractInviteMessage(invite),
       recommendedAdapterType: null,
       requiredFields: {
@@ -1743,7 +1743,7 @@ function buildInviteOnboardingManifest(
           "Adapter type for this runtime. Use 'openclaw_gateway' only for OpenClaw Gateway agents. Use 'hermes_gateway' only for Hermes Gateway agents.",
         capabilities: "Optional capability summary",
         agentDefaultsPayload:
-          "Runtime-specific adapter config. OpenClaw Gateway agents must include url (ws:// or wss://) and headers.x-openclaw-token. Hermes Gateway agents must include apiBaseUrl, apiKey set to the Hermes API_SERVER_KEY, and paperclipApiUrl. A default Hermes dashboard root or /chat URL such as http://127.0.0.1:9119/chat is accepted and maps to /api. Other runtimes should include the config their adapter expects."
+          "Runtime-specific adapter config. OpenClaw Gateway agents must include url (ws:// or wss://) and headers.x-openclaw-token. Hermes Gateway agents must include apiBaseUrl, apiKey set to the Hermes API_SERVER_KEY, and bullpenApiUrl. A default Hermes dashboard root or /chat URL such as http://127.0.0.1:9119/chat is accepted and maps to /api. Other runtimes should include the config their adapter expects."
       },
       registrationEndpoint: {
         method: "POST",
@@ -1768,8 +1768,8 @@ function buildInviteOnboardingManifest(
         guidance:
           opts.deploymentMode === "authenticated" &&
           opts.deploymentExposure === "private"
-            ? "If OpenClaw runs on another machine, ensure the Paperclip hostname is reachable and allowed via `pnpm paperclipai allowed-hostname <host>`."
-            : "Ensure OpenClaw can reach this Paperclip API base URL for invite, claim, and skill bootstrap calls."
+            ? "If OpenClaw runs on another machine, ensure the Bullpen hostname is reachable and allowed via `pnpm bullpen allowed-hostname <host>`."
+            : "Ensure OpenClaw can reach this Bullpen API base URL for invite, claim, and skill bootstrap calls."
       },
       textInstructions: {
         path: onboardingTextPath,
@@ -1777,10 +1777,10 @@ function buildInviteOnboardingManifest(
         contentType: "text/plain"
       },
       skill: {
-        name: "paperclip",
+        name: "bullpen",
         path: skillPath,
         url: skillUrl,
-        installPath: "runtime-specific Paperclip skill location"
+        installPath: "runtime-specific Bullpen skill location"
       }
     }
   };
@@ -1831,7 +1831,7 @@ export function buildInviteOnboardingTextDocument(
   };
 
   appendBlock(`
-    # Paperclip Agent Onboarding
+    # Bullpen Agent Onboarding
 
     This document is meant to be readable by both humans and agents.
 
@@ -1855,9 +1855,9 @@ export function buildInviteOnboardingTextDocument(
   appendBlock(`
     ## Step 0
 
-    Decide which Paperclip adapter type matches your runtime.
+    Decide which Bullpen adapter type matches your runtime.
 
-    Use adapterType only when there is a matching Paperclip adapter. Put runtime-specific settings in agentDefaultsPayload.
+    Use adapterType only when there is a matching Bullpen adapter. Put runtime-specific settings in agentDefaultsPayload.
 
     ## Step 1: Submit agent join request
     ${onboarding.registrationEndpoint.method} ${
@@ -1881,7 +1881,7 @@ export function buildInviteOnboardingTextDocument(
       "capabilities": "OpenClaw gateway agent",
       "agentDefaultsPayload": {
         "url": "wss://your-openclaw-gateway.example",
-        "paperclipApiUrl": "https://paperclip-hostname-your-agent-can-reach:3100",
+        "bullpenApiUrl": "https://bullpen-hostname-your-agent-can-reach:3100",
         "headers": { "x-openclaw-token": "replace-me" },
         "waitTimeoutMs": 120000,
         "sessionKeyStrategy": "issue",
@@ -1897,15 +1897,15 @@ export function buildInviteOnboardingTextDocument(
     - For a clean Hermes install, generate a fresh random gateway key and start Hermes with API_SERVER_ENABLED=true and API_SERVER_KEY=<random-gateway-key>.
     - Run: hermes gateway run --replace --accept-hooks
     - Default Hermes API server port: 8642.
-    - Set agentDefaultsPayload.apiBaseUrl to the Hermes gateway URL Paperclip can reach.
-    - Set agentDefaultsPayload.apiKey to the exact same value as API_SERVER_KEY. This is the Hermes gateway key, not the Paperclip key.
+    - Set agentDefaultsPayload.apiBaseUrl to the Hermes gateway URL Bullpen can reach.
+    - Set agentDefaultsPayload.apiKey to the exact same value as API_SERVER_KEY. This is the Hermes gateway key, not the Bullpen key.
     - If you only have the default Hermes dashboard or chat URL, http://127.0.0.1:9119 and http://127.0.0.1:9119/chat are accepted and map to /api automatically.
-    - Watch out: /chat and the dashboard root are browser UI routes. Paperclip tests /api/health and starts runs with /api/v1/runs after mapping them to the API base.
-    - Set agentDefaultsPayload.paperclipApiUrl to the Paperclip base URL Hermes can reach.
-    - Use hermes_local when Paperclip should start Hermes on the Paperclip host.
-    - Use hermes_gateway when Paperclip should call an already-running Hermes API server.
-    - After board approval, claim the Paperclip API key once with the claim endpoint below and save it as PAPERCLIP_API_KEY. Store the parsed token field from the raw HTTP JSON response before printing or summarizing it; do not copy token values from chat, transcript, or tool-output previews. A token value containing literal ... or [redacted] is a masked display preview, not a valid key. Do not rotate or invent a Paperclip key manually.
-    - Hermes-originated Paperclip API usage means Hermes calls Paperclip with PAPERCLIP_API_URL and PAPERCLIP_API_KEY after approval/key claim. Do not confuse that with agentDefaultsPayload.apiBaseUrl, which points Paperclip to Hermes.
+    - Watch out: /chat and the dashboard root are browser UI routes. Bullpen tests /api/health and starts runs with /api/v1/runs after mapping them to the API base.
+    - Set agentDefaultsPayload.bullpenApiUrl to the Bullpen base URL Hermes can reach.
+    - Use hermes_local when Bullpen should start Hermes on the Bullpen host.
+    - Use hermes_gateway when Bullpen should call an already-running Hermes API server.
+    - After board approval, claim the Bullpen API key once with the claim endpoint below and save it as BULLPEN_API_KEY. Store the parsed token field from the raw HTTP JSON response before printing or summarizing it; do not copy token values from chat, transcript, or tool-output previews. A token value containing literal ... or [redacted] is a masked display preview, not a valid key. Do not rotate or invent a Bullpen key manually.
+    - Hermes-originated Bullpen API usage means Hermes calls Bullpen with BULLPEN_API_URL and BULLPEN_API_KEY after approval/key claim. Do not confuse that with agentDefaultsPayload.apiBaseUrl, which points Bullpen to Hermes.
 
     Hermes Gateway payload example:
     {
@@ -1916,17 +1916,17 @@ export function buildInviteOnboardingTextDocument(
       "agentDefaultsPayload": {
         "apiBaseUrl": "http://127.0.0.1:8642",
         "apiKey": "<same-value-as-API_SERVER_KEY>",
-        "paperclipApiUrl": "http://localhost:3100"
+        "bullpenApiUrl": "http://localhost:3100"
       }
     }
 
     Hermes Gateway network examples:
-    - Local loopback API server: agentDefaultsPayload.apiBaseUrl = "http://127.0.0.1:8642" and agentDefaultsPayload.paperclipApiUrl = "http://127.0.0.1:3100".
-    - Local loopback dashboard root or chat URL: agentDefaultsPayload.apiBaseUrl = "http://127.0.0.1:9119" or "http://127.0.0.1:9119/chat"; Paperclip maps either one to "http://127.0.0.1:9119/api".
-    - LAN/private network: use reachable private addresses, for example agentDefaultsPayload.apiBaseUrl = "http://192.168.1.25:8642" and agentDefaultsPayload.paperclipApiUrl = "http://192.168.1.10:3100".
-    - Private overlay: use overlay DNS names, for example agentDefaultsPayload.apiBaseUrl = "http://hermes-host.tailnet-name.ts.net:8642" and agentDefaultsPayload.paperclipApiUrl = "http://paperclip-host.tailnet-name.ts.net:3100".
-    - Docker: if Paperclip runs in Docker and Hermes runs on the host, use agentDefaultsPayload.apiBaseUrl = "http://host.docker.internal:8642"; if both run in Compose, use the Hermes service name.
-    - Reverse proxy/TLS: use HTTPS origins, for example agentDefaultsPayload.apiBaseUrl = "https://hermes-gateway.example" and agentDefaultsPayload.paperclipApiUrl = "https://paperclip.example".
+    - Local loopback API server: agentDefaultsPayload.apiBaseUrl = "http://127.0.0.1:8642" and agentDefaultsPayload.bullpenApiUrl = "http://127.0.0.1:3100".
+    - Local loopback dashboard root or chat URL: agentDefaultsPayload.apiBaseUrl = "http://127.0.0.1:9119" or "http://127.0.0.1:9119/chat"; Bullpen maps either one to "http://127.0.0.1:9119/api".
+    - LAN/private network: use reachable private addresses, for example agentDefaultsPayload.apiBaseUrl = "http://192.168.1.25:8642" and agentDefaultsPayload.bullpenApiUrl = "http://192.168.1.10:3100".
+    - Private overlay: use overlay DNS names, for example agentDefaultsPayload.apiBaseUrl = "http://hermes-host.tailnet-name.ts.net:8642" and agentDefaultsPayload.bullpenApiUrl = "http://bullpen-host.tailnet-name.ts.net:3100".
+    - Docker: if Bullpen runs in Docker and Hermes runs on the host, use agentDefaultsPayload.apiBaseUrl = "http://host.docker.internal:8642"; if both run in Compose, use the Hermes service name.
+    - Reverse proxy/TLS: use HTTPS origins, for example agentDefaultsPayload.apiBaseUrl = "https://hermes-gateway.example" and agentDefaultsPayload.bullpenApiUrl = "https://bullpen.example".
 
     Expected response includes:
     - request id
@@ -1934,7 +1934,7 @@ export function buildInviteOnboardingTextDocument(
     - claimApiKeyPath
 
     ## Step 2: Wait for board approval
-    The board approves the join request in Paperclip before key claim is allowed.
+    The board approves the join request in Bullpen before key claim is allowed.
 
     ## Step 3: Claim API key (one-time)
     ${
@@ -1946,14 +1946,14 @@ export function buildInviteOnboardingTextDocument(
       "claimSecret": "<one-time-claim-secret>"
     }
 
-    On successful claim, save the full JSON response somewhere private for your runtime and set PAPERCLIP_API_KEY and PAPERCLIP_API_URL for future Paperclip API calls. The response body includes the full token exactly once, but runtime displays and tool summaries may mask or truncate it. Write the raw response token directly to private storage before logging anything, then verify it with an authenticated Paperclip API call. Do not persist displayed previews containing literal ... or [redacted].
+    On successful claim, save the full JSON response somewhere private for your runtime and set BULLPEN_API_KEY and BULLPEN_API_URL for future Bullpen API calls. The response body includes the full token exactly once, but runtime displays and tool summaries may mask or truncate it. Write the raw response token directly to private storage before logging anything, then verify it with an authenticated Bullpen API call. Do not persist displayed previews containing literal ... or [redacted].
 
     Important:
     - claim secrets expire
     - claim secrets are single-use
     - claim fails before board approval
 
-    ## Step 4: Install Paperclip skill
+    ## Step 4: Install Bullpen skill
     GET ${onboarding.skill.url}
     Install path: ${onboarding.skill.installPath}
 
@@ -1965,7 +1965,7 @@ export function buildInviteOnboardingTextDocument(
     ## Connectivity guidance
     ${
       onboarding.connectivity?.guidance ??
-      "Ensure Paperclip is reachable from your OpenClaw runtime."
+      "Ensure Bullpen is reachable from your OpenClaw runtime."
     }
   `);
 
@@ -1978,7 +1978,7 @@ export function buildInviteOnboardingTextDocument(
     : [];
 
   if (connectionCandidates.length > 0) {
-    lines.push("## Suggested Paperclip base URLs to try");
+    lines.push("## Suggested Bullpen base URLs to try");
     for (const candidate of connectionCandidates) {
       lines.push(`- ${candidate}`);
     }
@@ -1986,12 +1986,12 @@ export function buildInviteOnboardingTextDocument(
 
       Test each candidate with:
       - GET <candidate>/api/health
-      - set the first reachable candidate as agentDefaultsPayload.paperclipApiUrl when submitting your join request
+      - set the first reachable candidate as agentDefaultsPayload.bullpenApiUrl when submitting your join request
 
       If none are reachable: ask your human operator for a reachable hostname/address and help them update network configuration.
       For authenticated/private mode, they may need:
-      - pnpm paperclipai allowed-hostname <host>
-      - then restart Paperclip and retry onboarding.
+      - pnpm bullpen allowed-hostname <host>
+      - then restart Bullpen and retry onboarding.
     `);
   }
 
@@ -2110,7 +2110,7 @@ function toUserProfile(
 }
 
 async function resolveActorEmail(db: Db, req: Request): Promise<string | null> {
-  if (isLocalImplicit(req)) return "local@paperclip.local";
+  if (isLocalImplicit(req)) return "local@bullpen.local";
   const userId = req.actor.userId;
   if (!userId) return null;
   const user = await db
@@ -3253,18 +3253,18 @@ export function accessRoutes(
     assertAuthenticated(req);
     res.json({
       skills: [
-        { name: "paperclip", path: "/api/skills/paperclip" },
+        { name: "bullpen", path: "/api/skills/bullpen" },
         {
           name: "para-memory-files",
           path: "/api/skills/para-memory-files"
         },
         {
-          name: "paperclip-create-agent",
-          path: "/api/skills/paperclip-create-agent"
+          name: "bullpen-create-agent",
+          path: "/api/skills/bullpen-create-agent"
         },
         {
-          name: "paperclip-converting-plans-to-tasks",
-          path: "/api/skills/paperclip-converting-plans-to-tasks"
+          name: "bullpen-converting-plans-to-tasks",
+          path: "/api/skills/bullpen-converting-plans-to-tasks"
         }
       ]
     });
@@ -3530,8 +3530,8 @@ export function accessRoutes(
     res.json({
       skills: [
         {
-          name: "paperclip",
-          path: `/api/invites/${token}/skills/paperclip`,
+          name: "bullpen",
+          path: `/api/invites/${token}/skills/bullpen`,
         },
       ],
     });
@@ -3550,7 +3550,7 @@ export function accessRoutes(
     }
 
     const skillName = (req.params.skillName as string).trim().toLowerCase();
-    if (skillName !== "paperclip") throw notFound("Skill not found");
+    if (skillName !== "bullpen") throw notFound("Skill not found");
     const markdown = readSkillMarkdown(skillName);
     if (!markdown) throw notFound("Skill not found");
     res.type("text/markdown").send(markdown);
@@ -3755,7 +3755,7 @@ export function accessRoutes(
           ? buildJoinDefaultsPayloadForAccept({
               adapterType,
               defaultsPayload: replayMergedDefaults,
-              paperclipApiUrl: req.body.paperclipApiUrl ?? null,
+              bullpenApiUrl: req.body.bullpenApiUrl ?? null,
               inboundOpenClawAuthHeader: req.header("x-openclaw-auth") ?? null,
               inboundOpenClawTokenHeader: req.header("x-openclaw-token") ?? null
             })
@@ -3976,10 +3976,10 @@ export function accessRoutes(
         if (expectedDefaults.url && !persistedDefaults.url)
           missingPersistedFields.push("url");
         if (
-          expectedDefaults.paperclipApiUrl &&
-          !persistedDefaults.paperclipApiUrl
+          expectedDefaults.bullpenApiUrl &&
+          !persistedDefaults.bullpenApiUrl
         ) {
-          missingPersistedFields.push("paperclipApiUrl");
+          missingPersistedFields.push("bullpenApiUrl");
         }
         if (expectedDefaults.gatewayToken && !persistedDefaults.gatewayToken) {
           missingPersistedFields.push("headers.x-openclaw-token");

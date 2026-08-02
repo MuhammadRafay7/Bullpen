@@ -1,7 +1,7 @@
 import { Buffer } from "node:buffer";
 import { createHash, randomUUID } from "node:crypto";
 import { and, asc, desc, eq, gt, gte, inArray, isNull, like, lt, ne, notInArray, or, sql, type SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   activityLog,
   agentWakeupRequests,
@@ -35,7 +35,7 @@ import {
   projectWorkspaces,
   projects,
   workspaceOperations,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import type {
   AcceptedPlanDecomposition,
   IssueComment,
@@ -52,7 +52,7 @@ import type {
   IssueWatchdogSummary,
   LowTrustBoundary,
   SuccessfulRunHandoffState,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
   clampIssueRequestDepth,
   extractAgentMentionIds,
@@ -62,7 +62,7 @@ import {
   issueCommentPresentationSchema,
   isUuidLike,
   normalizeIssueIdentifier as normalizeIssueReferenceIdentifier,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { conflict, HttpError, notFound, unprocessable } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import { parseObject } from "../adapters/utils.js";
@@ -154,8 +154,8 @@ function wakeRequestTargetsIssue(issueId: string) {
   return sql`(
     ${agentWakeupRequests.payload} ->> 'issueId' = ${issueId}
     or ${agentWakeupRequests.payload} ->> 'taskId' = ${issueId}
-    or ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId' = ${issueId}
-    or ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId' = ${issueId}
+    or ${agentWakeupRequests.payload} -> '_bullpenWakeContext' ->> 'issueId' = ${issueId}
+    or ${agentWakeupRequests.payload} -> '_bullpenWakeContext' ->> 'taskId' = ${issueId}
   )`;
 }
 
@@ -1588,9 +1588,9 @@ function inboxVisibleForUserCondition(companyId: string, userId: string) {
 }
 
 const LEGACY_PLUGIN_OPERATION_ORIGIN_KINDS = [
-  "plugin:paperclipai.content-machine:case",
-  "plugin:paperclipai.content-machine:evaluation",
-  "plugin:paperclipai.content-machine:source-sync",
+  "plugin:bullpen.content-machine:case",
+  "plugin:bullpen.content-machine:evaluation",
+  "plugin:bullpen.content-machine:source-sync",
 ] as const;
 
 function nonPluginOperationIssueCondition() {
@@ -3316,8 +3316,8 @@ async function listIssueBlockedInboxAttentionMap(
             issueId: sql<string | null>`coalesce(
               ${agentWakeupRequests.payload} ->> 'issueId',
               ${agentWakeupRequests.payload} ->> 'taskId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId'
+              ${agentWakeupRequests.payload} -> '_bullpenWakeContext' ->> 'issueId',
+              ${agentWakeupRequests.payload} -> '_bullpenWakeContext' ->> 'taskId'
             )`,
             agentId: agentWakeupRequests.agentId,
             status: agentWakeupRequests.status,
@@ -3329,8 +3329,8 @@ async function listIssueBlockedInboxAttentionMap(
             inArray(sql<string>`coalesce(
               ${agentWakeupRequests.payload} ->> 'issueId',
               ${agentWakeupRequests.payload} ->> 'taskId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'issueId',
-              ${agentWakeupRequests.payload} -> '_paperclipWakeContext' ->> 'taskId'
+              ${agentWakeupRequests.payload} -> '_bullpenWakeContext' ->> 'issueId',
+              ${agentWakeupRequests.payload} -> '_bullpenWakeContext' ->> 'taskId'
             )`, graphIssueIds),
           )),
     graphIssueIds.length === 0
@@ -5817,8 +5817,8 @@ export function issueService(db: Db) {
           coalesce(
             wake.payload ->> 'issueId',
             wake.payload ->> 'taskId',
-            wake.payload -> '_paperclipWakeContext' ->> 'issueId',
-            wake.payload -> '_paperclipWakeContext' ->> 'taskId'
+            wake.payload -> '_bullpenWakeContext' ->> 'issueId',
+            wake.payload -> '_bullpenWakeContext' ->> 'taskId'
           )
         `;
         const rawWakeRows = Array.from(await db.execute(sql`

@@ -11,12 +11,12 @@ describe("plugin capability constants", () => {
 describe("plugin manifest validators", () => {
   it("accepts existing-style plugins that do not request access or authorization capabilities", () => {
     const parsed = pluginManifestV1Schema.parse({
-      id: "paperclip.compat-dashboard",
+      id: "bullpen.compat-dashboard",
       apiVersion: 1,
       version: "0.1.0",
       displayName: "Compat Dashboard",
       description: "Dashboard-only plugin without access or authorization host APIs.",
-      author: "Paperclip",
+      author: "Bullpen",
       categories: ["ui"],
       capabilities: ["ui.dashboardWidget.register"],
       entrypoints: {
@@ -40,12 +40,12 @@ describe("plugin manifest validators", () => {
 
   it("accepts sandbox provider template config bindings", () => {
     const parsed = pluginManifestV1Schema.parse({
-      id: "paperclip.template-provider",
+      id: "bullpen.template-provider",
       apiVersion: 1,
       version: "0.1.0",
       displayName: "Template Provider",
       description: "Sandbox provider with captured template config binding.",
-      author: "Paperclip",
+      author: "Bullpen",
       categories: ["automation"],
       capabilities: ["environment.drivers.register"],
       entrypoints: { worker: "./dist/worker.js" },
@@ -73,7 +73,7 @@ describe("plugin manifest validators", () => {
 
   it("rejects template config bindings that replace provider identity", () => {
     const parsed = pluginManifestV1Schema.safeParse({
-      id: "paperclip.bad-template-provider",
+      id: "bullpen.bad-template-provider",
       apiVersion: 1,
       version: "0.1.0",
       displayName: "Bad Template Provider",
@@ -127,12 +127,12 @@ describe("plugin managed routine validators", () => {
 
 describe("plugin managed skill validators", () => {
   const baseManifest = {
-    id: "paperclip.test-managed-skills",
+    id: "bullpen.test-managed-skills",
     apiVersion: 1,
     version: "0.1.0",
     displayName: "Managed Skills",
     description: "Managed skills test plugin.",
-    author: "Paperclip",
+    author: "Bullpen",
     categories: ["automation"],
     entrypoints: { worker: "./dist/worker.js" },
   } as const;

@@ -5,8 +5,8 @@ import {
   trackAgentTaskCompleted,
   trackInteractionResolved,
   trackInstallCompleted,
-} from "@paperclipai/shared/telemetry";
-import type { EventDimensionsMap, TelemetryClient } from "@paperclipai/shared/telemetry";
+} from "@bullpen/shared/telemetry";
+import type { EventDimensionsMap, TelemetryClient } from "@bullpen/shared/telemetry";
 
 function createClient(): TelemetryClient {
   return {

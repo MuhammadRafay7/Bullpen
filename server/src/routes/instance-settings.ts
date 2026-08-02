@@ -1,11 +1,11 @@
 import { Router, type Request } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   issueGraphLivenessAutoRecoveryRequestSchema,
   patchInstanceSettingsSchema,
   patchInstanceExperimentalSettingsSchema,
   patchInstanceGeneralSettingsSchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { forbidden } from "../errors.js";
 import { isCloudManagedInstance } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";

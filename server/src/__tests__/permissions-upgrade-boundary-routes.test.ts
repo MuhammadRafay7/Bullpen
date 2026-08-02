@@ -17,17 +17,17 @@ import {
   issues,
   issueWorkProducts,
   principalPermissionGrants,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 
 vi.hoisted(() => {
-  process.env.PAPERCLIP_HOME = "/tmp/paperclip-test-home";
-  process.env.PAPERCLIP_INSTANCE_ID = "vitest";
-  process.env.PAPERCLIP_LOG_DIR = "/tmp/paperclip-test-home/logs";
-  process.env.PAPERCLIP_IN_WORKTREE = "false";
+  process.env.BULLPEN_HOME = "/tmp/bullpen-test-home";
+  process.env.BULLPEN_INSTANCE_ID = "vitest";
+  process.env.BULLPEN_LOG_DIR = "/tmp/bullpen-test-home/logs";
+  process.env.BULLPEN_IN_WORKTREE = "false";
 });
 
 vi.mock("../services/issue-assignment-wakeup.js", () => ({
@@ -50,8 +50,8 @@ function agentActor(companyId: string, agentId: string): Express.Request["actor"
 }
 
 async function createApp(db: Db, actor: Express.Request["actor"]) {
-  process.env.PAPERCLIP_LOG_DIR = "/tmp/paperclip-test-home/logs";
-  process.env.PAPERCLIP_IN_WORKTREE = "false";
+  process.env.BULLPEN_LOG_DIR = "/tmp/bullpen-test-home/logs";
+  process.env.BULLPEN_IN_WORKTREE = "false";
   const [{ activityRoutes }, { issueRoutes }] = await Promise.all([
     import("../routes/activity.js"),
     import("../routes/issues.js"),
@@ -107,7 +107,7 @@ describeEmbeddedPostgres("permissions upgrade visibility and route boundaries", 
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-permissions-boundary-routes-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-permissions-boundary-routes-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

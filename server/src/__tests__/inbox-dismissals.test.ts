@@ -12,7 +12,7 @@ import {
   inboxDismissals,
   invites,
   joinRequests,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -38,7 +38,7 @@ describeEmbeddedPostgres("inbox dismissals", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-inbox-dismissals-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-inbox-dismissals-");
     db = createDb(tempDb.connectionString);
     dismissalsSvc = inboxDismissalService(db);
     badgesSvc = sidebarBadgeService(db);
@@ -67,7 +67,7 @@ describeEmbeddedPostgres("inbox dismissals", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: "PAP",
       requireBoardApprovalForNewAgents: false,
     });
@@ -90,7 +90,7 @@ describeEmbeddedPostgres("inbox dismissals", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: "PAP",
       requireBoardApprovalForNewAgents: false,
     });
@@ -150,7 +150,7 @@ describeEmbeddedPostgres("inbox dismissals", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: "PAP",
       requireBoardApprovalForNewAgents: false,
     });

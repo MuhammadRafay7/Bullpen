@@ -1,12 +1,12 @@
 import { Router } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   addDecisionQueueItemSchema,
   createDecisionQueueSchema,
   decisionAttentionSourceKindSchema,
   updateDecisionQueueSchema,
   updateDecisionTriageSchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { forbidden } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import {

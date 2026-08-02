@@ -1,5 +1,5 @@
 import { Copy } from "lucide-react";
-import type { ToolMcpGatewayWithTokens, ToolProfileWithDetails } from "@paperclipai/shared";
+import type { ToolMcpGatewayWithTokens, ToolProfileWithDetails } from "@bullpen/shared";
 import { Link } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
@@ -42,7 +42,7 @@ export function OverviewPanel({
   const snippet = [
     "{",
     '  "mcpServers": {',
-    `    "paperclip-${gateway.displaySlug}": {`,
+    `    "bullpen-${gateway.displaySlug}": {`,
     `      "url": "${endpoint}",`,
     '      "headers": { "Authorization": "Bearer pcgw_•••_TOKEN" }',
     "    }",

@@ -45,7 +45,7 @@ import type {
   AgentInstructionsBundle,
   AgentInstructionsFileSummary,
   HeartbeatRun,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 
 export function RunButton({
   onClick,

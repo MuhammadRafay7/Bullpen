@@ -78,8 +78,8 @@ export const AGENT_ROLE_LABELS: Record<AgentRole, string> = {
 export const AGENT_DEFAULT_MAX_CONCURRENT_RUNS = 20;
 export const WORKSPACE_BRANCH_ROUTINE_VARIABLE = "workspaceBranch";
 
-// Config keys owned by Paperclip/company state rather than one concrete adapter.
-// `paperclipSkillSync` is persisted in adapterConfig but must survive adapter swaps.
+// Config keys owned by Bullpen/company state rather than one concrete adapter.
+// `bullpenSkillSync` is persisted in adapterConfig but must survive adapter swaps.
 export const ADAPTER_AGNOSTIC_KEYS = [
   "env",
   "promptTemplate",
@@ -88,7 +88,7 @@ export const ADAPTER_AGNOSTIC_KEYS = [
   "timeoutSec",
   "graceSec",
   "bootstrapPromptTemplate",
-  "paperclipSkillSync",
+  "bullpenSkillSync",
 ] as const;
 export type AdapterAgnosticKey = (typeof ADAPTER_AGNOSTIC_KEYS)[number];
 
@@ -659,7 +659,7 @@ export type SecretStatus = (typeof SECRET_STATUSES)[number];
 export const SECRET_SCOPES = ["company", "user"] as const;
 export type SecretScope = (typeof SECRET_SCOPES)[number];
 
-export const SECRET_MANAGED_MODES = ["paperclip_managed", "external_reference"] as const;
+export const SECRET_MANAGED_MODES = ["bullpen_managed", "external_reference"] as const;
 export type SecretManagedMode = (typeof SECRET_MANAGED_MODES)[number];
 
 export const SECRET_VERSION_STATUSES = [
@@ -948,7 +948,7 @@ export const PERMISSION_KEYS = [
 ] as const;
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
 
-export const TOOL_APPLICATION_TYPES = ["mcp_http", "mcp_stdio", "paperclip_plugin", "a2a"] as const;
+export const TOOL_APPLICATION_TYPES = ["mcp_http", "mcp_stdio", "bullpen_plugin", "a2a"] as const;
 export type ToolApplicationType = (typeof TOOL_APPLICATION_TYPES)[number];
 
 export const TOOL_APPLICATION_STATUSES = ["draft", "active", "disabled", "archived"] as const;
@@ -1384,7 +1384,7 @@ export type PluginApiRouteCheckoutPolicy = (typeof PLUGIN_API_ROUTE_CHECKOUT_POL
 
 /**
  * UI extension slot types. Each slot type corresponds to a mount point in the
- * Paperclip UI where plugin components can be rendered.
+ * Bullpen UI where plugin components can be rendered.
  *
  * @see PLUGIN_SPEC.md §19 — UI Extension Model
  */

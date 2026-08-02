@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { CompanySearchIssueSummary, StatusCardRefreshPolicy } from "@paperclipai/shared";
+import type { CompanySearchIssueSummary, StatusCardRefreshPolicy } from "@bullpen/shared";
 
 export type StatusCardFingerprintEntry = {
   status: string;

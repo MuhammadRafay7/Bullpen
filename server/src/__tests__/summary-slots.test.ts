@@ -13,7 +13,7 @@ import {
   projectWorkspaces,
   projects,
   summarySlots,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -40,7 +40,7 @@ describeEmbeddedPostgres("summary slot service", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-summary-slots-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-summary-slots-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -65,7 +65,7 @@ describeEmbeddedPostgres("summary slot service", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: issuePrefix(companyId),
       defaultResponsibleUserId: "responsible-user",
     });
@@ -74,7 +74,7 @@ describeEmbeddedPostgres("summary slot service", () => {
 
   async function seedProject(companyId: string) {
     const projectId = randomUUID();
-    await db.insert(projects).values({ id: projectId, companyId, name: "Paperclip App" });
+    await db.insert(projects).values({ id: projectId, companyId, name: "Bullpen App" });
     return projectId;
   }
 

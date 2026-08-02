@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { and, asc, desc, eq, gte, inArray, lt, max, ne, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   activityLog,
   agents,
@@ -33,7 +33,7 @@ import {
   toolProfiles,
   toolRuntimeMetricCounters,
   toolRuntimeSlots,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import type {
   AppDefinition,
   ConnectionTokenIssuanceOutcome,
@@ -106,8 +106,8 @@ import type {
   UpdateToolProfileEntry,
   UpdateToolProfileWithEntries,
   UnbindToolProfileBinding,
-} from "@paperclipai/shared";
-import { CLASS3_STATIC_LEASE_ALLOWLIST, credentialConfigPath, getAvailableConnectionMethod, getConnectableAppDefinition, isToolConnectionAttentionHealth, recommendedDefaultsForApp } from "@paperclipai/shared";
+} from "@bullpen/shared";
+import { CLASS3_STATIC_LEASE_ALLOWLIST, credentialConfigPath, getAvailableConnectionMethod, getConnectableAppDefinition, isToolConnectionAttentionHealth, recommendedDefaultsForApp } from "@bullpen/shared";
 import { badRequest, conflict, forbidden, HttpError, notFound, unprocessable } from "../errors.js";
 import { logActivity } from "./activity-log.js";
 import { mcpHttpRequestHeaders, parseMcpHttpResponseBody } from "./mcp-http.js";
@@ -213,8 +213,8 @@ const APPROVED_STDIO_TEMPLATES: Record<string, {
   envKeys?: string[];
   tools: McpToolDescriptor[];
 }> = {
-  "paperclip.echo-calculator-time": {
-    name: "Paperclip Echo / Calculator / Time fixture",
+  "bullpen.echo-calculator-time": {
+    name: "Bullpen Echo / Calculator / Time fixture",
     tools: [
       {
         name: "echo",
@@ -254,8 +254,8 @@ const APPROVED_STDIO_TEMPLATES: Record<string, {
       },
     ],
   },
-  "paperclip.synthetic-todo-kv": {
-    name: "Paperclip Synthetic Todo / KV fixture",
+  "bullpen.synthetic-todo-kv": {
+    name: "Bullpen Synthetic Todo / KV fixture",
     tools: [
       { name: "list_items", description: "List synthetic todo items.", annotations: { readOnlyHint: true } },
       { name: "create_item", description: "Create a synthetic todo item.", annotations: { readOnlyHint: false } },
@@ -265,9 +265,9 @@ const APPROVED_STDIO_TEMPLATES: Record<string, {
       { name: "set_value", description: "Write a synthetic KV value.", annotations: { readOnlyHint: false } },
     ],
   },
-  "paperclip.google-sheets": {
+  "bullpen.google-sheets": {
     name: "Google Sheets",
-    command: "paperclip-google-sheets-mcp-server",
+    command: "bullpen-google-sheets-mcp-server",
     args: [],
     envKeys: [
       "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON",
@@ -362,7 +362,7 @@ const APPROVED_STDIO_TEMPLATES: Record<string, {
 };
 
 const GOOGLE_SHEETS_GALLERY_KEY = "google-sheets";
-const GOOGLE_SHEETS_TEMPLATE_ID = "paperclip.google-sheets";
+const GOOGLE_SHEETS_TEMPLATE_ID = "bullpen.google-sheets";
 const GOOGLE_SHEETS_ALLOWED_SPREADSHEET_IDS_ENV = "GOOGLE_SHEETS_ALLOWED_SPREADSHEET_IDS";
 const CONNECTION_TOKEN_MINT_TOOL_NAME = "connection_token.mint";
 
@@ -385,14 +385,14 @@ const TOOL_EXAMPLES: ToolExampleDefinition[] = [
     id: "safe-read-only-todo-kv",
     title: "Safe read-only Todo / KV fixture",
     description: "Installs a deterministic local MCP fixture and grants only its read-only catalog entries.",
-    applicationKey: "paperclip.examples.safe-read-only-todo-kv",
-    applicationName: "Paperclip example: Safe read-only Todo / KV",
+    applicationKey: "bullpen.examples.safe-read-only-todo-kv",
+    applicationName: "Bullpen example: Safe read-only Todo / KV",
     applicationDescription: "Deterministic MCP fixture for first-run tool governance checks.",
-    connectionName: "Paperclip example: Safe read-only Todo / KV",
-    templateId: "paperclip.synthetic-todo-kv",
-    profileKey: "paperclip.examples.safe-read-only-todo-kv.profile",
+    connectionName: "Bullpen example: Safe read-only Todo / KV",
+    templateId: "bullpen.synthetic-todo-kv",
+    profileKey: "bullpen.examples.safe-read-only-todo-kv.profile",
     profileName: "Example safe read-only tools",
-    profileDescription: "Allows only the read-only tools from the Paperclip Todo / KV example fixture.",
+    profileDescription: "Allows only the read-only tools from the Bullpen Todo / KV example fixture.",
   },
 ];
 
@@ -1261,7 +1261,7 @@ function sanitizeHttpFailure(error: unknown): { status: ToolConnectionHealthStat
         code: "secret_missing",
       };
     }
-    return { status: "error", message: error.message, code: "paperclip_error" };
+    return { status: "error", message: error.message, code: "bullpen_error" };
   }
   if (error instanceof Error) {
     return { status: "error", message: error.message.slice(0, 240), code: "runtime_error" };
@@ -1330,8 +1330,8 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
 
   function trustedRuntimeHost() {
     return options.trustedLocalStdioRuntimeHost
-      ?? process.env.PAPERCLIP_TRUSTED_MCP_RUNTIME_HOST
-      ?? process.env.PAPERCLIP_TOOL_RUNTIME_TRUSTED_HOST
+      ?? process.env.BULLPEN_TRUSTED_MCP_RUNTIME_HOST
+      ?? process.env.BULLPEN_TOOL_RUNTIME_TRUSTED_HOST
       ?? null;
   }
 
@@ -1451,9 +1451,9 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
     const broker = tokenBrokerConfig(connection);
     const applicationKey = application?.applicationKey ?? "";
     return Boolean(
-      applicationKey === "paperclip-pages"
-      || applicationKey === "paperclip.pages"
-      || applicationKey === "pages.paperclip"
+      applicationKey === "bullpen-pages"
+      || applicationKey === "bullpen.pages"
+      || applicationKey === "pages.bullpen"
       || readConfigString(config, "connectionType") === "pages"
       || readConfigString(config, "service") === "pages"
       || readConfigString(broker, "connectionType") === "pages"
@@ -1543,14 +1543,14 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
       throw forbidden("Agent run is not active");
     }
     const snapshot = asRecord(run.contextSnapshot);
-    const paperclipIssue = asRecord(snapshot.paperclipIssue);
+    const bullpenIssue = asRecord(snapshot.bullpenIssue);
     return {
       run,
-      issueId: runSnapshotString(snapshot, "issueId") ?? runSnapshotString(paperclipIssue, "id"),
-      projectId: runSnapshotString(snapshot, "projectId") ?? runSnapshotString(paperclipIssue, "projectId"),
+      issueId: runSnapshotString(snapshot, "issueId") ?? runSnapshotString(bullpenIssue, "id"),
+      projectId: runSnapshotString(snapshot, "projectId") ?? runSnapshotString(bullpenIssue, "projectId"),
       routineId: runSnapshotString(snapshot, "routineId"),
       responsibleUserId: runSnapshotString(snapshot, "responsibleUserId", "responsible_user_id")
-        ?? runSnapshotString(paperclipIssue, "responsibleUserId", "responsible_user_id"),
+        ?? runSnapshotString(bullpenIssue, "responsibleUserId", "responsible_user_id"),
     };
   }
 
@@ -1771,7 +1771,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
       ?? readConfigString(config, "tokenExchangeUrl")
       ?? readConfigString(config, "pagesTokenExchangeUrl");
     if (url) return url;
-    const pagesApiBase = process.env.PAPERCLIP_PAGES_API_URL?.trim();
+    const pagesApiBase = process.env.BULLPEN_PAGES_API_URL?.trim();
     if (isPages && pagesApiBase) return new URL("/v1/tokens/exchange", pagesApiBase.endsWith("/") ? pagesApiBase : `${pagesApiBase}/`).toString();
     throw unprocessable("Connection token exchange URL is not configured", { code: "exchange_url_missing" });
   }
@@ -1929,7 +1929,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
         threshold: "Warning at >=3 timeouts and >=10% timeout rate in 1 hour; critical at >=10 timeouts or >=25%.",
         observed: `${input.timeoutCount} timeout(s), ${input.timeoutRate}% timeout rate.`,
         description: "Tool gateway calls are timing out or being runtime-deferred at an elevated rate.",
-        firstResponderAction: "Check upstream MCP health, Paperclip runtime capacity, and recent gateway audit failures before retrying workloads.",
+        firstResponderAction: "Check upstream MCP health, Bullpen runtime capacity, and recent gateway audit failures before retrying workloads.",
         runbookSection,
       }),
       runtimeAlert({
@@ -2693,7 +2693,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
       ownerScopeId: connection.id,
       runtimeKind: "local_stdio",
       status: "stopped",
-      provider: "paperclip",
+      provider: "bullpen",
       providerRef: `template:${String(connection.config.templateId)}`,
       commandTemplateKey: String(connection.config.templateId),
       healthStatus: "unchecked",
@@ -2781,7 +2781,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
       headers: mcpHttpRequestHeaders(headers),
       body: JSON.stringify({
         jsonrpc: "2.0",
-        id: "paperclip-catalog-refresh",
+        id: "bullpen-catalog-refresh",
         method: "tools/list",
         params: {},
       }),
@@ -3301,7 +3301,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
     definition: ToolExampleDefinition,
     existing: typeof toolApplications.$inferSelect | null,
   ) {
-    const metadata = { ...(existing?.metadata ?? {}), source: "paperclip_example", exampleId: definition.id, safeDefault: true };
+    const metadata = { ...(existing?.metadata ?? {}), source: "bullpen_example", exampleId: definition.id, safeDefault: true };
     if (existing) {
       const [updated] = await db
         .update(toolApplications)
@@ -3369,7 +3369,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
       companyId,
       applicationId,
       name: definition.connectionName,
-      uid: connectionUid("paperclip", definition.connectionName, connectionId),
+      uid: connectionUid("bullpen", definition.connectionName, connectionId),
       connectionKind: "managed",
       transport: "local_stdio",
       status: "active",
@@ -3389,7 +3389,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
     definition: ToolExampleDefinition,
     existing: typeof toolProfiles.$inferSelect | null,
   ) {
-    const metadata = { ...(existing?.metadata ?? {}), source: "paperclip_example", exampleId: definition.id, safeDefault: true };
+    const metadata = { ...(existing?.metadata ?? {}), source: "bullpen_example", exampleId: definition.id, safeDefault: true };
     if (existing) {
       const [updated] = await db
         .update(toolProfiles)
@@ -3437,7 +3437,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
       catalogEntryId: entry.id,
       toolName: entry.toolName,
       riskLevel: entry.riskLevel,
-      conditions: { source: "paperclip_example" },
+      conditions: { source: "bullpen_example" },
     }))).returning();
     return rows.map(toProfileEntry);
   }
@@ -3448,7 +3448,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
     existing: typeof toolProfileBindings.$inferSelect | null,
     actor?: ActorInfo,
   ): Promise<ToolProfileBinding> {
-    const metadata = { ...(existing?.metadata ?? {}), source: "paperclip_example", safeDefault: true };
+    const metadata = { ...(existing?.metadata ?? {}), source: "bullpen_example", safeDefault: true };
     if (existing) {
       const [updated] = await db
         .update(toolProfileBindings)
@@ -3481,7 +3481,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
 
   function sampleArguments(toolName: string): Record<string, unknown> {
     if (toolName === "get_value") return { key: "project" };
-    if (toolName === "set_value") return { key: "project", value: "paperclip" };
+    if (toolName === "set_value") return { key: "project", value: "bullpen" };
     if (toolName === "create_item") return { title: "Smoke test item" };
     if (toolName === "mark_done" || toolName === "delete_item") return { id: "todo-1" };
     return {};
@@ -3600,7 +3600,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
   }
 
   function oauthEnvName(provider: string, suffix: "CLIENT_ID" | "CLIENT_SECRET") {
-    return `PAPERCLIP_TOOL_OAUTH_${provider.replace(/[^a-z0-9]+/gi, "_").toUpperCase()}_${suffix}`;
+    return `BULLPEN_TOOL_OAUTH_${provider.replace(/[^a-z0-9]+/gi, "_").toUpperCase()}_${suffix}`;
   }
 
   function oauthClientConfig(provider: string) {
@@ -3609,8 +3609,8 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
     return {
       clientIdEnv,
       clientSecretEnv,
-      clientId: process.env[clientIdEnv] ?? process.env.PAPERCLIP_TOOL_OAUTH_CLIENT_ID ?? null,
-      clientSecret: process.env[clientSecretEnv] ?? process.env.PAPERCLIP_TOOL_OAUTH_CLIENT_SECRET ?? null,
+      clientId: process.env[clientIdEnv] ?? process.env.BULLPEN_TOOL_OAUTH_CLIENT_ID ?? null,
+      clientSecret: process.env[clientSecretEnv] ?? process.env.BULLPEN_TOOL_OAUTH_CLIENT_SECRET ?? null,
     };
   }
 
@@ -3650,7 +3650,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
       return {
         clientIdEnv: "SMOKE_LAB_FIXED_CLIENT_ID",
         clientSecretEnv: "SMOKE_LAB_FIXED_CLIENT_SECRET",
-        clientId: "paperclip-smoke-lab",
+        clientId: "bullpen-smoke-lab",
         clientSecret: null,
       };
     }
@@ -6937,7 +6937,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
         if (typeof server.url === "string" || typeof server.endpoint === "string") {
           const headers = asRecord(server.headers);
           const credentialFields = Object.keys(headers).sort().map((key) => {
-            warnings.push(`Header ${key} will be stored as a Paperclip secret before activation.`);
+            warnings.push(`Header ${key} will be stored as a Bullpen secret before activation.`);
             return {
               configPath: `headers.${key}`,
               label: key,
@@ -6958,7 +6958,7 @@ export function toolAccessService(db: Db, options: ToolAccessServiceOptions = {}
           };
         }
         if (typeof server.command === "string") {
-          warnings.push("Imported stdio commands stay draft-only unless mapped to an approved Paperclip template.");
+          warnings.push("Imported stdio commands stay draft-only unless mapped to an approved Bullpen template.");
           return {
             name,
             transport: "local_stdio" as const,

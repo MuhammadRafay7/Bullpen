@@ -2,17 +2,17 @@ import type {
   AdapterExecutionContext,
   AdapterExecutionResult,
   UsageSummary,
-} from "@paperclipai/adapter-utils";
+} from "@bullpen/adapter-utils";
 import {
   asNumber,
   asString,
   parseObject,
-  readPaperclipIssueWorkModeFromContext,
-  renderPaperclipWakePrompt,
-  isPaperclipRecoveryWakePayload,
-  selectPaperclipTaskMarkdown,
-  stringifyPaperclipWakePayload,
-} from "@paperclipai/adapter-utils/server-utils";
+  readBullpenIssueWorkModeFromContext,
+  renderBullpenWakePrompt,
+  isBullpenRecoveryWakePayload,
+  selectBullpenTaskMarkdown,
+  stringifyBullpenWakePayload,
+} from "@bullpen/adapter-utils/server-utils";
 import {
   ADAPTER_TYPE,
   DEFAULT_EVENT_RECONNECT_MS,
@@ -71,8 +71,8 @@ const SENSITIVE_KEY_PATTERN =
   /(^|[_-])(auth|authorization|token|secret|password|api[_-]?key|private[_-]?key)([_-]|$)/i;
 const BEARER_TOKEN_PATTERN = /Bearer\s+\S+/gi;
 const HERMES_SESSION_KEY_HEADER_PATTERN = /(X-Hermes-Session-Key\s*[:=]\s*)([^\s,;]+)/gi;
-const PAPERCLIP_SESSION_KEY_PATTERN =
-  /\bpaperclip:(?:company:[A-Za-z0-9-]+:agent:[A-Za-z0-9-]+(?::(?:issue|run):[A-Za-z0-9-]+)?|run:[A-Za-z0-9-]+)\b/gi;
+const BULLPEN_SESSION_KEY_PATTERN =
+  /\bbullpen:(?:company:[A-Za-z0-9-]+:agent:[A-Za-z0-9-]+(?::(?:issue|run):[A-Za-z0-9-]+)?|run:[A-Za-z0-9-]+)\b/gi;
 
 const TERMINAL_STATUSES = new Set([
   "completed",
@@ -157,13 +157,13 @@ export function resolveSessionKey(input: {
 }): string | null {
   if (input.strategy === "none") return null;
   if (input.strategy === "agent") {
-    return `paperclip:company:${input.companyId}:agent:${input.agentId}`;
+    return `bullpen:company:${input.companyId}:agent:${input.agentId}`;
   }
   if (input.strategy === "run") {
-    return `paperclip:run:${input.runId}`;
+    return `bullpen:run:${input.runId}`;
   }
   const issuePart = input.issueId ? `issue:${input.issueId}` : `run:${input.runId}`;
-  return `paperclip:company:${input.companyId}:agent:${input.agentId}:${issuePart}`;
+  return `bullpen:company:${input.companyId}:agent:${input.agentId}:${issuePart}`;
 }
 
 function stringifyForLog(value: unknown, maxChars = 4_000): string {
@@ -175,7 +175,7 @@ function sanitizeSensitiveText(value: string): string {
   return value
     .replace(BEARER_TOKEN_PATTERN, "Bearer [redacted]")
     .replace(HERMES_SESSION_KEY_HEADER_PATTERN, "$1[redacted]")
-    .replace(PAPERCLIP_SESSION_KEY_PATTERN, "[redacted-session-key]");
+    .replace(BULLPEN_SESSION_KEY_PATTERN, "[redacted-session-key]");
 }
 
 function escapeRegExp(value: string): string {
@@ -263,7 +263,7 @@ function buildHeaders(input: {
   };
 }
 
-function buildInput(ctx: AdapterExecutionContext, paperclipApiUrl: string | null): string {
+function buildInput(ctx: AdapterExecutionContext, bullpenApiUrl: string | null): string {
   // Stable session keys (issue/agent strategy) resume the same remote Hermes
   // conversation across runs; a stored session id from a prior run means that
   // conversation already received the task brief, so pick the compact
@@ -272,35 +272,35 @@ function buildInput(ctx: AdapterExecutionContext, paperclipApiUrl: string | null
   const resumedSession =
     (sessionKeyStrategy === "issue" || sessionKeyStrategy === "agent") &&
     Boolean(nonEmpty(ctx.runtime?.sessionId));
-  const taskMarkdown = nonEmpty(selectPaperclipTaskMarkdown(ctx.context, { resumedSession }));
-  const wakePrompt = renderPaperclipWakePrompt(ctx.context.paperclipWake, {
+  const taskMarkdown = nonEmpty(selectBullpenTaskMarkdown(ctx.context, { resumedSession }));
+  const wakePrompt = renderBullpenWakePrompt(ctx.context.bullpenWake, {
     // The task-context markdown is the authoritative brief on this lane; keep
     // the wake prompt's description copy out so the prompt carries it once.
     suppressIssueDescription: Boolean(taskMarkdown),
   });
-  const wakePayloadJson = stringifyPaperclipWakePayload(ctx.context.paperclipWake, {
+  const wakePayloadJson = stringifyBullpenWakePayload(ctx.context.bullpenWake, {
     omitIssueDescription: Boolean(taskMarkdown),
   });
-  const sessionHandoff = nonEmpty(ctx.context.paperclipSessionHandoffMarkdown);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(ctx.context);
+  const sessionHandoff = nonEmpty(ctx.context.bullpenSessionHandoffMarkdown);
+  const issueWorkMode = readBullpenIssueWorkModeFromContext(ctx.context);
   const lines = [
-    `You are ${ctx.agent.name}, an AI agent employee in a Paperclip-managed company.`,
+    `You are ${ctx.agent.name}, an AI agent employee in a Bullpen-managed company.`,
     "",
-    "Paperclip runtime identity:",
+    "Bullpen runtime identity:",
     `- Agent ID: ${ctx.agent.id}`,
     `- Company ID: ${ctx.agent.companyId}`,
     `- Run ID: ${ctx.runId}`,
-    ...(paperclipApiUrl ? [`- Paperclip API URL: ${paperclipApiUrl}`] : []),
+    ...(bullpenApiUrl ? [`- Bullpen API URL: ${bullpenApiUrl}`] : []),
     ...(issueWorkMode ? [`- Issue work mode: ${issueWorkMode}`] : []),
     "",
-    ...(isPaperclipRecoveryWakePayload(ctx.context.paperclipWake)
+    ...(isBullpenRecoveryWakePayload(ctx.context.bullpenWake)
       ? []
       : [
           "Execution contract:",
           "- Take concrete action in this run when the task is actionable.",
           "- Do not stop at a plan unless the issue asks for planning only.",
           "- Leave durable progress and update the issue to a clear final disposition.",
-          "- Use X-Paperclip-Run-Id on mutating Paperclip API requests when a Paperclip API key is available.",
+          "- Use X-Bullpen-Run-Id on mutating Bullpen API requests when a Bullpen API key is available.",
           "",
         ]),
     wakePrompt,
@@ -320,13 +320,13 @@ function buildInput(ctx: AdapterExecutionContext, paperclipApiUrl: string | null
 }
 
 function buildRunBody(ctx: AdapterExecutionContext, sessionKey: string | null): Record<string, unknown> {
-  const paperclipApiUrl = nonEmpty(ctx.config.paperclipApiUrl);
+  const bullpenApiUrl = nonEmpty(ctx.config.bullpenApiUrl);
   const payloadTemplate = parseObject(ctx.config.payloadTemplate);
-  const input = nonEmpty(payloadTemplate.input) ?? buildInput(ctx, paperclipApiUrl);
+  const input = nonEmpty(payloadTemplate.input) ?? buildInput(ctx, bullpenApiUrl);
   const instructions =
     nonEmpty(ctx.config.instructions) ??
     nonEmpty(payloadTemplate.instructions) ??
-    "Follow the Paperclip wake instructions exactly. Do not expose secrets in logs, comments, or final output.";
+    "Follow the Bullpen wake instructions exactly. Do not expose secrets in logs, comments, or final output.";
   return {
     ...payloadTemplate,
     input,

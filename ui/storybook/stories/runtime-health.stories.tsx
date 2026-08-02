@@ -6,7 +6,7 @@ import type {
   ToolRuntimeAlertRecommendation,
   ToolRuntimeHealthSummary,
   ToolRuntimeSlot,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { queryKeys } from "@/lib/queryKeys";
 import { RuntimeTab } from "@/pages/tools/RuntimeTab";

@@ -1,15 +1,15 @@
-import type { CLIAdapterModule } from "@paperclipai/adapter-utils";
-import { printClaudeStreamEvent } from "@paperclipai/adapter-claude-local/cli";
-import { printCodexStreamEvent } from "@paperclipai/adapter-codex-local/cli";
-import { printCursorStreamEvent } from "@paperclipai/adapter-cursor-local/cli";
-import { printCursorCloudEvent } from "@paperclipai/adapter-cursor-cloud/cli";
-import { printGeminiStreamEvent } from "@paperclipai/adapter-gemini-local/cli";
-import { printGrokStreamEvent } from "@paperclipai/adapter-grok-local/cli";
-import { formatStdoutEvent as printHermesGatewayStreamEvent } from "@paperclipai/hermes-paperclip-adapter/gateway/cli";
-import { printHermesStreamEvent } from "@paperclipai/hermes-paperclip-adapter/cli";
-import { printOpenCodeStreamEvent } from "@paperclipai/adapter-opencode-local/cli";
-import { printPiStreamEvent } from "@paperclipai/adapter-pi-local/cli";
-import { printOpenClawGatewayStreamEvent } from "@paperclipai/adapter-openclaw-gateway/cli";
+import type { CLIAdapterModule } from "@bullpen/adapter-utils";
+import { printClaudeStreamEvent } from "@bullpen/adapter-claude-local/cli";
+import { printCodexStreamEvent } from "@bullpen/adapter-codex-local/cli";
+import { printCursorStreamEvent } from "@bullpen/adapter-cursor-local/cli";
+import { printCursorCloudEvent } from "@bullpen/adapter-cursor-cloud/cli";
+import { printGeminiStreamEvent } from "@bullpen/adapter-gemini-local/cli";
+import { printGrokStreamEvent } from "@bullpen/adapter-grok-local/cli";
+import { formatStdoutEvent as printHermesGatewayStreamEvent } from "@bullpen/hermes-bullpen-adapter/gateway/cli";
+import { printHermesStreamEvent } from "@bullpen/hermes-bullpen-adapter/cli";
+import { printOpenCodeStreamEvent } from "@bullpen/adapter-opencode-local/cli";
+import { printPiStreamEvent } from "@bullpen/adapter-pi-local/cli";
+import { printOpenClawGatewayStreamEvent } from "@bullpen/adapter-openclaw-gateway/cli";
 import { processCLIAdapter } from "./process/index.js";
 import { httpCLIAdapter } from "./http/index.js";
 

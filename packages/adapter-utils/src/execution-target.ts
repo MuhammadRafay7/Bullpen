@@ -148,7 +148,7 @@ export interface AdapterExecutionTargetProcessOptions {
   onSpawn?: (meta: { pid: number; processGroupId: number | null; startedAt: string }) => Promise<void>;
   terminalResultCleanup?: TerminalResultCleanupOptions;
   /**
-   * Sandbox-only: factory from the Paperclip bridge handle that streams the
+   * Sandbox-only: factory from the Bullpen bridge handle that streams the
    * CLI's stdout/stderr during the run. When provided, the batched provider
    * onLog is suppressed and incremental chunks flow through `onLog` instead.
    */
@@ -164,7 +164,7 @@ export interface AdapterExecutionTargetShellOptions {
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
 }
 
-export interface AdapterExecutionTargetPaperclipBridgeHandle {
+export interface AdapterExecutionTargetBullpenBridgeHandle {
   env: Record<string, string>;
   /**
    * Present when the sandbox target opted into run-log streaming
@@ -212,17 +212,17 @@ function resolveHostForUrl(rawHost: string): string {
   return host;
 }
 
-function resolveDefaultPaperclipApiUrl(): string {
+function resolveDefaultBullpenApiUrl(): string {
   const runtimeHost = resolveHostForUrl(
-    process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
+    process.env.BULLPEN_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
-  // 3100 matches the default Paperclip dev server port when the runtime does not provide one.
-  const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
+  // 3100 matches the default Bullpen dev server port when the runtime does not provide one.
+  const runtimePort = process.env.BULLPEN_LISTEN_PORT ?? process.env.PORT ?? "3100";
   return `http://${runtimeHost}:${runtimePort}`;
 }
 
 function isBridgeDebugEnabled(env: NodeJS.ProcessEnv): boolean {
-  const value = env.PAPERCLIP_BRIDGE_DEBUG?.trim().toLowerCase();
+  const value = env.BULLPEN_BRIDGE_DEBUG?.trim().toLowerCase();
   return value === "1" || value === "true" || value === "yes";
 }
 
@@ -298,7 +298,7 @@ export function resolveAdapterExecutionTargetCwd(
   return adapterExecutionTargetRemoteCwd(target, localFallbackCwd);
 }
 
-export function adapterExecutionTargetUsesPaperclipBridge(
+export function adapterExecutionTargetUsesBullpenBridge(
   target: AdapterExecutionTarget | null | undefined,
 ): boolean {
   return target?.kind === "remote";
@@ -394,7 +394,7 @@ export function formatAdapterExecutionTimeoutErrorMessage(
 
 /**
  * One-line start-of-run statement of the effective wall-clock timeout and its
- * source. Callers prefix with `[paperclip] ` and append a newline.
+ * source. Callers prefix with `[bullpen] ` and append a newline.
  */
 export function formatAdapterExecutionTimeoutStartLogLine(
   resolution: AdapterExecutionTargetTimeoutResolution,
@@ -922,7 +922,7 @@ export async function ensureAdapterExecutionTargetRuntimeCommandInstalled(input:
         const reason = result.timedOut ? "timed out" : `exited ${result.exitCode ?? "?"}`;
         await input.onLog(
           "stderr",
-          `[paperclip] Install command ${reason} (${installCommand}) but ${detectCommand} is on PATH; continuing.\n`,
+          `[bullpen] Install command ${reason} (${installCommand}) but ${detectCommand} is on PATH; continuing.\n`,
         );
       }
       return;
@@ -955,7 +955,7 @@ export async function ensureAdapterExecutionTargetFile(
  * For local targets this delegates to the local `ensureAbsoluteDirectory` helper
  * (Node fs). For remote (SSH/sandbox) targets it shells out and runs
  * `mkdir -p` (when allowed) followed by a `[ -d ]` check so the result reflects
- * the directory state inside the environment, not on the Paperclip host.
+ * the directory state inside the environment, not on the Bullpen host.
  *
  * Throws an Error with a human-readable message on failure.
  */
@@ -1218,7 +1218,7 @@ export function runtimeAssetDir(
   key: string,
   fallbackRemoteCwd: string,
 ): string {
-  return prepared.assetDirs[key] ?? path.posix.join(fallbackRemoteCwd, ".paperclip-runtime", key);
+  return prepared.assetDirs[key] ?? path.posix.join(fallbackRemoteCwd, ".bullpen-runtime", key);
 }
 
 function buildBridgeResponseHeaders(response: Response): Record<string, string> {
@@ -1271,8 +1271,8 @@ async function readBridgeForwardResponseBody(response: Response, maxBodyBytes: n
   return Buffer.concat(chunks, totalBytes).toString("utf8");
 }
 
-const PROCESS_SESSION_PROXY_SCRIPT = "paperclip-process-session-proxy.mjs";
-const PROCESS_SESSION_REMOTE_SCRIPT = "paperclip-process-session-remote.mjs";
+const PROCESS_SESSION_PROXY_SCRIPT = "bullpen-process-session-proxy.mjs";
+const PROCESS_SESSION_REMOTE_SCRIPT = "bullpen-process-session-remote.mjs";
 const PROCESS_SESSION_AUTH_TIMEOUT_MS = 5_000;
 
 function jsonLine(value: unknown): string {
@@ -1293,7 +1293,7 @@ async function writeProcessSessionProxyScript(dir: string, port: number, token: 
 
 // Content-hash-skip the process-session remote script write, mirroring the
 // sandbox callback bridge entrypoint sha256 gate. The script is a static
-// Paperclip-authored `.mjs` that only changes when the build changes, so on a
+// Bullpen-authored `.mjs` that only changes when the build changes, so on a
 // warm start (same sandbox, script already present) the single sha-gate exec
 // skips the ~3-exec base64 upload entirely. `syncRemoteTextFileWithHashSkip`
 // fails loud on a check error rather than silently re-uploading.
@@ -1313,7 +1313,7 @@ async function syncProcessSessionRemoteScript(input: {
     body: getProcessSessionRemoteSource(),
     label: "Process session remote script",
     action: "sync process session remote script",
-    lockDir: path.posix.join(input.remoteScriptDir, ".paperclip-process-session-script.lock"),
+    lockDir: path.posix.join(input.remoteScriptDir, ".bullpen-process-session-script.lock"),
     timeoutMs: input.timeoutMs,
     shellCommand: input.shellCommand,
   });
@@ -1361,7 +1361,7 @@ export async function startAdapterExecutionTargetProcessSessionBridge(input: {
   // The launch env is consumed ONLY when building the base64 `commandPayload`
   // below — never during the env-INDEPENDENT dir/script setup. Accepting a
   // resolver (in addition to a plain object) lets a caller overlap that setup
-  // with other work — e.g. starting the paperclip callback bridge — and hand the
+  // with other work — e.g. starting the bullpen callback bridge — and hand the
   // merged env in right before the launch.
   env: Record<string, string> | (() => Promise<Record<string, string>>);
   timeoutSec?: number | null;
@@ -1380,7 +1380,7 @@ export async function startAdapterExecutionTargetProcessSessionBridge(input: {
       ? Math.trunc(input.timeoutSec * 1000)
       : target.timeoutMs ?? undefined;
   const bridgeRuntimeDir = path.posix.join(
-    input.runtimeRootDir?.trim() || path.posix.join(target.remoteCwd, ".paperclip-runtime", input.adapterKey),
+    input.runtimeRootDir?.trim() || path.posix.join(target.remoteCwd, ".bullpen-runtime", input.adapterKey),
     "process-sessions",
   );
   const sessionId = randomUUID();
@@ -1408,7 +1408,7 @@ export async function startAdapterExecutionTargetProcessSessionBridge(input: {
   });
 
   // Resolve the launch env AFTER the env-independent setup above, so a caller
-  // can defer it until an upstream dependency (e.g. the paperclip bridge's env)
+  // can defer it until an upstream dependency (e.g. the bullpen bridge's env)
   // is ready without blocking the dir/script setup.
   const launchEnv = typeof input.env === "function" ? await input.env() : input.env;
   const commandPayload = Buffer.from(JSON.stringify({
@@ -1418,21 +1418,21 @@ export async function startAdapterExecutionTargetProcessSessionBridge(input: {
     env: sanitizeRemoteExecutionEnv(launchEnv),
   }), "utf8").toString("base64");
 
-  await onLog("stdout", `[paperclip] Starting ACP process session bridge in sandbox (${target.providerKey ?? "provider"}).\n`);
+  await onLog("stdout", `[bullpen] Starting ACP process session bridge in sandbox (${target.providerKey ?? "provider"}).\n`);
   const startResult = await runner.execute({
     command: shellCommand,
     args: shellCommandArgs(
       [
         `mkdir -p ${shellQuote(stdinDir)} ${shellQuote(eventsDir)}`,
-        `PAPERCLIP_PROCESS_SESSION_DIR=${shellQuote(sessionDir)} ` +
-          `PAPERCLIP_PROCESS_SESSION_COMMAND_B64=${shellQuote(commandPayload)} ` +
+        `BULLPEN_PROCESS_SESSION_DIR=${shellQuote(sessionDir)} ` +
+          `BULLPEN_PROCESS_SESSION_COMMAND_B64=${shellQuote(commandPayload)} ` +
           `nohup node ${shellQuote(remoteScriptPath)} >/dev/null 2>&1 < /dev/null &`,
         "printf '%s\\n' \"$!\"",
       ].join("\n"),
     ),
     cwd: target.remoteCwd,
     env: {
-      PAPERCLIP_SANDBOX_EXEC_CHANNEL: "bridge",
+      BULLPEN_SANDBOX_EXEC_CHANNEL: "bridge",
     },
     timeoutMs,
   });
@@ -1453,7 +1453,7 @@ export async function startAdapterExecutionTargetProcessSessionBridge(input: {
     message?: string;
   }> = [];
   const token = createSandboxCallbackBridgeToken(18);
-  const proxyDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-process-session-proxy-"));
+  const proxyDir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-process-session-proxy-"));
 
   const writeRemoteEventToSocket = (event: (typeof pendingRemoteEvents)[number]) => {
     if (!socket) return false;
@@ -1567,7 +1567,7 @@ export async function startAdapterExecutionTargetProcessSessionBridge(input: {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await onLog("stderr", `[paperclip] ACP process session bridge poll failed: ${message}\n`);
+      await onLog("stderr", `[bullpen] ACP process session bridge poll failed: ${message}\n`);
       deliverRemoteEvent({ type: "error", message });
       return;
     } finally {
@@ -1652,8 +1652,8 @@ function getProcessSessionRemoteSource(): string {
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-const sessionDir = process.env.PAPERCLIP_PROCESS_SESSION_DIR;
-const commandPayload = process.env.PAPERCLIP_PROCESS_SESSION_COMMAND_B64;
+const sessionDir = process.env.BULLPEN_PROCESS_SESSION_DIR;
+const commandPayload = process.env.BULLPEN_PROCESS_SESSION_COMMAND_B64;
 if (!sessionDir || !commandPayload) throw new Error("Missing process session bridge env.");
 
 const stdinDir = path.posix.join(sessionDir, "stdin");
@@ -1716,7 +1716,7 @@ void pollStdin().catch((error) => void writeEvent({ type: "error", message: erro
 `;
 }
 
-export async function startAdapterExecutionTargetPaperclipBridge(input: {
+export async function startAdapterExecutionTargetBullpenBridge(input: {
   runId: string;
   target: AdapterExecutionTarget | null | undefined;
   runtimeRootDir: string | null | undefined;
@@ -1726,8 +1726,8 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
   hostApiUrl?: string | null;
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
   maxBodyBytes?: number | null;
-}): Promise<AdapterExecutionTargetPaperclipBridgeHandle | null> {
-  if (!adapterExecutionTargetUsesPaperclipBridge(input.target)) {
+}): Promise<AdapterExecutionTargetBullpenBridgeHandle | null> {
+  if (!adapterExecutionTargetUsesBullpenBridge(input.target)) {
     return null;
   }
   if (!input.target || input.target.kind !== "remote") {
@@ -1738,14 +1738,14 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
   const onLog = input.onLog ?? (async () => {});
   const hostApiToken = input.hostApiToken?.trim() ?? "";
   if (hostApiToken.length === 0) {
-    throw new Error("Sandbox bridge mode requires a host-side Paperclip API token.");
+    throw new Error("Sandbox bridge mode requires a host-side Bullpen API token.");
   }
 
   const runtimeRootDir =
     input.runtimeRootDir?.trim().length
       ? input.runtimeRootDir.trim()
-      : path.posix.join(target.remoteCwd, ".paperclip-runtime", input.adapterKey);
-  const bridgeRuntimeDir = path.posix.join(runtimeRootDir, "paperclip-bridge");
+      : path.posix.join(target.remoteCwd, ".bullpen-runtime", input.adapterKey);
+  const bridgeRuntimeDir = path.posix.join(runtimeRootDir, "bullpen-bridge");
   const queueDir = path.posix.join(bridgeRuntimeDir, "queue");
   const assetRemoteDir = path.posix.join(bridgeRuntimeDir, "server");
   const bridgeToken = createSandboxCallbackBridgeToken();
@@ -1755,9 +1755,9 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
       : DEFAULT_SANDBOX_CALLBACK_BRIDGE_MAX_BODY_BYTES;
   const hostApiUrl =
     input.hostApiUrl?.trim() ||
-    process.env.PAPERCLIP_RUNTIME_API_URL?.trim() ||
-    process.env.PAPERCLIP_API_URL?.trim() ||
-    resolveDefaultPaperclipApiUrl();
+    process.env.BULLPEN_RUNTIME_API_URL?.trim() ||
+    process.env.BULLPEN_API_URL?.trim() ||
+    resolveDefaultBullpenApiUrl();
   const shellCommand = adapterExecutionTargetShellCommand(target);
   const runner = adapterExecutionTargetCommandRunner(target);
   const bridgeTimeoutMs =
@@ -1767,7 +1767,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
 
   await onLog(
     "stdout",
-    `[paperclip] Starting sandbox callback bridge for ${input.adapterKey} in ${bridgeRuntimeDir}.\n`,
+    `[bullpen] Starting sandbox callback bridge for ${input.adapterKey} in ${bridgeRuntimeDir}.\n`,
   );
 
   const bridgeAsset = await createSandboxCallbackBridgeAsset();
@@ -1780,7 +1780,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
       timeoutMs: bridgeTimeoutMs,
       shellCommand,
     });
-    // PAPERCLIP_BRIDGE_DEBUG opts into verbose stdout logs of every bridge
+    // BULLPEN_BRIDGE_DEBUG opts into verbose stdout logs of every bridge
     // proxy request/response. The query string is logged verbatim, so callers
     // who pass auth tokens or other sensitive values as query parameters
     // should be aware those values appear in the host process's stdout when
@@ -1796,7 +1796,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
         if (bridgeDebugEnabled) {
           await onLog(
             "stdout",
-            `[paperclip] Bridge proxy ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
+            `[bullpen] Bridge proxy ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
           );
         }
         const headers = new Headers();
@@ -1805,7 +1805,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
           headers.set(key, value);
         }
         headers.set("authorization", `Bearer ${hostApiToken}`);
-        headers.set("x-paperclip-run-id", input.runId);
+        headers.set("x-bullpen-run-id", input.runId);
         const response = await fetch(buildBridgeForwardUrl(hostApiUrl, request), {
           method,
           headers,
@@ -1815,7 +1815,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
         if (bridgeDebugEnabled) {
           await onLog(
             "stdout",
-            `[paperclip] Bridge proxy response ${response.status} for ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
+            `[bullpen] Bridge proxy response ${response.status} for ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
           );
         }
         return {
@@ -1853,15 +1853,15 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
       logsDir: sandboxCallbackBridgeDirectories(queueDir).logsDir,
       shellCommand,
     });
-    await onLog("stdout", "[paperclip] Sandbox run log streaming enabled for this run.\n");
+    await onLog("stdout", "[bullpen] Sandbox run log streaming enabled for this run.\n");
   }
 
   return {
     env: {
-      PAPERCLIP_API_URL: server.baseUrl,
-      PAPERCLIP_API_KEY: bridgeToken,
-      PAPERCLIP_API_BRIDGE_MODE: "queue_v1",
-      PAPERCLIP_BRIDGE_QUEUE_DIR: queueDir,
+      BULLPEN_API_URL: server.baseUrl,
+      BULLPEN_API_KEY: bridgeToken,
+      BULLPEN_API_BRIDGE_MODE: "queue_v1",
+      BULLPEN_BRIDGE_QUEUE_DIR: queueDir,
     },
     runLogTail,
     stop: async () => {

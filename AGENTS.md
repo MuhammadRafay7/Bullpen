@@ -4,7 +4,7 @@ Guidance for human and AI contributors working in this repository.
 
 ## 1. Purpose
 
-Paperclip is a control plane for AI-agent companies.
+Bullpen is a control plane for AI-agent companies.
 The current implementation target is V1 and is defined in `doc/SPEC-implementation.md`.
 
 ## 2. Read This First
@@ -82,10 +82,10 @@ If you change schema/API behavior, update all impacted layers:
 Prefer additive updates. Keep `doc/SPEC.md` and `doc/SPEC-implementation.md` aligned.
 
 5. Keep repo plan docs dated and centralized.
-When you are creating a plan file in the repository itself, new plan documents belong in `doc/plans/` and should use `YYYY-MM-DD-slug.md` filenames. This does not replace Paperclip issue planning: if a Paperclip issue asks for a plan, update the issue `plan` document per the `paperclip` skill instead of creating a repo markdown file.
+When you are creating a plan file in the repository itself, new plan documents belong in `doc/plans/` and should use `YYYY-MM-DD-slug.md` filenames. This does not replace Bullpen issue planning: if a Bullpen issue asks for a plan, update the issue `plan` document per the `bullpen` skill instead of creating a repo markdown file.
 
 6. Attach inspectable generated artifacts.
-When your task produces a user-inspectable deliverable file, follow the Paperclip skill's "Generated Artifacts and Work Products" workflow before final disposition. In this repo, prefer the self-contained skill helper at `skills/paperclip/scripts/paperclip-upload-artifact.sh` so the file is available through the Paperclip API, create/update an artifact work product when the file is the deliverable, link the uploaded artifact in the final issue comment, and then set status. Do not rely on local filesystem paths as the only access path. If an important file intentionally remains workspace-only, create/update a work product with `metadata.resourceRef.kind: "workspace_file"` and a workspace-relative path, then name that work product and path in the final comment. Treat browse/search as a fallback for recovering workspace files, not the preferred deliverable path. See `doc/AGENT-ARTIFACTS.md` for details and `.mp4`/`.webm` examples.
+When your task produces a user-inspectable deliverable file, follow the Bullpen skill's "Generated Artifacts and Work Products" workflow before final disposition. In this repo, prefer the self-contained skill helper at `skills/bullpen/scripts/bullpen-upload-artifact.sh` so the file is available through the Bullpen API, create/update an artifact work product when the file is the deliverable, link the uploaded artifact in the final issue comment, and then set status. Do not rely on local filesystem paths as the only access path. If an important file intentionally remains workspace-only, create/update a work product with `metadata.resourceRef.kind: "workspace_file"` and a workspace-relative path, then name that work product and path in the final comment. Treat browse/search as a fallback for recovering workspace files, not the preferred deliverable path. See `doc/AGENT-ARTIFACTS.md` for details and `.mp4`/`.webm` examples.
 
 ## 6. Database Change Workflow
 
@@ -179,9 +179,9 @@ A change is done when all are true:
 4. Docs updated when behavior or commands change
 5. PR description follows the [PR template](.github/PULL_REQUEST_TEMPLATE.md) with all sections filled in (including Model Used)
 
-## 11. Fork-Specific: HenkDz/paperclip
+## 11. Fork-Specific: HenkDz/bullpen
 
-This is a fork of `paperclipai/paperclip` with QoL patches and a **built-in** Hermes adapter story on branch `feat/externalize-hermes-adapter` ([tree](https://github.com/HenkDz/paperclip/tree/feat/externalize-hermes-adapter)).
+This is a fork of `bullpen/bullpen` with QoL patches and a **built-in** Hermes adapter story on branch `feat/externalize-hermes-adapter` ([tree](https://github.com/HenkDz/bullpen/tree/feat/externalize-hermes-adapter)).
 
 ### Branch Strategy
 
@@ -193,14 +193,14 @@ This is a fork of `paperclipai/paperclip` with QoL patches and a **built-in** He
 - `hermes_local` is available without Adapter manager installation and runs the local Hermes CLI.
 - `hermes_gateway` is available without Adapter manager installation and calls an already-running Hermes API server.
 - Operators may still install external Hermes packages through Adapter manager to override/shadow the built-ins.
-- Optional: `file:` entry in `~/.paperclip/adapter-plugins.json` remains useful for local development of override packages.
+- Optional: `file:` entry in `~/.bullpen/adapter-plugins.json` remains useful for local development of override packages.
 
 ### Local Dev
 
 - Fork runs on port 3101+ (auto-detects if 3100 is taken by upstream instance)
 - `npx vite build` hangs on NTFS — use `node node_modules/vite/bin/vite.js build` instead
 - Server startup from NTFS takes 30-60s — don't assume failure immediately
-- Kill ALL paperclip processes before starting: `pkill -f "paperclip"; pkill -f "tsx.*index.ts"`
+- Kill ALL bullpen processes before starting: `pkill -f "bullpen"; pkill -f "tsx.*index.ts"`
 - Vite cache survives `rm -rf dist` — delete both: `rm -rf ui/dist ui/node_modules/.vite`
 
 ### Fork QoL Patches (not in upstream)
@@ -215,7 +215,7 @@ These are local modifications in the fork's UI. If re-copying source, these must
 
 PR #2218 (`feat/external-adapter-phase1`) adds external adapter support. See root `AGENTS.md` for full details.
 
-- Adapters can be loaded as external plugins via `~/.paperclip/adapter-plugins.json`
+- Adapters can be loaded as external plugins via `~/.bullpen/adapter-plugins.json`
 - The plugin-loader should have ZERO hardcoded adapter imports — pure dynamic loading
 - `createServerAdapter()` must include ALL optional fields (especially `detectModel`)
 - Built-in UI adapters can shadow external plugin parsers; external override pause/resume should restore the built-in parser.

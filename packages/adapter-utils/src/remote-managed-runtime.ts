@@ -119,13 +119,13 @@ export async function prepareRemoteManagedRuntime(input: {
   const workspaceRemoteDir = syncWorkspace
     ? path.posix.join(
         baseWorkspaceRemoteDir,
-        ".paperclip-runtime",
+        ".bullpen-runtime",
         "runs",
         input.runId,
         "workspace",
       )
     : baseWorkspaceRemoteDir;
-  const runtimeRootDir = path.posix.join(workspaceRemoteDir, ".paperclip-runtime", input.adapterKey);
+  const runtimeRootDir = path.posix.join(workspaceRemoteDir, ".bullpen-runtime", input.adapterKey);
 
   const preparedWorkspace = syncWorkspace
     ? await prepareWorkspaceForSshExecution({
@@ -138,8 +138,8 @@ export async function prepareRemoteManagedRuntime(input: {
   const baselineSnapshot = preparedWorkspace
     ? await captureDirectorySnapshot(input.workspaceLocalDir, {
         exclude: preparedWorkspace.gitBacked
-          ? [...GIT_ARCHIVE_EXCLUDES, ".paperclip-runtime"]
-          : [".paperclip-runtime"],
+          ? [...GIT_ARCHIVE_EXCLUDES, ".bullpen-runtime"]
+          : [".bullpen-runtime"],
       })
     : null;
 
@@ -204,7 +204,7 @@ export async function prepareRemoteManagedRuntime(input: {
       additionalSourceDirs[projectId] = remoteDir;
     } catch (error) {
       console.warn(
-        `[paperclip] Failed to stage referenced project ${projectId}; skipping it. ${String(error)}`,
+        `[bullpen] Failed to stage referenced project ${projectId}; skipping it. ${String(error)}`,
       );
     }
   }

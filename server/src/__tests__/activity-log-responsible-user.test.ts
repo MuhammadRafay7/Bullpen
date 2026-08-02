@@ -10,7 +10,7 @@ import {
   heartbeatRuns,
   issues,
   type Db,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   logActivity,
   resolveResponsibleUserIdForActivity,
@@ -174,7 +174,7 @@ describeEmbeddedPostgres("logActivity responsible-user stamping", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-activity-responsible-user-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-activity-responsible-user-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -189,7 +189,7 @@ describeEmbeddedPostgres("logActivity responsible-user stamping", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       defaultResponsibleUserId: "default-user",
       requireBoardApprovalForNewAgents: false,

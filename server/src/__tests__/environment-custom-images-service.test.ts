@@ -8,7 +8,7 @@ import {
   environmentCustomImageTemplates,
   environments,
   plugins,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import {
   environmentCustomImageService,
@@ -37,7 +37,7 @@ if (!embeddedPostgresSupport.supported) {
 
 function pluginManifest() {
   return {
-    id: "paperclip.fake-sandbox-provider",
+    id: "bullpen.fake-sandbox-provider",
     apiVersion: 1,
     version: "0.1.0",
     displayName: "Fake Sandbox Provider",
@@ -177,8 +177,8 @@ describeEmbeddedPostgres("environmentCustomImageService", () => {
       envVars: {},
     });
     await db.insert(plugins).values({
-      pluginKey: "paperclip.fake-sandbox-provider",
-      packageName: "paperclip-plugin-fake-sandbox",
+      pluginKey: "bullpen.fake-sandbox-provider",
+      packageName: "bullpen-plugin-fake-sandbox",
       version: "0.1.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -743,8 +743,8 @@ describeEmbeddedPostgres("environmentCustomImageService reconciliation", () => {
       envVars: {},
     });
     await db.insert(plugins).values({
-      pluginKey: "paperclip.fake-sandbox-provider",
-      packageName: "paperclip-plugin-fake-sandbox",
+      pluginKey: "bullpen.fake-sandbox-provider",
+      packageName: "bullpen-plugin-fake-sandbox",
       version: "0.1.0",
       apiVersion: 1,
       categories: ["automation"],

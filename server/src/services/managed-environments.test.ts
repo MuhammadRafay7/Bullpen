@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import { MANAGED_CONFIG_ENV_KEY, parseManagedConfigEnv } from "./managed-config.js";
 import {
   applyManagedEnvironments,
@@ -101,7 +101,7 @@ describe("applyManagedEnvironments", () => {
     });
     await expect(
       applyManagedEnvironments(noDb, config, {
-        env: { PAPERCLIP_EXECUTION_MODE: "kubernetes" },
+        env: { BULLPEN_EXECUTION_MODE: "kubernetes" },
       }),
     ).rejects.toThrow(/mutually exclusive/);
   });

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { Preview } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { WorkTimelineResult } from "@paperclipai/shared";
+import type { WorkTimelineResult } from "@bullpen/shared";
 import { MemoryRouter } from "@/lib/router";
 import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
 import { CompanyProvider } from "@/context/CompanyContext";
@@ -29,7 +29,7 @@ import {
   storybookSecretProviders,
   storybookSecrets,
   storybookSidebarBadges,
-} from "../fixtures/paperclipData";
+} from "../fixtures/bullpenData";
 import timelineSample from "../fixtures/workTimeline.human.sample.json";
 import "@mdxeditor/editor/style.css";
 import "./tailwind-entry.css";
@@ -72,12 +72,12 @@ installStorybookApiFixtures();
 function installStorybookApiFixtures() {
   if (typeof window === "undefined") return;
   const currentWindow = window as typeof window & {
-    __paperclipStorybookFetchInstalled?: boolean;
+    __bullpenStorybookFetchInstalled?: boolean;
   };
-  if (currentWindow.__paperclipStorybookFetchInstalled) return;
+  if (currentWindow.__bullpenStorybookFetchInstalled) return;
 
   const originalFetch = window.fetch.bind(window);
-  currentWindow.__paperclipStorybookFetchInstalled = true;
+  currentWindow.__bullpenStorybookFetchInstalled = true;
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const rawUrl =
@@ -104,7 +104,7 @@ function installStorybookApiFixtures() {
             status: "active",
             user: {
               id: "user-board",
-              email: "board@paperclip.local",
+              email: "board@bullpen.local",
               name: "Board Operator",
               image: null,
             },
@@ -114,7 +114,7 @@ function installStorybookApiFixtures() {
             status: "active",
             user: {
               id: "user-product",
-              email: "product@paperclip.local",
+              email: "product@bullpen.local",
               name: "Product Lead",
               image: null,
             },
@@ -195,8 +195,8 @@ function installStorybookApiFixtures() {
     if (adapterSchemaMatch) {
       const [, adapterType] = adapterSchemaMatch;
       const schemas = (window as typeof window & {
-        __paperclipStorybookAdapterSchemas?: Record<string, unknown>;
-      }).__paperclipStorybookAdapterSchemas;
+        __bullpenStorybookAdapterSchemas?: Record<string, unknown>;
+      }).__bullpenStorybookAdapterSchemas;
       const schema = schemas?.[adapterType];
       if (schema) return Response.json(schema);
     }
@@ -400,7 +400,7 @@ const preview: Preview = {
   ],
   globalTypes: {
     theme: {
-      description: "Paperclip color mode",
+      description: "Bullpen color mode",
       defaultValue: "dark",
       toolbar: {
         title: "Theme",

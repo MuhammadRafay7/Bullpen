@@ -5,7 +5,7 @@ import type {
   Agent,
   ToolCatalogEntry,
   ToolConnection,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { queryKeys } from "@/lib/queryKeys";
 import { AgentToolsTab } from "@/pages/AgentToolsTab";
 import { PermissionsPanel } from "@/pages/apps/app-detail/PermissionsPanel";

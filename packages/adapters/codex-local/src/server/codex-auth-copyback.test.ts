@@ -51,7 +51,7 @@ describe("copyBackCodexAuth", () => {
   }
 
   async function makeHostDir(): Promise<string> {
-    const dir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-copyback-"));
+    const dir = await mkdtemp(path.join(os.tmpdir(), "bullpen-codex-copyback-"));
     cleanupDirs.push(dir);
     return dir;
   }

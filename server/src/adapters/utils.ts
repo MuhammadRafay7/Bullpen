@@ -3,8 +3,8 @@
 // imports (process/, http/, heartbeat.ts) don't need rewriting.
 import type { ChildProcess } from "node:child_process";
 import { logger } from "../middleware/logger.js";
-import * as serverUtils from "@paperclipai/adapter-utils/server-utils";
-export type { RunProcessResult } from "@paperclipai/adapter-utils/server-utils";
+import * as serverUtils from "@bullpen/adapter-utils/server-utils";
+export type { RunProcessResult } from "@bullpen/adapter-utils/server-utils";
 
 type BuildInvocationEnvForLogsOptions = {
   runtimeEnv?: NodeJS.ProcessEnv | Record<string, string>;
@@ -28,8 +28,8 @@ export const appendWithByteCap = serverUtils.appendWithByteCap;
 export const resolvePathValue = serverUtils.resolvePathValue;
 export const renderTemplate = serverUtils.renderTemplate;
 export const redactEnvForLogs = serverUtils.redactEnvForLogs;
-export const buildPaperclipEnv = serverUtils.buildPaperclipEnv;
-export const isPaperclipRuntimeEnvKey = serverUtils.isPaperclipRuntimeEnvKey;
+export const buildBullpenEnv = serverUtils.buildBullpenEnv;
+export const isBullpenRuntimeEnvKey = serverUtils.isBullpenRuntimeEnvKey;
 export const isForbiddenConfigEnvKey = serverUtils.isForbiddenConfigEnvKey;
 export const defaultPathForPlatform = serverUtils.defaultPathForPlatform;
 export const ensurePathInEnv = serverUtils.ensurePathInEnv;
@@ -66,7 +66,7 @@ export function buildInvocationEnvForLogs(
 
   const resolvedCommand = options.resolvedCommand?.trim();
   if (resolvedCommand) {
-    merged[options.resolvedCommandEnvKey ?? "PAPERCLIP_RESOLVED_COMMAND"] =
+    merged[options.resolvedCommandEnvKey ?? "BULLPEN_RESOLVED_COMMAND"] =
       serverUtils.redactCommandTextForLogs(resolvedCommand);
   }
 
@@ -74,7 +74,7 @@ export function buildInvocationEnvForLogs(
 }
 
 // Re-export runChildProcess with the server's pino logger wired in.
-import type { RunProcessResult } from "@paperclipai/adapter-utils/server-utils";
+import type { RunProcessResult } from "@bullpen/adapter-utils/server-utils";
 const _runChildProcess = serverUtils.runChildProcess;
 
 export async function runChildProcess(

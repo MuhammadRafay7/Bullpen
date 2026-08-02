@@ -137,7 +137,7 @@ import { IssueReferencePill } from "@/components/IssueReferencePill";
 import { MembershipAction } from "@/components/MembershipAction";
 import { IssueOutputSection } from "@/components/issue-output/IssueOutputSection";
 import { EnvironmentVariablesEditor } from "@/components/environment-variables-editor";
-import type { CompanySecret, EnvBinding } from "@paperclipai/shared";
+import type { CompanySecret, EnvBinding } from "@bullpen/shared";
 import {
   EnvInputsList,
   ExternalSourcesList,
@@ -157,7 +157,7 @@ import {
   sampleTeam,
   warnTeam,
 } from "@/pages/TeamCatalog.fixtures";
-import type { IssueWorkProduct } from "@paperclipai/shared";
+import type { IssueWorkProduct } from "@bullpen/shared";
 
 /* ------------------------------------------------------------------ */
 /*  Sample data for the Issue Output surface showcase                  */
@@ -179,7 +179,7 @@ function sampleOutput(
     executionWorkspaceId: null,
     runtimeServiceId: null,
     type: "artifact",
-    provider: "paperclip",
+    provider: "bullpen",
     externalId: null,
     title: filename,
     url: null,
@@ -283,7 +283,7 @@ const DESIGN_GUIDE_SECRETS: CompanySecret[] = [
     name: "GITHUB_TOKEN",
     provider: "local_encrypted",
     status: "active",
-    managedMode: "paperclip_managed",
+    managedMode: "bullpen_managed",
     externalRef: null,
     providerConfigId: null,
     providerMetadata: null,
@@ -307,7 +307,7 @@ const DESIGN_GUIDE_SECRETS: CompanySecret[] = [
     name: "DB_CONNECTION",
     provider: "local_encrypted",
     status: "active",
-    managedMode: "paperclip_managed",
+    managedMode: "bullpen_managed",
     externalRef: null,
     providerConfigId: null,
     providerMetadata: null,
@@ -396,7 +396,7 @@ export function DesignGuide() {
       <div>
         <h2 className="text-xl font-bold">Design Guide</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Every component, style, and pattern used across Paperclip.
+          Every component, style, and pattern used across Bullpen.
         </p>
       </div>
 
@@ -1027,7 +1027,7 @@ export function DesignGuide() {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="#">Paperclip App</BreadcrumbLink>
+              <BreadcrumbLink href="#">Bullpen App</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -1991,7 +1991,7 @@ export function DesignGuide() {
             title="Built-in agent"
             actions={<Button variant="outline" size="sm">Reset to defaults</Button>}
           >
-            Ships with Paperclip and powers <strong>Briefs</strong>. It can be paused but not deleted.
+            Ships with Bullpen and powers <strong>Briefs</strong>. It can be paused but not deleted.
           </InlineBanner>
           <InlineBanner
             tone="warning"

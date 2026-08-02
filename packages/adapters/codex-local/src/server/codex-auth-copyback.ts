@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
-import { withDirectoryMergeLock } from "@paperclipai/adapter-utils/workspace-restore-merge";
+import { withDirectoryMergeLock } from "@bullpen/adapter-utils/workspace-restore-merge";
 
 const execFile = promisify(execFileCallback);
 
@@ -107,7 +107,7 @@ export async function copyBackCodexAuth(input: CopyBackCodexAuthInput): Promise<
   } catch (error) {
     if ((error as NodeJS.ErrnoException | null)?.code === "ENOENT") {
       await log(
-        "[paperclip] Codex auth copy-back: no sandbox credential to copy back (absent auth.json); host credential kept.",
+        "[bullpen] Codex auth copy-back: no sandbox credential to copy back (absent auth.json); host credential kept.",
       );
       return "kept-host";
     }
@@ -133,13 +133,13 @@ export async function copyBackCodexAuth(input: CopyBackCodexAuthInput): Promise<
         // Atomic same-directory swap; rename preserves the temp's 0600 mode.
         await rename(stagedTempPath, hostAuthPath);
         await log(
-          "[paperclip] Codex auth copy-back: sandbox credential is strictly newer for the same subscription identity; installed to the host at mode 0600.",
+          "[bullpen] Codex auth copy-back: sandbox credential is strictly newer for the same subscription identity; installed to the host at mode 0600.",
         );
         return "copied";
       }
 
       await log(
-        "[paperclip] Codex auth copy-back: host credential kept (sandbox copy is not a strictly-newer same-identity subscription credential).",
+        "[bullpen] Codex auth copy-back: host credential kept (sandbox copy is not a strictly-newer same-identity subscription credential).",
       );
       return "kept-host";
     } finally {

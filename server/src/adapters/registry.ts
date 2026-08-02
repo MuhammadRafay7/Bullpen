@@ -8,7 +8,7 @@ import { stampClaudeAgentIdHeader } from "./claude-agent-id-header.js";
 import {
   buildSandboxNpmInstallCommand,
   getAdapterSessionManagement,
-} from "@paperclipai/adapter-utils";
+} from "@bullpen/adapter-utils";
 import {
   execute as claudeExecute,
   listClaudeSkills,
@@ -19,12 +19,12 @@ import {
   sessionCodec as claudeSessionCodec,
   getQuotaWindows as claudeGetQuotaWindows,
   getConfigSchema as getClaudeConfigSchema,
-} from "@paperclipai/adapter-claude-local/server";
+} from "@bullpen/adapter-claude-local/server";
 import {
   agentConfigurationDoc as claudeAgentConfigurationDoc,
   models as claudeModels,
   modelProfiles as claudeModelProfiles,
-} from "@paperclipai/adapter-claude-local";
+} from "@bullpen/adapter-claude-local";
 import {
   execute as codexExecute,
   listCodexSkills,
@@ -33,31 +33,31 @@ import {
   sessionCodec as codexSessionCodec,
   getQuotaWindows as codexGetQuotaWindows,
   getConfigSchema as getCodexConfigSchema,
-} from "@paperclipai/adapter-codex-local/server";
+} from "@bullpen/adapter-codex-local/server";
 import {
   agentConfigurationDoc as codexAgentConfigurationDoc,
   models as codexModels,
   modelProfiles as codexModelProfiles,
-} from "@paperclipai/adapter-codex-local";
+} from "@bullpen/adapter-codex-local";
 import {
   execute as cursorExecute,
   listCursorSkills,
   syncCursorSkills,
   testEnvironment as cursorTestEnvironment,
   sessionCodec as cursorSessionCodec,
-} from "@paperclipai/adapter-cursor-local/server";
+} from "@bullpen/adapter-cursor-local/server";
 import {
   agentConfigurationDoc as cursorAgentConfigurationDoc,
   models as cursorModels,
   modelProfiles as cursorModelProfiles,
-} from "@paperclipai/adapter-cursor-local";
+} from "@bullpen/adapter-cursor-local";
 import {
   execute as cursorCloudExecute,
   getConfigSchema as getCursorCloudConfigSchema,
   sessionCodec as cursorCloudSessionCodec,
   testEnvironment as cursorCloudTestEnvironment,
-} from "@paperclipai/adapter-cursor-cloud/server";
-import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@paperclipai/adapter-cursor-cloud";
+} from "@bullpen/adapter-cursor-cloud/server";
+import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@bullpen/adapter-cursor-cloud";
 import {
   execute as geminiExecute,
   listGeminiSkills,
@@ -65,27 +65,27 @@ import {
   testEnvironment as geminiTestEnvironment,
   sessionCodec as geminiSessionCodec,
   getConfigSchema as getGeminiConfigSchema,
-} from "@paperclipai/adapter-gemini-local/server";
+} from "@bullpen/adapter-gemini-local/server";
 import {
   agentConfigurationDoc as geminiAgentConfigurationDoc,
   models as geminiModels,
   modelProfiles as geminiModelProfiles,
-} from "@paperclipai/adapter-gemini-local";
+} from "@bullpen/adapter-gemini-local";
 import {
   execute as grokExecute,
   listGrokSkills,
   syncGrokSkills,
   testEnvironment as grokTestEnvironment,
   sessionCodec as grokSessionCodec,
-} from "@paperclipai/adapter-grok-local/server";
+} from "@bullpen/adapter-grok-local/server";
 import {
   agentConfigurationDoc as grokAgentConfigurationDoc,
   models as grokModels,
-} from "@paperclipai/adapter-grok-local";
+} from "@bullpen/adapter-grok-local";
 import {
   createHermesGatewayServerAdapter,
   createHermesLocalServerAdapter,
-} from "@paperclipai/hermes-paperclip-adapter";
+} from "@bullpen/hermes-bullpen-adapter";
 import {
   execute as openCodeExecute,
   listOpenCodeSkills,
@@ -93,20 +93,20 @@ import {
   testEnvironment as openCodeTestEnvironment,
   sessionCodec as openCodeSessionCodec,
   listOpenCodeModels,
-} from "@paperclipai/adapter-opencode-local/server";
+} from "@bullpen/adapter-opencode-local/server";
 import {
   agentConfigurationDoc as openCodeAgentConfigurationDoc,
   models as openCodeModels,
   modelProfiles as openCodeModelProfiles,
-} from "@paperclipai/adapter-opencode-local";
+} from "@bullpen/adapter-opencode-local";
 import {
   execute as openclawGatewayExecute,
   testEnvironment as openclawGatewayTestEnvironment,
-} from "@paperclipai/adapter-openclaw-gateway/server";
+} from "@bullpen/adapter-openclaw-gateway/server";
 import {
   agentConfigurationDoc as openclawGatewayAgentConfigurationDoc,
   models as openclawGatewayModels,
-} from "@paperclipai/adapter-openclaw-gateway";
+} from "@bullpen/adapter-openclaw-gateway";
 import { listCodexModels, refreshCodexModels } from "./codex-models.js";
 import { listCursorModels } from "./cursor-models.js";
 import {
@@ -116,11 +116,11 @@ import {
   testEnvironment as piTestEnvironment,
   sessionCodec as piSessionCodec,
   listPiModels,
-} from "@paperclipai/adapter-pi-local/server";
+} from "@bullpen/adapter-pi-local/server";
 import {
   agentConfigurationDoc as piAgentConfigurationDoc,
   modelProfiles as piModelProfiles,
-} from "@paperclipai/adapter-pi-local";
+} from "@bullpen/adapter-pi-local";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
 import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
@@ -178,7 +178,7 @@ The standalone ACPX adapter has been retired. Use:
 - claude_local with adapterConfig.engine="acp" for Claude ACP execution.
 - codex_local with adapterConfig.engine="acp" for Codex ACP execution.
 
-Paperclip keeps this tombstone registered so stale acpx_local rows fail clearly instead of falling back to the process adapter.
+Bullpen keeps this tombstone registered so stale acpx_local rows fail clearly instead of falling back to the process adapter.
 `;
 
 const claudeLocalAdapter: ServerAdapterModule = {
@@ -511,7 +511,7 @@ const externalAdaptersReady: Promise<void> = (async () => {
       const overriding = BUILTIN_ADAPTER_TYPES.has(externalAdapter.type);
       if (overriding) {
         console.log(
-          `[paperclip] External adapter "${externalAdapter.type}" overrides built-in adapter`,
+          `[bullpen] External adapter "${externalAdapter.type}" overrides built-in adapter`,
         );
         // Save the original builtin for later restoration.
         const existing = adaptersByType.get(externalAdapter.type);
@@ -525,7 +525,7 @@ const externalAdaptersReady: Promise<void> = (async () => {
       );
     }
   } catch (err) {
-    console.error("[paperclip] Failed to load external adapters:", err);
+    console.error("[bullpen] Failed to load external adapters:", err);
   }
 })();
 
@@ -578,7 +578,7 @@ export function getServerAdapter(type: string): ServerAdapterModule {
 }
 
 /**
- * Memoized view of PAPERCLIP_ADAPTER_MODELS, keyed by the raw env string so
+ * Memoized view of BULLPEN_ADAPTER_MODELS, keyed by the raw env string so
  * tests (and live env mutation) that change the variable are still observed.
  * Parsing happens at most once per distinct raw value instead of per
  * `listAdapterModels` request, and malformed values fail SOFT here: we log the
@@ -591,7 +591,7 @@ let adapterModelsEnvCache: {
 } | null = null;
 
 function getDeclaredAdapterModels(): ReturnType<typeof parseAdapterModelsEnv> {
-  const raw = process.env.PAPERCLIP_ADAPTER_MODELS;
+  const raw = process.env.BULLPEN_ADAPTER_MODELS;
   if (adapterModelsEnvCache && adapterModelsEnvCache.raw === raw) {
     return adapterModelsEnvCache.value;
   }
@@ -600,7 +600,7 @@ function getDeclaredAdapterModels(): ReturnType<typeof parseAdapterModelsEnv> {
     value = parseAdapterModelsEnv(process.env);
   } catch (err) {
     console.error(
-      "[paperclip] Invalid PAPERCLIP_ADAPTER_MODELS; ignoring declared model lists:",
+      "[bullpen] Invalid BULLPEN_ADAPTER_MODELS; ignoring declared model lists:",
       err,
     );
   }
@@ -700,12 +700,12 @@ export function setOverridePaused(type: string, paused: boolean): boolean {
   const wasPaused = pausedOverrides.has(type);
   if (paused && !wasPaused) {
     pausedOverrides.add(type);
-    console.log(`[paperclip] Override paused for "${type}" — builtin adapter restored`);
+    console.log(`[bullpen] Override paused for "${type}" — builtin adapter restored`);
     return true;
   }
   if (!paused && wasPaused) {
     pausedOverrides.delete(type);
-    console.log(`[paperclip] Override resumed for "${type}" — external adapter active`);
+    console.log(`[bullpen] Override resumed for "${type}" — external adapter active`);
     return true;
   }
   return false;

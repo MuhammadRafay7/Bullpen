@@ -16,9 +16,9 @@ import {
   type DeploymentMode,
   type SecretProvider,
   type StorageProvider,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { configExists, readConfig, resolveConfigPath, writeConfig } from "../config/store.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { BullpenConfig } from "../config/schema.js";
 import { ensureAgentJwtSecret, resolveAgentJwtEnvFile } from "../config/env.js";
 import { ensureLocalSecretsKeyFile } from "../config/secrets-key.js";
 import { promptDatabase } from "../prompts/database.js";
@@ -34,10 +34,10 @@ import {
   resolveDefaultBackupDir,
   resolveDefaultEmbeddedPostgresDir,
   resolveDefaultLogsDir,
-  resolvePaperclipInstanceId,
+  resolveBullpenInstanceId,
 } from "../config/home.js";
 import { bootstrapCeoInvite } from "./auth-bootstrap-ceo.js";
-import { printPaperclipCliBanner } from "../utils/banner.js";
+import { printBullpenCliBanner } from "../utils/banner.js";
 import {
   getTelemetryClient,
   trackInstallStarted,
@@ -57,41 +57,41 @@ type OnboardOptions = {
   installService?: boolean;
 };
 
-type OnboardDefaults = Pick<PaperclipConfig, "database" | "logging" | "server" | "auth" | "storage" | "secrets">;
+type OnboardDefaults = Pick<BullpenConfig, "database" | "logging" | "server" | "auth" | "storage" | "secrets">;
 
 const TAILNET_BIND_WARNING =
-  "No Tailscale address was detected during setup. The saved config will stay on loopback until Tailscale is available or PAPERCLIP_TAILNET_BIND_HOST is set.";
+  "No Tailscale address was detected during setup. The saved config will stay on loopback until Tailscale is available or BULLPEN_TAILNET_BIND_HOST is set.";
 
 const ONBOARD_ENV_KEYS = [
-  "PAPERCLIP_PUBLIC_URL",
+  "BULLPEN_PUBLIC_URL",
   "DATABASE_URL",
-  "PAPERCLIP_DB_BACKUP_ENABLED",
-  "PAPERCLIP_DB_BACKUP_INTERVAL_MINUTES",
-  "PAPERCLIP_DB_BACKUP_RETENTION_DAYS",
-  "PAPERCLIP_DB_BACKUP_DIR",
-  "PAPERCLIP_DEPLOYMENT_MODE",
-  "PAPERCLIP_DEPLOYMENT_EXPOSURE",
-  "PAPERCLIP_BIND",
-  "PAPERCLIP_BIND_HOST",
-  "PAPERCLIP_TAILNET_BIND_HOST",
+  "BULLPEN_DB_BACKUP_ENABLED",
+  "BULLPEN_DB_BACKUP_INTERVAL_MINUTES",
+  "BULLPEN_DB_BACKUP_RETENTION_DAYS",
+  "BULLPEN_DB_BACKUP_DIR",
+  "BULLPEN_DEPLOYMENT_MODE",
+  "BULLPEN_DEPLOYMENT_EXPOSURE",
+  "BULLPEN_BIND",
+  "BULLPEN_BIND_HOST",
+  "BULLPEN_TAILNET_BIND_HOST",
   "HOST",
   "PORT",
   "SERVE_UI",
-  "PAPERCLIP_ALLOWED_HOSTNAMES",
-  "PAPERCLIP_AUTH_BASE_URL_MODE",
-  "PAPERCLIP_AUTH_PUBLIC_BASE_URL",
+  "BULLPEN_ALLOWED_HOSTNAMES",
+  "BULLPEN_AUTH_BASE_URL_MODE",
+  "BULLPEN_AUTH_PUBLIC_BASE_URL",
   "BETTER_AUTH_URL",
   "BETTER_AUTH_BASE_URL",
-  "PAPERCLIP_STORAGE_PROVIDER",
-  "PAPERCLIP_STORAGE_LOCAL_DIR",
-  "PAPERCLIP_STORAGE_S3_BUCKET",
-  "PAPERCLIP_STORAGE_S3_REGION",
-  "PAPERCLIP_STORAGE_S3_ENDPOINT",
-  "PAPERCLIP_STORAGE_S3_PREFIX",
-  "PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE",
-  "PAPERCLIP_SECRETS_PROVIDER",
-  "PAPERCLIP_SECRETS_STRICT_MODE",
-  "PAPERCLIP_SECRETS_MASTER_KEY_FILE",
+  "BULLPEN_STORAGE_PROVIDER",
+  "BULLPEN_STORAGE_LOCAL_DIR",
+  "BULLPEN_STORAGE_S3_BUCKET",
+  "BULLPEN_STORAGE_S3_REGION",
+  "BULLPEN_STORAGE_S3_ENDPOINT",
+  "BULLPEN_STORAGE_S3_PREFIX",
+  "BULLPEN_STORAGE_S3_FORCE_PATH_STYLE",
+  "BULLPEN_SECRETS_PROVIDER",
+  "BULLPEN_SECRETS_STRICT_MODE",
+  "BULLPEN_SECRETS_MASTER_KEY_FILE",
 ] as const;
 
 function parseBooleanFromEnv(rawValue: string | undefined): boolean | null {
@@ -119,7 +119,7 @@ function resolvePathFromEnv(rawValue: string | undefined): string | null {
   return path.resolve(expandHomePrefix(rawValue.trim()));
 }
 
-function describeServerBinding(server: Pick<PaperclipConfig["server"], "bind" | "customBindHost" | "host" | "port">): string {
+function describeServerBinding(server: Pick<BullpenConfig["server"], "bind" | "customBindHost" | "host" | "port">): string {
   const bind = server.bind ?? inferBindModeFromHost(server.host);
   const detail =
     bind === "custom"
@@ -136,30 +136,30 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
   ignoredEnvKeys: Array<{ key: string; reason: string }>;
 } {
   const preferTrustedLocal = opts?.preferTrustedLocal ?? false;
-  const instanceId = resolvePaperclipInstanceId();
+  const instanceId = resolveBullpenInstanceId();
   const defaultStorage = defaultStorageConfig();
   const defaultSecrets = defaultSecretsConfig();
   const databaseUrl = process.env.DATABASE_URL?.trim() || undefined;
   const publicUrl = preferTrustedLocal
     ? undefined
     : (
-      process.env.PAPERCLIP_PUBLIC_URL?.trim() ||
-      process.env.PAPERCLIP_AUTH_PUBLIC_BASE_URL?.trim() ||
+      process.env.BULLPEN_PUBLIC_URL?.trim() ||
+      process.env.BULLPEN_AUTH_PUBLIC_BASE_URL?.trim() ||
       process.env.BETTER_AUTH_URL?.trim() ||
       process.env.BETTER_AUTH_BASE_URL?.trim() ||
       undefined
     );
   const deploymentMode = preferTrustedLocal
     ? "local_trusted"
-    : (parseEnumFromEnv<DeploymentMode>(process.env.PAPERCLIP_DEPLOYMENT_MODE, DEPLOYMENT_MODES) ?? "local_trusted");
+    : (parseEnumFromEnv<DeploymentMode>(process.env.BULLPEN_DEPLOYMENT_MODE, DEPLOYMENT_MODES) ?? "local_trusted");
   const deploymentExposureFromEnv = parseEnumFromEnv<DeploymentExposure>(
-    process.env.PAPERCLIP_DEPLOYMENT_EXPOSURE,
+    process.env.BULLPEN_DEPLOYMENT_EXPOSURE,
     DEPLOYMENT_EXPOSURES,
   );
   const deploymentExposure =
     deploymentMode === "local_trusted" ? "private" : (deploymentExposureFromEnv ?? "private");
-  const bindFromEnv = parseEnumFromEnv<BindMode>(process.env.PAPERCLIP_BIND, BIND_MODES);
-  const customBindHostFromEnv = process.env.PAPERCLIP_BIND_HOST?.trim() || undefined;
+  const bindFromEnv = parseEnumFromEnv<BindMode>(process.env.BULLPEN_BIND, BIND_MODES);
+  const customBindHostFromEnv = process.env.BULLPEN_BIND_HOST?.trim() || undefined;
   const hostFromEnv = process.env.HOST?.trim() || undefined;
   const configuredBindHost = customBindHostFromEnv ?? hostFromEnv;
   const bind = preferTrustedLocal
@@ -173,16 +173,16 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
     bind,
     host: hostFromEnv ?? (bind === "loopback" ? "127.0.0.1" : "0.0.0.0"),
     customBindHost: customBindHostFromEnv,
-    tailnetBindHost: process.env.PAPERCLIP_TAILNET_BIND_HOST?.trim(),
+    tailnetBindHost: process.env.BULLPEN_TAILNET_BIND_HOST?.trim(),
   });
   const authPublicBaseUrl = publicUrl;
   const authBaseUrlModeFromEnv = parseEnumFromEnv<AuthBaseUrlMode>(
-    process.env.PAPERCLIP_AUTH_BASE_URL_MODE,
+    process.env.BULLPEN_AUTH_BASE_URL_MODE,
     AUTH_BASE_URL_MODES,
   );
   const authBaseUrlMode = authBaseUrlModeFromEnv ?? (authPublicBaseUrl ? "explicit" : "auto");
-  const allowedHostnamesFromEnv = process.env.PAPERCLIP_ALLOWED_HOSTNAMES
-    ? process.env.PAPERCLIP_ALLOWED_HOSTNAMES
+  const allowedHostnamesFromEnv = process.env.BULLPEN_ALLOWED_HOSTNAMES
+    ? process.env.BULLPEN_ALLOWED_HOSTNAMES
       .split(",")
       .map((value) => value.trim().toLowerCase())
       .filter((value) => value.length > 0)
@@ -197,19 +197,19 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
     })()
     : null;
   const storageProvider =
-    parseEnumFromEnv<StorageProvider>(process.env.PAPERCLIP_STORAGE_PROVIDER, STORAGE_PROVIDERS) ??
+    parseEnumFromEnv<StorageProvider>(process.env.BULLPEN_STORAGE_PROVIDER, STORAGE_PROVIDERS) ??
     defaultStorage.provider;
   const secretsProvider =
-    parseEnumFromEnv<SecretProvider>(process.env.PAPERCLIP_SECRETS_PROVIDER, SECRET_PROVIDERS) ??
+    parseEnumFromEnv<SecretProvider>(process.env.BULLPEN_SECRETS_PROVIDER, SECRET_PROVIDERS) ??
     defaultSecrets.provider;
-  const databaseBackupEnabled = parseBooleanFromEnv(process.env.PAPERCLIP_DB_BACKUP_ENABLED) ?? true;
+  const databaseBackupEnabled = parseBooleanFromEnv(process.env.BULLPEN_DB_BACKUP_ENABLED) ?? true;
   const databaseBackupIntervalMinutes = Math.max(
     1,
-    parseNumberFromEnv(process.env.PAPERCLIP_DB_BACKUP_INTERVAL_MINUTES) ?? 60,
+    parseNumberFromEnv(process.env.BULLPEN_DB_BACKUP_INTERVAL_MINUTES) ?? 60,
   );
   const databaseBackupRetentionDays = Math.max(
     1,
-    parseNumberFromEnv(process.env.PAPERCLIP_DB_BACKUP_RETENTION_DAYS) ?? 30,
+    parseNumberFromEnv(process.env.BULLPEN_DB_BACKUP_RETENTION_DAYS) ?? 30,
   );
   const defaults: OnboardDefaults = {
     database: {
@@ -221,7 +221,7 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
         enabled: databaseBackupEnabled,
         intervalMinutes: databaseBackupIntervalMinutes,
         retentionDays: databaseBackupRetentionDays,
-        dir: resolvePathFromEnv(process.env.PAPERCLIP_DB_BACKUP_DIR) ?? resolveDefaultBackupDir(instanceId),
+        dir: resolvePathFromEnv(process.env.BULLPEN_DB_BACKUP_DIR) ?? resolveDefaultBackupDir(instanceId),
       },
     },
     logging: {
@@ -247,24 +247,24 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
       provider: storageProvider,
       localDisk: {
         baseDir:
-          resolvePathFromEnv(process.env.PAPERCLIP_STORAGE_LOCAL_DIR) ?? defaultStorage.localDisk.baseDir,
+          resolvePathFromEnv(process.env.BULLPEN_STORAGE_LOCAL_DIR) ?? defaultStorage.localDisk.baseDir,
       },
       s3: {
-        bucket: process.env.PAPERCLIP_STORAGE_S3_BUCKET ?? defaultStorage.s3.bucket,
-        region: process.env.PAPERCLIP_STORAGE_S3_REGION ?? defaultStorage.s3.region,
-        endpoint: process.env.PAPERCLIP_STORAGE_S3_ENDPOINT ?? defaultStorage.s3.endpoint,
-        prefix: process.env.PAPERCLIP_STORAGE_S3_PREFIX ?? defaultStorage.s3.prefix,
+        bucket: process.env.BULLPEN_STORAGE_S3_BUCKET ?? defaultStorage.s3.bucket,
+        region: process.env.BULLPEN_STORAGE_S3_REGION ?? defaultStorage.s3.region,
+        endpoint: process.env.BULLPEN_STORAGE_S3_ENDPOINT ?? defaultStorage.s3.endpoint,
+        prefix: process.env.BULLPEN_STORAGE_S3_PREFIX ?? defaultStorage.s3.prefix,
         forcePathStyle:
-          parseBooleanFromEnv(process.env.PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE) ??
+          parseBooleanFromEnv(process.env.BULLPEN_STORAGE_S3_FORCE_PATH_STYLE) ??
           defaultStorage.s3.forcePathStyle,
       },
     },
     secrets: {
       provider: secretsProvider,
-      strictMode: parseBooleanFromEnv(process.env.PAPERCLIP_SECRETS_STRICT_MODE) ?? defaultSecrets.strictMode,
+      strictMode: parseBooleanFromEnv(process.env.BULLPEN_SECRETS_STRICT_MODE) ?? defaultSecrets.strictMode,
       localEncrypted: {
         keyFilePath:
-          resolvePathFromEnv(process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE) ??
+          resolvePathFromEnv(process.env.BULLPEN_SECRETS_MASTER_KEY_FILE) ??
           defaultSecrets.localEncrypted.keyFilePath,
       },
     },
@@ -273,14 +273,14 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
   if (preferTrustedLocal) {
     const forcedLocalReason = "Ignored because --yes quickstart forces trusted local loopback defaults";
     for (const key of [
-      "PAPERCLIP_DEPLOYMENT_MODE",
-      "PAPERCLIP_DEPLOYMENT_EXPOSURE",
-      "PAPERCLIP_BIND",
-      "PAPERCLIP_BIND_HOST",
+      "BULLPEN_DEPLOYMENT_MODE",
+      "BULLPEN_DEPLOYMENT_EXPOSURE",
+      "BULLPEN_BIND",
+      "BULLPEN_BIND_HOST",
       "HOST",
-      "PAPERCLIP_AUTH_BASE_URL_MODE",
-      "PAPERCLIP_AUTH_PUBLIC_BASE_URL",
-      "PAPERCLIP_PUBLIC_URL",
+      "BULLPEN_AUTH_BASE_URL_MODE",
+      "BULLPEN_AUTH_PUBLIC_BASE_URL",
+      "BULLPEN_PUBLIC_URL",
       "BETTER_AUTH_URL",
       "BETTER_AUTH_BASE_URL",
     ] as const) {
@@ -289,21 +289,21 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
       }
     }
   }
-  if (deploymentMode === "local_trusted" && process.env.PAPERCLIP_DEPLOYMENT_EXPOSURE !== undefined) {
+  if (deploymentMode === "local_trusted" && process.env.BULLPEN_DEPLOYMENT_EXPOSURE !== undefined) {
     ignoredEnvKeys.push({
-      key: "PAPERCLIP_DEPLOYMENT_EXPOSURE",
+      key: "BULLPEN_DEPLOYMENT_EXPOSURE",
       reason: "Ignored because deployment mode local_trusted always forces private exposure",
     });
   }
-  if (deploymentMode === "local_trusted" && process.env.PAPERCLIP_BIND !== undefined) {
+  if (deploymentMode === "local_trusted" && process.env.BULLPEN_BIND !== undefined) {
     ignoredEnvKeys.push({
-      key: "PAPERCLIP_BIND",
+      key: "BULLPEN_BIND",
       reason: "Ignored because deployment mode local_trusted always uses loopback reachability",
     });
   }
-  if (deploymentMode === "local_trusted" && process.env.PAPERCLIP_BIND_HOST !== undefined) {
+  if (deploymentMode === "local_trusted" && process.env.BULLPEN_BIND_HOST !== undefined) {
     ignoredEnvKeys.push({
-      key: "PAPERCLIP_BIND_HOST",
+      key: "BULLPEN_BIND_HOST",
       reason: "Ignored because deployment mode local_trusted always uses loopback reachability",
     });
   }
@@ -321,7 +321,7 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
   return { defaults, usedEnvKeys, ignoredEnvKeys };
 }
 
-function canCreateBootstrapInviteImmediately(config: Pick<PaperclipConfig, "database" | "server">): boolean {
+function canCreateBootstrapInviteImmediately(config: Pick<BullpenConfig, "database" | "server">): boolean {
   return config.server.deploymentMode === "authenticated" && config.database.mode !== "embedded-postgres";
 }
 
@@ -336,7 +336,7 @@ function printManagedInstallHint(): void {
   if (manifest && isManagedExecutable(process.argv[1], manifest)) return;
   if (!isEphemeralNpxExecution()) return;
   p.log.info(
-    `This npx run is temporary. Use ${pc.cyan("paperclipai install")} for atomic updates, rollback, and service support.`,
+    `This npx run is temporary. Use ${pc.cyan("bullpen install")} for atomic updates, rollback, and service support.`,
   );
 }
 
@@ -345,17 +345,17 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
     throw new Error(`Unsupported bind preset for onboard: ${opts.bind}. Use loopback, lan, or tailnet.`);
   }
 
-  printPaperclipCliBanner();
-  p.intro(pc.bgCyan(pc.black(" paperclipai onboard ")));
+  printBullpenCliBanner();
+  p.intro(pc.bgCyan(pc.black(" bullpen onboard ")));
   const configPath = resolveConfigPath(opts.config);
-  const instance = describeLocalInstancePaths(resolvePaperclipInstanceId());
+  const instance = describeLocalInstancePaths(resolveBullpenInstanceId());
   p.log.message(
     pc.dim(
       `Local home: ${instance.homeDir} | instance: ${instance.instanceId} | config: ${configPath}`,
     ),
   );
 
-  let existingConfig: PaperclipConfig | null = null;
+  let existingConfig: BullpenConfig | null = null;
   if (configExists(opts.config)) {
     p.log.message(pc.dim(`${configPath} exists`));
 
@@ -372,18 +372,18 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
 
   if (existingConfig) {
     p.log.message(
-      pc.dim("Existing Paperclip install detected; keeping the current configuration unchanged."),
+      pc.dim("Existing Bullpen install detected; keeping the current configuration unchanged."),
     );
-    p.log.message(pc.dim(`Use ${pc.cyan("paperclipai configure")} if you want to change settings.`));
+    p.log.message(pc.dim(`Use ${pc.cyan("bullpen configure")} if you want to change settings.`));
 
     const jwtSecret = ensureAgentJwtSecret(configPath);
     const envFilePath = resolveAgentJwtEnvFile(configPath);
     if (jwtSecret.created) {
-      p.log.success(`Created ${pc.cyan("PAPERCLIP_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
-    } else if (process.env.PAPERCLIP_AGENT_JWT_SECRET?.trim()) {
-      p.log.info(`Using existing ${pc.cyan("PAPERCLIP_AGENT_JWT_SECRET")} from environment`);
+      p.log.success(`Created ${pc.cyan("BULLPEN_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
+    } else if (process.env.BULLPEN_AGENT_JWT_SECRET?.trim()) {
+      p.log.info(`Using existing ${pc.cyan("BULLPEN_AGENT_JWT_SECRET")} from environment`);
     } else {
-      p.log.info(`Using existing ${pc.cyan("PAPERCLIP_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
+      p.log.info(`Using existing ${pc.cyan("BULLPEN_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
     }
 
     const keyResult = ensureLocalSecretsKeyFile(existingConfig, configPath);
@@ -404,16 +404,16 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
         `Auth URL mode: ${existingConfig.auth.baseUrlMode}${existingConfig.auth.publicBaseUrl ? ` (${existingConfig.auth.publicBaseUrl})` : ""}`,
         `Storage: ${existingConfig.storage.provider}`,
         `Secrets: ${existingConfig.secrets.provider} (strict mode ${existingConfig.secrets.strictMode ? "on" : "off"})`,
-        "Agent auth: PAPERCLIP_AGENT_JWT_SECRET configured",
+        "Agent auth: BULLPEN_AGENT_JWT_SECRET configured",
       ].join("\n"),
       "Configuration ready",
     );
 
     p.note(
       [
-        `Run: ${pc.cyan("paperclipai run")}`,
-        `Reconfigure later: ${pc.cyan("paperclipai configure")}`,
-        `Diagnose setup: ${pc.cyan("paperclipai doctor")}`,
+        `Run: ${pc.cyan("bullpen run")}`,
+        `Reconfigure later: ${pc.cyan("bullpen configure")}`,
+        `Diagnose setup: ${pc.cyan("bullpen doctor")}`,
       ].join("\n"),
       "Next commands",
     );
@@ -424,7 +424,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
     let shouldRunNow = !serviceInstalled && (opts.run === true || opts.yes === true);
     if (!shouldRunNow && !opts.invokedByRun && process.stdin.isTTY && process.stdout.isTTY) {
       const answer = await p.confirm({
-        message: "Start Paperclip now?",
+        message: "Start Bullpen now?",
         initialValue: true,
       });
       if (!p.isCancel(answer)) {
@@ -433,13 +433,13 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
     }
 
     if (shouldRunNow && !opts.invokedByRun) {
-      process.env.PAPERCLIP_OPEN_ON_LISTEN = "true";
+      process.env.BULLPEN_OPEN_ON_LISTEN = "true";
       const { runCommand } = await import("./run.js");
       await runCommand({ config: configPath, repair: true, yes: true });
       return;
     }
 
-    p.outro("Existing Paperclip setup is ready.");
+    p.outro("Existing Bullpen setup is ready.");
     return;
   }
 
@@ -479,7 +479,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
   const tc = getTelemetryClient();
   if (tc) trackInstallStarted(tc);
 
-  let llm: PaperclipConfig["llm"] | undefined;
+  let llm: BullpenConfig["llm"] | undefined;
   const { defaults: derivedDefaults, usedEnvKeys, ignoredEnvKeys } = quickstartDefaultsFromEnv({
     preferTrustedLocal: opts.yes === true && !opts.bind,
   });
@@ -513,12 +513,12 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
       const s = p.spinner();
       s.start("Testing database connection...");
       try {
-        const { createDb } = await import("@paperclipai/db");
+        const { createDb } = await import("@bullpen/db");
         const db = createDb(database.connectionString);
         await db.execute("SELECT 1");
         s.stop("Database connection successful");
       } catch {
-        s.stop(pc.yellow("Could not connect to database — you can fix this later with `paperclipai doctor`"));
+        s.stop(pc.yellow("Could not connect to database — you can fix this later with `bullpen doctor`"));
       }
     }
 
@@ -614,14 +614,14 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
   const jwtSecret = ensureAgentJwtSecret(configPath);
   const envFilePath = resolveAgentJwtEnvFile(configPath);
   if (jwtSecret.created) {
-    p.log.success(`Created ${pc.cyan("PAPERCLIP_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
-  } else if (process.env.PAPERCLIP_AGENT_JWT_SECRET?.trim()) {
-    p.log.info(`Using existing ${pc.cyan("PAPERCLIP_AGENT_JWT_SECRET")} from environment`);
+    p.log.success(`Created ${pc.cyan("BULLPEN_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
+  } else if (process.env.BULLPEN_AGENT_JWT_SECRET?.trim()) {
+    p.log.info(`Using existing ${pc.cyan("BULLPEN_AGENT_JWT_SECRET")} from environment`);
   } else {
-    p.log.info(`Using existing ${pc.cyan("PAPERCLIP_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
+    p.log.info(`Using existing ${pc.cyan("BULLPEN_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
   }
 
-  const config: PaperclipConfig = {
+  const config: BullpenConfig = {
     $meta: {
       version: 1,
       updatedAt: new Date().toISOString(),
@@ -662,16 +662,16 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
       `Auth URL mode: ${auth.baseUrlMode}${auth.publicBaseUrl ? ` (${auth.publicBaseUrl})` : ""}`,
       `Storage: ${storage.provider}`,
       `Secrets: ${secrets.provider} (strict mode ${secrets.strictMode ? "on" : "off"})`,
-      "Agent auth: PAPERCLIP_AGENT_JWT_SECRET configured",
+      "Agent auth: BULLPEN_AGENT_JWT_SECRET configured",
     ].join("\n"),
     "Configuration saved",
   );
 
   p.note(
     [
-      `Run: ${pc.cyan("paperclipai run")}`,
-      `Reconfigure later: ${pc.cyan("paperclipai configure")}`,
-      `Diagnose setup: ${pc.cyan("paperclipai doctor")}`,
+      `Run: ${pc.cyan("bullpen run")}`,
+      `Reconfigure later: ${pc.cyan("bullpen configure")}`,
+      `Diagnose setup: ${pc.cyan("bullpen doctor")}`,
     ].join("\n"),
     "Next commands",
   );
@@ -688,7 +688,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
   let shouldRunNow = !serviceInstalled && (opts.run === true || opts.yes === true);
   if (!shouldRunNow && !opts.invokedByRun && process.stdin.isTTY && process.stdout.isTTY) {
     const answer = await p.confirm({
-      message: "Start Paperclip now?",
+      message: "Start Bullpen now?",
       initialValue: true,
     });
     if (!p.isCancel(answer)) {
@@ -697,7 +697,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
   }
 
   if (shouldRunNow && !opts.invokedByRun) {
-    process.env.PAPERCLIP_OPEN_ON_LISTEN = "true";
+    process.env.BULLPEN_OPEN_ON_LISTEN = "true";
     const { runCommand } = await import("./run.js");
     await runCommand({ config: configPath, repair: true, yes: true });
     return;
@@ -707,8 +707,8 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
     p.log.info(
       [
         "Bootstrap CEO invite will be created after the server starts.",
-        `Next: ${pc.cyan("paperclipai run")}`,
-        `Then: ${pc.cyan("paperclipai auth bootstrap-ceo")}`,
+        `Next: ${pc.cyan("bullpen run")}`,
+        `Then: ${pc.cyan("bullpen auth bootstrap-ceo")}`,
       ].join("\n"),
     );
   }

@@ -1,0 +1,5 @@
+schema: bullpen/v1
+agents:
+  cto:
+    permissions:
+      canCreateAgents: true

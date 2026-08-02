@@ -81,7 +81,7 @@ function shellQuote(value: string) {
 }
 
 function mergeRuntimeExcludes(entries: string[] | undefined): string[] {
-  return [...new Set([".paperclip-runtime", ...(entries ?? [])])];
+  return [...new Set([".bullpen-runtime", ...(entries ?? [])])];
 }
 
 // Largest base64 body we hand to the runner as a single stdin string. Normal
@@ -230,7 +230,7 @@ export function createCommandManagedRuntimeClient(input: {
       const total = buffer.byteLength;
       const encodedLength = base64EncodedLength(total);
       const remoteDir = path.posix.dirname(remotePath);
-      const remoteTempPath = buildUniqueStagingPath({ targetPath: remotePath, suffix: ".paperclip-upload" });
+      const remoteTempPath = buildUniqueStagingPath({ targetPath: remotePath, suffix: ".bullpen-upload" });
       const canUseSingleStreamProgressPath = input.runner.supportsSingleStreamStdinProgress === true;
 
       try {
@@ -358,7 +358,7 @@ export function createCommandManagedRuntimeClient(input: {
   // attribute (Open Q1).
   const fallbackSyncIn = async (operations: SandboxSyncOperation[]): Promise<SandboxSyncResult> => {
     const resultOperations: SandboxSyncResult["operations"] = [];
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-syncin-fallback-"));
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-syncin-fallback-"));
     try {
       for (const operation of operations) {
         let filesTransferred = 0;
@@ -377,7 +377,7 @@ export function createCommandManagedRuntimeClient(input: {
               const tarBytes = await fs.readFile(archivePath);
               const remoteTarPath = buildUniqueStagingPath({
                 targetPath: mapping.targetPath,
-                suffix: ".paperclip-syncin.tar",
+                suffix: ".bullpen-syncin.tar",
               });
               cleanupPaths.push(remoteTarPath);
               await client.writeFile(remoteTarPath, bufferToArrayBuffer(tarBytes));
@@ -389,7 +389,7 @@ export function createCommandManagedRuntimeClient(input: {
             } else {
               const fileBytes = await fs.readFile(mapping.sourcePath);
               const targetPathForWrite = mapping.mode != null
-                ? buildUniqueStagingPath({ targetPath: mapping.targetPath, suffix: ".paperclip-syncin" })
+                ? buildUniqueStagingPath({ targetPath: mapping.targetPath, suffix: ".bullpen-syncin" })
                 : mapping.targetPath;
               if (mapping.mode != null) cleanupPaths.push(targetPathForWrite);
               await client.writeFile(targetPathForWrite, bufferToArrayBuffer(fileBytes));
@@ -548,7 +548,7 @@ export async function prepareCommandManagedRuntime(input: {
         text.split(/\r?\n/).filter((line) => line.trim().length > 0).slice(-3).join(" | ").slice(0, 480);
       const reason = result.timedOut ? "timed out" : `exited ${result.exitCode ?? "?"}`;
       console.warn(
-        `[paperclip] managed-runtime install command ${reason}: ${installCommand} :: ${tail(result.stderr || result.stdout)}`,
+        `[bullpen] managed-runtime install command ${reason}: ${installCommand} :: ${tail(result.stderr || result.stdout)}`,
       );
     }
   }

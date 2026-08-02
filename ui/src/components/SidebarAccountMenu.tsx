@@ -8,7 +8,7 @@ import {
   UserRound,
   UserRoundPen,
 } from "lucide-react";
-import type { DeploymentMode, ServerGitInfo } from "@paperclipai/shared";
+import type { DeploymentMode, ServerGitInfo } from "@bullpen/shared";
 import { Link } from "@/lib/router";
 import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/queryKeys";
@@ -16,7 +16,7 @@ import { useSidebar } from "../context/SidebarContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn, SIDEBAR_RAIL_HIDDEN_LABEL } from "../lib/utils";
-import { ThemeToggle } from "./ThemeToggle";
+import { ThemeModeSelect } from "./ThemeModeSelect";
 import { SidebarServerInfo } from "./SidebarServerInfo";
 import { Badge } from "@/components/ui/badge";
 
@@ -207,7 +207,7 @@ export function SidebarAccountMenu({
                       </a>
                     ) : null}
                     <p>
-                      Paperclip{" "}
+                      Bullpen{" "}
                       <a
                         href={`${SOURCE_REPOSITORY_URL}/commit/${sourceFullSha}`}
                         target="_blank"
@@ -219,7 +219,7 @@ export function SidebarAccountMenu({
                     </p>
                   </div>
                 ) : version ? (
-                  <p className="mt-1 text-xs text-muted-foreground">Paperclip v{version}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Bullpen v{version}</p>
                 ) : null}
               </div>
             </div>
@@ -241,7 +241,7 @@ export function SidebarAccountMenu({
               />
               <MenuAction
                 label="Documentation"
-                description="Open Paperclip docs in a new tab."
+                description="Open Bullpen docs in a new tab."
                 icon={BookOpen}
                 href={DOCS_URL}
                 external
@@ -255,7 +255,9 @@ export function SidebarAccountMenu({
                 external
                 onClick={() => setOpen(false)}
               />
-              <ThemeToggle variant="menu-action" onAfterToggle={() => setOpen(false)} />
+              {/* Deliberately does not close the popover: with three options the
+                  user may want to compare modes before settling on one. */}
+              <ThemeModeSelect />
               {deploymentMode === "authenticated" ? (
                 <button
                   type="button"

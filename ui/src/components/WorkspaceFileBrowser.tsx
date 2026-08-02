@@ -22,7 +22,7 @@ import type {
   WorkspaceFileListFileItem,
   WorkspaceFileListMode,
   WorkspaceFileSelector,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 
 type BrowserSource = "current" | "other";
 

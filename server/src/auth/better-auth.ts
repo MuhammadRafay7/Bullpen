@@ -3,15 +3,15 @@ import type { IncomingHttpHeaders } from "node:http";
 import { betterAuth, type Auth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { toNodeHandler } from "better-auth/node";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   authAccounts,
   authSessions,
   authUsers,
   authVerifications,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import type { Config } from "../config.js";
-import { resolvePaperclipInstanceId } from "../home-paths.js";
+import { resolveBullpenInstanceId } from "../home-paths.js";
 
 export type BetterAuthSessionUser = {
   id: string;
@@ -39,12 +39,12 @@ type BetterAuthInstance = BetterAuthHandlerTarget & BetterAuthSessionResolver;
 const AUTH_COOKIE_PREFIX_FALLBACK = "default";
 const AUTH_COOKIE_PREFIX_INVALID_SEGMENTS_RE = /[^a-zA-Z0-9_-]+/g;
 
-export function deriveAuthCookiePrefix(instanceId = resolvePaperclipInstanceId()): string {
+export function deriveAuthCookiePrefix(instanceId = resolveBullpenInstanceId()): string {
   const scopedInstanceId = instanceId
     .trim()
     .replace(AUTH_COOKIE_PREFIX_INVALID_SEGMENTS_RE, "-")
     .replace(/^-+|-+$/g, "") || AUTH_COOKIE_PREFIX_FALLBACK;
-  return `paperclip-${scopedInstanceId}`;
+  return `bullpen-${scopedInstanceId}`;
 }
 
 export function buildBetterAuthAdvancedOptions(input: { disableSecureCookies: boolean }) {
@@ -146,12 +146,12 @@ export function deriveAuthTrustedOrigins(config: Config, opts?: { listenPort?: n
 
 export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins: string[]): BetterAuthInstance {
   const baseUrl = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
-  const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim() || baseUrl;
-  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.PAPERCLIP_AGENT_JWT_SECRET;
+  const publicUrl = process.env.BULLPEN_PUBLIC_URL?.trim() || baseUrl;
+  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.BULLPEN_AGENT_JWT_SECRET;
   if (!secret) {
     throw new Error(
-      "BETTER_AUTH_SECRET (or PAPERCLIP_AGENT_JWT_SECRET) must be set. " +
-      "For local development, set BETTER_AUTH_SECRET=paperclip-dev-secret in your .env file.",
+      "BETTER_AUTH_SECRET (or BULLPEN_AGENT_JWT_SECRET) must be set. " +
+      "For local development, set BETTER_AUTH_SECRET=bullpen-dev-secret in your .env file.",
     );
   }
   const disableSecureCookies = shouldDisableSecureAuthCookies({
@@ -183,7 +183,7 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
     rateLimit: buildBetterAuthRateLimitOptions({
       deploymentMode: config.deploymentMode,
       deploymentExposure: config.deploymentExposure,
-      override: process.env.PAPERCLIP_AUTH_RATE_LIMIT_ENABLED,
+      override: process.env.BULLPEN_AUTH_RATE_LIMIT_ENABLED,
     }),
     advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies }),
   };

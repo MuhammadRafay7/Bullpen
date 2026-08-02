@@ -1,30 +1,30 @@
-# Paperclip MCP Server
+# Bullpen MCP Server
 
-Model Context Protocol server for Paperclip.
+Model Context Protocol server for Bullpen.
 
-This package is a thin MCP wrapper over the existing Paperclip REST API. It does
+This package is a thin MCP wrapper over the existing Bullpen REST API. It does
 not talk to the database directly and it does not reimplement business logic.
 
 ## Authentication
 
 The server reads its configuration from environment variables:
 
-- `PAPERCLIP_API_URL` - Paperclip base URL, for example `http://localhost:3100`
-- `PAPERCLIP_API_KEY` - bearer token used for `/api` requests
-- `PAPERCLIP_COMPANY_ID` - optional default company for company-scoped tools
-- `PAPERCLIP_AGENT_ID` - optional default agent for checkout helpers
-- `PAPERCLIP_RUN_ID` - optional run id forwarded on mutating requests
+- `BULLPEN_API_URL` - Bullpen base URL, for example `http://localhost:3100`
+- `BULLPEN_API_KEY` - bearer token used for `/api` requests
+- `BULLPEN_COMPANY_ID` - optional default company for company-scoped tools
+- `BULLPEN_AGENT_ID` - optional default agent for checkout helpers
+- `BULLPEN_RUN_ID` - optional run id forwarded on mutating requests
 
 ## Usage
 
 ```sh
-npx -y @paperclipai/mcp-server
+npx -y @bullpen/mcp-server
 ```
 
 Or locally in this repo:
 
 ```sh
-pnpm --filter @paperclipai/mcp-server build
+pnpm --filter @bullpen/mcp-server build
 node packages/mcp-server/dist/stdio.js
 ```
 
@@ -32,52 +32,52 @@ node packages/mcp-server/dist/stdio.js
 
 Read tools:
 
-- `paperclipMe`
-- `paperclipInboxLite`
-- `paperclipListAgents`
-- `paperclipGetAgent`
-- `paperclipListIssues`
-- `paperclipGetIssue`
-- `paperclipGetHeartbeatContext`
-- `paperclipListComments`
-- `paperclipGetComment`
-- `paperclipListIssueApprovals`
-- `paperclipListDocuments`
-- `paperclipGetDocument`
-- `paperclipListDocumentRevisions`
-- `paperclipListProjects`
-- `paperclipGetProject`
-- `paperclipGetIssueWorkspaceRuntime`
-- `paperclipWaitForIssueWorkspaceService`
-- `paperclipListGoals`
-- `paperclipGetGoal`
-- `paperclipListApprovals`
-- `paperclipGetApproval`
-- `paperclipGetApprovalIssues`
-- `paperclipListApprovalComments`
+- `bullpenMe`
+- `bullpenInboxLite`
+- `bullpenListAgents`
+- `bullpenGetAgent`
+- `bullpenListIssues`
+- `bullpenGetIssue`
+- `bullpenGetHeartbeatContext`
+- `bullpenListComments`
+- `bullpenGetComment`
+- `bullpenListIssueApprovals`
+- `bullpenListDocuments`
+- `bullpenGetDocument`
+- `bullpenListDocumentRevisions`
+- `bullpenListProjects`
+- `bullpenGetProject`
+- `bullpenGetIssueWorkspaceRuntime`
+- `bullpenWaitForIssueWorkspaceService`
+- `bullpenListGoals`
+- `bullpenGetGoal`
+- `bullpenListApprovals`
+- `bullpenGetApproval`
+- `bullpenGetApprovalIssues`
+- `bullpenListApprovalComments`
 
 Write tools:
 
-- `paperclipCreateIssue`
-- `paperclipUpdateIssue`
-- `paperclipCheckoutIssue`
-- `paperclipReleaseIssue`
-- `paperclipAddComment`
-- `paperclipSuggestTasks`
-- `paperclipAskUserQuestions`
-- `paperclipRequestConfirmation`
-- `paperclipUpsertIssueDocument`
-- `paperclipRestoreIssueDocumentRevision`
-- `paperclipControlIssueWorkspaceServices`
-- `paperclipCreateApproval`
-- `paperclipLinkIssueApproval`
-- `paperclipUnlinkIssueApproval`
-- `paperclipApprovalDecision`
-- `paperclipAddApprovalComment`
+- `bullpenCreateIssue`
+- `bullpenUpdateIssue`
+- `bullpenCheckoutIssue`
+- `bullpenReleaseIssue`
+- `bullpenAddComment`
+- `bullpenSuggestTasks`
+- `bullpenAskUserQuestions`
+- `bullpenRequestConfirmation`
+- `bullpenUpsertIssueDocument`
+- `bullpenRestoreIssueDocumentRevision`
+- `bullpenControlIssueWorkspaceServices`
+- `bullpenCreateApproval`
+- `bullpenLinkIssueApproval`
+- `bullpenUnlinkIssueApproval`
+- `bullpenApprovalDecision`
+- `bullpenAddApprovalComment`
 
 Escape hatch:
 
-- `paperclipApiRequest`
+- `bullpenApiRequest`
 
-`paperclipApiRequest` is limited to paths under `/api` and JSON bodies. It is
+`bullpenApiRequest` is limited to paths under `/api` and JSON bodies. It is
 meant for endpoints that do not yet have a dedicated MCP tool.

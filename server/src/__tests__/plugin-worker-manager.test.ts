@@ -1,14 +1,14 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+import type { BullpenPluginManifestV1 } from "@bullpen/shared";
 import {
   createHostClientHandlers,
   JsonRpcCallError,
   PLUGIN_RPC_ERROR_CODES,
   type HostServices,
   type HostToWorkerMethods,
-} from "@paperclipai/plugin-sdk";
+} from "@bullpen/plugin-sdk";
 import {
   appendStderrExcerpt,
   createPluginWorkerHandle,
@@ -24,13 +24,13 @@ const INVOCATION_SCOPE_WORKER_ENTRYPOINT = path.join(
 );
 const TERMINATED_WORKER_ENTRYPOINT = path.join(FIXTURES_DIR, "plugin-worker-terminated.cjs");
 
-const TEST_MANIFEST: PaperclipPluginManifestV1 = {
+const TEST_MANIFEST: BullpenPluginManifestV1 = {
   id: "test.plugin",
   apiVersion: 1,
   version: "1.0.0",
   displayName: "Test plugin",
   description: "Test plugin",
-  author: "Paperclip",
+  author: "Bullpen",
   categories: ["automation"],
   capabilities: [],
   entrypoints: { worker: "dist/worker.js" },
@@ -574,7 +574,7 @@ describe("plugin host company context guards", () => {
 describe("plugin proactive company scope (LOOA-629)", () => {
   // A proactive plugin (e.g. the chat gateway) makes company-scoped worker→host
   // calls from its own timers/loops — outside any host-issued invocation, so
-  // those calls carry no paperclipInvocationId (the fixture's "omit" mode). The
+  // those calls carry no bullpenInvocationId (the fixture's "omit" mode). The
   // host authorizes a bounded set of companies for such proactive work; calls
   // referencing an authorized company resolve to that scope, all others stay
   // denied. Each case drives a real worker so the nested call flows through the

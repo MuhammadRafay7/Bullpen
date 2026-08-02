@@ -14,8 +14,8 @@ const DEFAULT_BRIDGE_STOP_TIMEOUT_MS = 2_000;
 const DEFAULT_BRIDGE_MAX_QUEUE_DEPTH = 64;
 const DEFAULT_BRIDGE_MAX_BODY_BYTES = 256 * 1024;
 const REMOTE_WRITE_BASE64_CHUNK_SIZE = 32 * 1024;
-const SANDBOX_CALLBACK_BRIDGE_ENTRYPOINT = "paperclip-bridge-server.mjs";
-const SANDBOX_EXEC_CHANNEL_ENV = "PAPERCLIP_SANDBOX_EXEC_CHANNEL";
+const SANDBOX_CALLBACK_BRIDGE_ENTRYPOINT = "bullpen-bridge-server.mjs";
+const SANDBOX_EXEC_CHANNEL_ENV = "BULLPEN_SANDBOX_EXEC_CHANNEL";
 const SANDBOX_EXEC_CHANNEL_BRIDGE = "bridge";
 
 export const DEFAULT_SANDBOX_CALLBACK_BRIDGE_MAX_BODY_BYTES = DEFAULT_BRIDGE_MAX_BODY_BYTES;
@@ -28,8 +28,8 @@ export interface SandboxCallbackBridgeRouteRule {
 // Routes the in-sandbox heartbeat skill is documented to call. The server
 // still enforces actor-level permissions on top of this allowlist; the list
 // exists to bound the surface area a compromised CLI could reach via the
-// reverse bridge. Keep this in sync with the Paperclip skill in
-// `skills/paperclip/SKILL.md` and `references/api-reference.md`.
+// reverse bridge. Keep this in sync with the Bullpen skill in
+// `skills/bullpen/SKILL.md` and `references/api-reference.md`.
 export const DEFAULT_SANDBOX_CALLBACK_BRIDGE_ROUTE_ALLOWLIST: readonly SandboxCallbackBridgeRouteRule[] = [
   // Identity, inbox, agent self-management
   { method: "GET", path: /^\/api\/agents\/me$/ },
@@ -326,28 +326,28 @@ export function buildSandboxCallbackBridgeEnv(input: {
   maxBodyBytes?: number | null;
 }): Record<string, string> {
   return {
-    PAPERCLIP_API_BRIDGE_MODE: "queue_v1",
-    PAPERCLIP_BRIDGE_QUEUE_DIR: input.queueDir,
-    PAPERCLIP_BRIDGE_TOKEN: input.bridgeToken,
-    PAPERCLIP_BRIDGE_HOST: input.host?.trim() || "127.0.0.1",
-    PAPERCLIP_BRIDGE_PORT: String(input.port && input.port > 0 ? Math.trunc(input.port) : 0),
-    PAPERCLIP_BRIDGE_POLL_INTERVAL_MS: String(
+    BULLPEN_API_BRIDGE_MODE: "queue_v1",
+    BULLPEN_BRIDGE_QUEUE_DIR: input.queueDir,
+    BULLPEN_BRIDGE_TOKEN: input.bridgeToken,
+    BULLPEN_BRIDGE_HOST: input.host?.trim() || "127.0.0.1",
+    BULLPEN_BRIDGE_PORT: String(input.port && input.port > 0 ? Math.trunc(input.port) : 0),
+    BULLPEN_BRIDGE_POLL_INTERVAL_MS: String(
       normalizeTimeoutMs(input.pollIntervalMs, DEFAULT_BRIDGE_POLL_INTERVAL_MS),
     ),
-    PAPERCLIP_BRIDGE_RESPONSE_TIMEOUT_MS: String(
+    BULLPEN_BRIDGE_RESPONSE_TIMEOUT_MS: String(
       normalizeTimeoutMs(input.responseTimeoutMs, DEFAULT_BRIDGE_RESPONSE_TIMEOUT_MS),
     ),
-    PAPERCLIP_BRIDGE_MAX_QUEUE_DEPTH: String(
+    BULLPEN_BRIDGE_MAX_QUEUE_DEPTH: String(
       normalizeTimeoutMs(input.maxQueueDepth, DEFAULT_BRIDGE_MAX_QUEUE_DEPTH),
     ),
-    PAPERCLIP_BRIDGE_MAX_BODY_BYTES: String(
+    BULLPEN_BRIDGE_MAX_BODY_BYTES: String(
       normalizeTimeoutMs(input.maxBodyBytes, DEFAULT_BRIDGE_MAX_BODY_BYTES),
     ),
   };
 }
 
 export async function createSandboxCallbackBridgeAsset(): Promise<SandboxCallbackBridgeAsset> {
-  const localDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-asset-"));
+  const localDir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-asset-"));
   const entrypoint = path.join(localDir, SANDBOX_CALLBACK_BRIDGE_ENTRYPOINT);
   await fs.writeFile(entrypoint, getSandboxCallbackBridgeServerSource(), "utf8");
   return {
@@ -384,7 +384,7 @@ export function createFileSystemSandboxCallbackBridgeQueueClient(): SandboxCallb
     writeResponseFile: async (responsePath, body, options = {}) => {
       const responseDir = path.posix.dirname(responsePath);
       const tempPath = `${responsePath}.tmp`;
-      const lockDir = `${responsePath}.paperclip-write.lock`;
+      const lockDir = `${responsePath}.bullpen-write.lock`;
       const lockPidFile = `${lockDir}/pid`;
       if (options.requestPath) {
         const requestExists = await pathExists(options.requestPath);
@@ -515,7 +515,7 @@ export function createCommandManagedSandboxCallbackBridgeQueueClient(input: {
     },
     writeTextFile: async (remotePath, body) => {
       const remoteDir = path.posix.dirname(remotePath);
-      const tempPath = `${remotePath}.paperclip-upload.b64`;
+      const tempPath = `${remotePath}.bullpen-upload.b64`;
       await runChecked(
         `prepare upload ${remotePath}`,
         `mkdir -p ${shellQuote(remoteDir)} && rm -f ${shellQuote(tempPath)} && : > ${shellQuote(tempPath)}`,
@@ -535,7 +535,7 @@ export function createCommandManagedSandboxCallbackBridgeQueueClient(input: {
     writeResponseFile: async (responsePath, body, options = {}) => {
       const responseDir = path.posix.dirname(responsePath);
       const tempPath = `${responsePath}.tmp`;
-      const lockDir = `${responsePath}.paperclip-write.lock`;
+      const lockDir = `${responsePath}.bullpen-write.lock`;
       const requestPath = options.requestPath?.trim() || "";
       const result = await runShell(
         input.runner,
@@ -700,7 +700,7 @@ export async function startSandboxCallbackBridgeWorker(input: {
       });
     } catch (error) {
       console.warn(
-        `[paperclip] sandbox callback bridge handler failed for ${request.id}: ${error instanceof Error ? error.message : String(error)}`,
+        `[bullpen] sandbox callback bridge handler failed for ${request.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
       await writeBridgeResponse(input.client, requestPath, responsePath, {
         id: request.id,
@@ -737,7 +737,7 @@ export async function startSandboxCallbackBridgeWorker(input: {
         });
       } catch (error) {
         console.warn(
-          `[paperclip] sandbox callback bridge failed to abort pending request ${requestId}: ${error instanceof Error ? error.message : String(error)}`,
+          `[bullpen] sandbox callback bridge failed to abort pending request ${requestId}: ${error instanceof Error ? error.message : String(error)}`,
         );
       } finally {
         await input.client.remove(requestPath).catch(() => undefined);
@@ -771,12 +771,12 @@ export async function startSandboxCallbackBridgeWorker(input: {
       }
     } catch (error) {
       const message = buildWorkerFailureMessage(error);
-      console.warn(`[paperclip] ${message}`);
+      console.warn(`[bullpen] ${message}`);
       try {
         await failPendingRequests(message);
       } catch (failPendingError) {
         console.warn(
-          `[paperclip] sandbox callback bridge failed to abort queued requests after worker failure: ${failPendingError instanceof Error ? failPendingError.message : String(failPendingError)}`,
+          `[bullpen] sandbox callback bridge failed to abort queued requests after worker failure: ${failPendingError instanceof Error ? failPendingError.message : String(failPendingError)}`,
         );
       }
     } finally {
@@ -806,7 +806,7 @@ export async function startSandboxCallbackBridgeWorker(input: {
 }
 
 /**
- * Content-hash-skip write of a Paperclip-authored text file into the sandbox, in
+ * Content-hash-skip write of a Bullpen-authored text file into the sandbox, in
  * a SINGLE remote exec. The body's sha256 is computed on the host; the one shell
  * round-trip skips the write entirely when the remote file already hashes to the
  * same value (warm start — 0 write execs), otherwise it uploads (base64 over
@@ -839,7 +839,7 @@ export async function syncRemoteTextFileWithHashSkip(input: {
   const timeoutMs = normalizeTimeoutMs(input.timeoutMs, DEFAULT_BRIDGE_RESPONSE_TIMEOUT_MS);
   const shellCommand = preferredShellForSandbox(input.shellCommand);
   const remotePartial = `${input.remotePath}.partial`;
-  const remoteUploadPath = `${input.remotePath}.paperclip-upload.b64`;
+  const remoteUploadPath = `${input.remotePath}.bullpen-upload.b64`;
   const base64Body = toBuffer(Buffer.from(input.body, "utf8")).toString("base64");
   const sha256 = createHash("sha256").update(input.body, "utf8").digest("hex");
 
@@ -932,7 +932,7 @@ export async function syncSandboxCallbackBridgeEntrypoint(input: {
     body: entrypointSource,
     label: "Sandbox callback bridge entrypoint",
     action: "sync sandbox callback bridge entrypoint",
-    lockDir: path.posix.join(input.assetRemoteDir, ".paperclip-bridge-upload.lock"),
+    lockDir: path.posix.join(input.assetRemoteDir, ".bullpen-bridge-upload.lock"),
     timeoutMs: input.timeoutMs,
     shellCommand: input.shellCommand,
   });
@@ -1098,18 +1098,18 @@ import { createServer } from "node:http";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-const queueDir = process.env.PAPERCLIP_BRIDGE_QUEUE_DIR;
-const bridgeToken = process.env.PAPERCLIP_BRIDGE_TOKEN;
-const host = process.env.PAPERCLIP_BRIDGE_HOST || "127.0.0.1";
-const port = Number(process.env.PAPERCLIP_BRIDGE_PORT || "0");
-const pollIntervalMs = Number(process.env.PAPERCLIP_BRIDGE_POLL_INTERVAL_MS || "100");
-const responseTimeoutMs = Number(process.env.PAPERCLIP_BRIDGE_RESPONSE_TIMEOUT_MS || "30000");
-const maxQueueDepth = Number(process.env.PAPERCLIP_BRIDGE_MAX_QUEUE_DEPTH || "${DEFAULT_BRIDGE_MAX_QUEUE_DEPTH}");
-const maxBodyBytes = Number(process.env.PAPERCLIP_BRIDGE_MAX_BODY_BYTES || "${DEFAULT_BRIDGE_MAX_BODY_BYTES}");
+const queueDir = process.env.BULLPEN_BRIDGE_QUEUE_DIR;
+const bridgeToken = process.env.BULLPEN_BRIDGE_TOKEN;
+const host = process.env.BULLPEN_BRIDGE_HOST || "127.0.0.1";
+const port = Number(process.env.BULLPEN_BRIDGE_PORT || "0");
+const pollIntervalMs = Number(process.env.BULLPEN_BRIDGE_POLL_INTERVAL_MS || "100");
+const responseTimeoutMs = Number(process.env.BULLPEN_BRIDGE_RESPONSE_TIMEOUT_MS || "30000");
+const maxQueueDepth = Number(process.env.BULLPEN_BRIDGE_MAX_QUEUE_DEPTH || "${DEFAULT_BRIDGE_MAX_QUEUE_DEPTH}");
+const maxBodyBytes = Number(process.env.BULLPEN_BRIDGE_MAX_BODY_BYTES || "${DEFAULT_BRIDGE_MAX_BODY_BYTES}");
 const allowedHeaders = new Set(${JSON.stringify([...DEFAULT_SANDBOX_CALLBACK_BRIDGE_HEADER_ALLOWLIST])});
 
 if (!queueDir || !bridgeToken) {
-  throw new Error("PAPERCLIP_BRIDGE_QUEUE_DIR and PAPERCLIP_BRIDGE_TOKEN are required.");
+  throw new Error("BULLPEN_BRIDGE_QUEUE_DIR and BULLPEN_BRIDGE_TOKEN are required.");
 }
 
 const requestsDir = path.posix.join(queueDir, "requests");

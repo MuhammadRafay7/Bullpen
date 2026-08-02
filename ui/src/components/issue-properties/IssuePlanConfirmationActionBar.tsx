@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import type { Issue, IssueThreadInteraction, RequestConfirmationInteraction } from "@paperclipai/shared";
+import type { Issue, IssueThreadInteraction, RequestConfirmationInteraction } from "@bullpen/shared";
 import { issuesApi } from "@/api/issues";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";

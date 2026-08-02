@@ -130,7 +130,7 @@ export interface SandboxManagedRuntimeAsset {
  * subdirectory (`project-<projectId>` under the runtime root) the tree lands in.
  *
  * Additional sources are plain trees only. They never carry the anchor
- * workspace's git-history, overlay, or `.paperclip-runtime` preservation
+ * workspace's git-history, overlay, or `.bullpen-runtime` preservation
  * semantics — those stay anchor-only.
  */
 export interface SandboxAdditionalSource {
@@ -190,7 +190,7 @@ export interface SandboxSyncFileMapping {
  * order, fail-fast (first non-zero exit or timeout aborts the operation).
  *
  * SECURITY — command origin (Stage-1 design review, condition C1). `command` is
- * a **Paperclip/adapter-authored control operation**: it may be supplied ONLY by
+ * a **Bullpen/adapter-authored control operation**: it may be supplied ONLY by
  * core/adapter code. No server route, issue/comment content, project/workspace
  * file content, provider-plugin callback, or arbitrary adapter config may supply
  * a raw `command` string; any path embedded in it MUST be built by adapter/core
@@ -536,7 +536,7 @@ async function copyWorkspaceEntry(sourceRoot: string, targetRoot: string, relati
     return;
   }
 
-  const stagedTargetPath = buildUniqueStagingPath({ targetPath, suffix: ".paperclip-copy" });
+  const stagedTargetPath = buildUniqueStagingPath({ targetPath, suffix: ".bullpen-copy" });
   await fs.rm(stagedTargetPath, { recursive: true, force: true }).catch(() => undefined);
   try {
     await fs.copyFile(sourcePath, stagedTargetPath, fsConstants.COPYFILE_FICLONE).catch(async () => {
@@ -662,7 +662,7 @@ function makeTransferProgress(
         await emitRuntimeStatus(
           runtimeStatus.sink,
           runtimeStatus.phase,
-          line.replace(/^\[paperclip\]\s*/, "").trim(),
+          line.replace(/^\[bullpen\]\s*/, "").trim(),
         );
       }
     },
@@ -705,7 +705,7 @@ export async function prepareSandboxManagedRuntime(input: {
   onRuntimeProgress?: RuntimeStatusSink;
 }): Promise<PreparedSandboxManagedRuntime> {
   const workspaceRemoteDir = input.workspaceRemoteDir ?? input.spec.remoteCwd;
-  const runtimeRootDir = path.posix.join(workspaceRemoteDir, ".paperclip-runtime", input.adapterKey);
+  const runtimeRootDir = path.posix.join(workspaceRemoteDir, ".bullpen-runtime", input.adapterKey);
   const syncWorkspace = input.syncWorkspace !== false;
   const gitSnapshot = syncWorkspace ? await readGitWorkspaceSnapshot(input.workspaceLocalDir) : null;
   const gitIgnoredExcludes = gitSnapshot?.ignoredPaths;
@@ -718,7 +718,7 @@ export async function prepareSandboxManagedRuntime(input: {
   const restoreExclude = mergeExcludes(
     SANDBOX_WORKSPACE_HEAVY_DIR_EXCLUDES,
     [...GIT_ARCHIVE_EXCLUDES],
-    [".paperclip-runtime"],
+    [".bullpen-runtime"],
     input.preserveAbsentOnRestore,
     input.workspaceExclude,
     gitIgnoredExcludes,
@@ -776,9 +776,9 @@ export async function prepareSandboxManagedRuntime(input: {
       timeoutMs: command.timeoutMs ?? input.spec.timeoutMs,
     }));
 
-  await withTempDir("paperclip-sandbox-sync-", async (tempDir) => {
+  await withTempDir("bullpen-sandbox-sync-", async (tempDir) => {
     const preservedNames = new Set([
-      ".paperclip-runtime",
+      ".bullpen-runtime",
       ...(gitSnapshot ? [".git"] : []),
       ...(input.preserveAbsentOnRestore ?? []),
     ]);
@@ -836,9 +836,9 @@ export async function prepareSandboxManagedRuntime(input: {
       let workspaceUploadBytes = 0;
 
       // 1. git-history tar (git-backed workspace only). Both tar targets live under
-      //    `runtimeRootDir` (`.paperclip-runtime/<adapterKey>`). The git extract
-      //    wipes the target tree EXCEPT `.paperclip-runtime`, so the overlay tar,
-      //    which sits under `.paperclip-runtime`, survives to run its own extract.
+      //    `runtimeRootDir` (`.bullpen-runtime/<adapterKey>`). The git extract
+      //    wipes the target tree EXCEPT `.bullpen-runtime`, so the overlay tar,
+      //    which sits under `.bullpen-runtime`, survives to run its own extract.
       if (gitSnapshot) {
         await emitRuntimeStatus(input.onRuntimeProgress, "git_sync", "Syncing git history to sandbox");
         const gitTarPath = path.join(tempDir, "git-workspace.tar");
@@ -850,7 +850,7 @@ export async function prepareSandboxManagedRuntime(input: {
           await createTarballFromDirectory({
             localDir: cloneDir,
             archivePath: gitTarPath,
-            exclude: [".paperclip-runtime"],
+            exclude: [".bullpen-runtime"],
           });
         });
         workspaceFiles.push({ sourcePath: gitTarPath, targetPath: remoteGitTar, kind: "file", access: "rw", writablePath: workspaceRemoteDir });
@@ -858,7 +858,7 @@ export async function prepareSandboxManagedRuntime(input: {
           command: buildWorkspaceTarExtractCommand({
             workspaceRemoteDir,
             remoteTar: remoteGitTar,
-            wipeExceptNames: [".paperclip-runtime"],
+            wipeExceptNames: [".bullpen-runtime"],
           }),
         });
         workspaceUploadBytes += (await fs.stat(gitTarPath)).size;
@@ -980,7 +980,7 @@ export async function prepareSandboxManagedRuntime(input: {
     // its OWN isolated remote directory (`project-<projectId>`). An additional
     // project rides one confined `syncIn` directory mapping — a native directory
     // transfer, or the base64-tar fallback — with source and target confined to
-    // their own roots. No workspace, git-history, or `.paperclip-runtime`
+    // their own roots. No workspace, git-history, or `.bullpen-runtime`
     // semantics apply; those stay anchor-only. Per-project failure isolation: one
     // project's confinement or sync failure logs a warning and is skipped, and
     // the run plus the other projects continue. Only a project that stages
@@ -1020,7 +1020,7 @@ export async function prepareSandboxManagedRuntime(input: {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.warn(
-          `[paperclip] Failed to stage referenced project ${projectId}; skipping it. ${message}`,
+          `[bullpen] Failed to stage referenced project ${projectId}; skipping it. ${message}`,
         );
         // Record the failure as a first-class per-project outcome so the run can count it in the
         // requested-vs-synced accounting instead of losing it to a warning line.
@@ -1053,7 +1053,7 @@ export async function prepareSandboxManagedRuntime(input: {
         }
         return;
       }
-      await withTempDir("paperclip-sandbox-restore-", async (tempDir) => {
+      await withTempDir("bullpen-sandbox-restore-", async (tempDir) => {
         let importedRef: string | null = null;
         let importedHead: string | null = null;
         let remoteWorkspaceStatus = "dirty";

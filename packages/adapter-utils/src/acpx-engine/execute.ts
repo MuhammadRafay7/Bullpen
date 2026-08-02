@@ -11,7 +11,7 @@ import type {
   AdapterExecutionContext,
   AdapterExecutionResult,
   UsageSummary,
-} from "@paperclipai/adapter-utils";
+} from "@bullpen/adapter-utils";
 import {
   adapterExecutionTargetSessionIdentity,
   describeAdapterExecutionTarget,
@@ -20,45 +20,45 @@ import {
   prepareAdapterExecutionTargetRuntime,
   readAdapterExecutionTarget,
   resolveAdapterExecutionTargetTimeout,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetBullpenBridge,
   startAdapterExecutionTargetProcessSessionBridge,
   type AdapterExecutionTarget,
-  type AdapterExecutionTargetPaperclipBridgeHandle,
+  type AdapterExecutionTargetBullpenBridgeHandle,
   type AdapterExecutionTargetProcessSessionBridgeHandle,
   type AdapterExecutionTargetTimeoutResolution,
   type AdapterManagedRuntimeAsset,
   type PreparedAdapterExecutionTargetRuntime,
   type SandboxAdditionalSource,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@bullpen/adapter-utils/execution-target";
 import {
-  DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-  applyPaperclipWorkspaceEnv,
+  DEFAULT_BULLPEN_AGENT_PROMPT_TEMPLATE,
+  applyBullpenWorkspaceEnv,
   asNumber,
   asString,
   buildInvocationEnvForLogs,
-  buildPaperclipEnv,
+  buildBullpenEnv,
   ensureAbsoluteDirectory,
   ensurePathInEnv,
-  ensurePaperclipSkillSymlink,
+  ensureBullpenSkillSymlink,
   isForbiddenConfigEnvKey,
-  isPaperclipRuntimeEnvKey,
+  isBullpenRuntimeEnvKey,
   joinPromptSections,
-  materializePaperclipSkillCopy,
+  materializeBullpenSkillCopy,
   parseObject,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  renderPaperclipWakePrompt,
+  readBullpenRuntimeSkillEntries,
+  readBullpenIssueWorkModeFromContext,
+  renderBullpenWakePrompt,
   renderTemplate,
-  resolvePaperclipInstanceRootForAdapter,
-  selectPaperclipTaskMarkdown,
-  resolvePaperclipDesiredSkillNames,
+  resolveBullpenInstanceRootForAdapter,
+  selectBullpenTaskMarkdown,
+  resolveBullpenDesiredSkillNames,
   removeMaintainerOnlySkillSymlinks,
   rewriteWorkspaceCwdEnvVarsForExecution,
-  shapePaperclipWorkspaceEnvForExecution,
-  stringifyPaperclipWakePayload,
-  type PaperclipSkillEntry,
-} from "@paperclipai/adapter-utils/server-utils";
-import { shellQuote } from "@paperclipai/adapter-utils/ssh";
+  shapeBullpenWorkspaceEnvForExecution,
+  stringifyBullpenWakePayload,
+  type BullpenSkillEntry,
+} from "@bullpen/adapter-utils/server-utils";
+import { shellQuote } from "@bullpen/adapter-utils/ssh";
 import {
   createAcpRuntime,
   createAgentRegistry,
@@ -95,7 +95,7 @@ import {
 import type { CommandManagedRuntimeRunner } from "../command-managed-runtime.js";
 
 const defaultModuleDir = path.dirname(fileURLToPath(import.meta.url));
-const PAPERCLIP_MANAGED_CODEX_SKILLS_MANIFEST = ".paperclip-managed-skills.json";
+const BULLPEN_MANAGED_CODEX_SKILLS_MANIFEST = ".bullpen-managed-skills.json";
 const BENIGN_NES_CLOSE_STDERR = /method: ['"]nes\/close['"].*-32601/;
 
 interface ChildStderrState {
@@ -132,7 +132,7 @@ function flushChildStderr(state: ChildStderrState) {
 
 type AcpxAgentProcessIdentity = { pid: number; startedAt: string };
 
-type PaperclipAcpRuntimeOptions = AcpRuntimeOptions & {
+type BullpenAcpRuntimeOptions = AcpRuntimeOptions & {
   onAgentSpawn?: (meta: AcpxAgentProcessIdentity) => Promise<void>;
 };
 
@@ -141,7 +141,7 @@ type AcpxProcessIdentitySink = {
   latest: AcpxAgentProcessIdentity | null;
 };
 
-type AcpxRuntimeFactory = (options: PaperclipAcpRuntimeOptions) => AcpRuntime;
+type AcpxRuntimeFactory = (options: BullpenAcpRuntimeOptions) => AcpRuntime;
 
 export interface RuntimeCacheEntry {
   runtime: AcpRuntime;
@@ -157,7 +157,7 @@ export interface RuntimeCacheEntry {
  * A remote runner-backed session's staged runtime, kept warm across runs so a
  * compatible resume reuses it instead of re-shipping the workspace / re-seeding
  * the managed home (PR 3: "stage once per session"). Keyed by the session's
- * `sessionKey` (`paperclip:companyId:agentId:taskKey:fingerprint`) — the SAME
+ * `sessionKey` (`bullpen:companyId:agentId:taskKey:fingerprint`) — the SAME
  * fingerprint scoping the warm handle uses — so one session can never read
  * another session's staged credentials: a different agent/task/config hashes to
  * a different key, misses this cache, and stages its own home.
@@ -217,7 +217,7 @@ export interface AcpxEngineBillingIdentity {
  * credential/home helpers (`copyBackCodexAuth`, `stageCodexHomeForSync`,
  * `prepareClaudeConfigSeed`, the Gemini skills stager, …) live in the adapter
  * packages, and the shared engine — which lives *inside*
- * `@paperclipai/adapter-utils`, a dependency of those packages — cannot import
+ * `@bullpen/adapter-utils`, a dependency of those packages — cannot import
  * them without a circular dependency. So the engine exposes this seam and each
  * adapter supplies it, reusing the exact same vetted helpers (no duplication of
  * the security-critical copy-back path).
@@ -367,7 +367,7 @@ interface AcpxPreparedRuntime {
   agentCommand: string | null;
   agentRegistry: AcpAgentRegistry;
   processSessionBridge: AdapterExecutionTargetProcessSessionBridgeHandle | null;
-  paperclipBridge: AdapterExecutionTargetPaperclipBridgeHandle | null;
+  bullpenBridge: AdapterExecutionTargetBullpenBridgeHandle | null;
   // The workspace/runtime staged into a runner-backed remote sandbox (null for
   // local runs and the runner-less ACP→CLI fallback). PR 1 stages the workspace
   // + cwd only; the `assetDirs`/`runtimeRootDir`/`restoreWorkspace` it carries
@@ -400,7 +400,7 @@ interface AcpxPreparedRuntime {
   skillPromptInstructions: string;
   skillsIdentity: Record<string, unknown>;
   childStderrLogPath: string | null;
-  paperclipClaudeSettings: PaperclipClaudeSettingsResult | null;
+  bullpenClaudeSettings: BullpenClaudeSettingsResult | null;
   mcpServers: NonNullable<AcpRuntimeOptions["mcpServers"]>;
   mcpIdentity: Array<{ name: string; url: string; connectionId: string }>;
   // Per-step round-trip / provider-duration readers sourced from the sandbox
@@ -516,21 +516,21 @@ async function referencedSourceContentSignature(localPath: string): Promise<stri
   return hash.digest("hex").slice(0, 16);
 }
 
-function defaultPaperclipInstanceDir(): string {
-  const home = process.env.PAPERCLIP_HOME?.trim() || path.join(os.homedir(), ".paperclip");
-  const instanceId = process.env.PAPERCLIP_INSTANCE_ID?.trim() || "default";
-  return resolvePaperclipInstanceRootForAdapter({
+function defaultBullpenInstanceDir(): string {
+  const home = process.env.BULLPEN_HOME?.trim() || path.join(os.homedir(), ".bullpen");
+  const instanceId = process.env.BULLPEN_INSTANCE_ID?.trim() || "default";
+  return resolveBullpenInstanceRootForAdapter({
     homeDir: home,
     instanceId,
   });
 }
 
 function defaultStateDir(companyId: string, agentId: string): string {
-  return path.join(defaultPaperclipInstanceDir(), "companies", companyId, "acp-engine", "agents", agentId);
+  return path.join(defaultBullpenInstanceDir(), "companies", companyId, "acp-engine", "agents", agentId);
 }
 
 function resolveManagedCodexHomeDir(companyId: string): string {
-  return path.join(defaultPaperclipInstanceDir(), "companies", companyId, "codex-home");
+  return path.join(defaultBullpenInstanceDir(), "companies", companyId, "codex-home");
 }
 
 // Walk up from startDir looking for `node_modules/.bin/<binName>`. This matches
@@ -729,7 +729,7 @@ async function prepareManagedCodexHome(input: {
 
   await onLog(
     "stdout",
-    `[paperclip] Using Paperclip-managed ACPX Codex home "${targetHome}" (seeded from "${sourceHome}").\n`,
+    `[bullpen] Using Bullpen-managed ACPX Codex home "${targetHome}" (seeded from "${sourceHome}").\n`,
   );
   return targetHome;
 }
@@ -775,11 +775,11 @@ async function hashPathContents(
 }
 
 async function buildSkillSetKey(input: {
-  skills: PaperclipSkillEntry[];
+  skills: BullpenSkillEntry[];
   label: string;
 }): Promise<string> {
   const hash = createHash("sha256");
-  hash.update(`paperclip-acpx-${input.label}-skills:v1\n`);
+  hash.update(`bullpen-acpx-${input.label}-skills:v1\n`);
   const sorted = [...input.skills].sort((left, right) => left.runtimeName.localeCompare(right.runtimeName));
   for (const entry of sorted) {
     hash.update(`skill:${entry.key}:${entry.runtimeName}\n`);
@@ -791,9 +791,9 @@ async function buildSkillSetKey(input: {
 async function resolveSelectedRuntimeSkills(
   config: Record<string, unknown>,
   moduleDir: string,
-): Promise<{ allSkills: PaperclipSkillEntry[]; selectedSkills: PaperclipSkillEntry[]; desiredSkillNames: string[] }> {
-  const allSkills = await readPaperclipRuntimeSkillEntries(config, moduleDir);
-  const desiredSkillNames = resolvePaperclipDesiredSkillNames(config, allSkills);
+): Promise<{ allSkills: BullpenSkillEntry[]; selectedSkills: BullpenSkillEntry[]; desiredSkillNames: string[] }> {
+  const allSkills = await readBullpenRuntimeSkillEntries(config, moduleDir);
+  const desiredSkillNames = resolveBullpenDesiredSkillNames(config, allSkills);
   const desiredSet = new Set(desiredSkillNames);
   return {
     allSkills,
@@ -821,17 +821,17 @@ async function prepareClaudeSkillRuntime(input: {
   for (const entry of selectedSkills) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {
-      const result = await materializePaperclipSkillCopy(entry.source, target);
+      const result = await materializeBullpenSkillCopy(entry.source, target);
       if (result.skippedSymlinks.length > 0) {
         await input.onLog(
           "stdout",
-          `[paperclip] Materialized ACPX Claude skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
+          `[bullpen] Materialized ACPX Claude skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
         );
       }
     } catch (err) {
       await input.onLog(
         "stderr",
-        `[paperclip] Failed to materialize ACPX Claude skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[bullpen] Failed to materialize ACPX Claude skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
@@ -839,7 +839,7 @@ async function prepareClaudeSkillRuntime(input: {
   const selectedNames = selectedSkills.map((entry) => entry.runtimeName).sort();
   const promptInstructions = selectedSkills.length > 0
     ? [
-        "Paperclip has materialized selected runtime skills for this ACPX Claude session.",
+        "Bullpen has materialized selected runtime skills for this ACPX Claude session.",
         `Skill root: ${skillsHome}`,
         selectedNames.length > 0 ? `Selected skills: ${selectedNames.join(", ")}` : "",
         "When a task calls for one of these skills, read its SKILL.md from that root and follow it.",
@@ -856,13 +856,13 @@ async function prepareClaudeSkillRuntime(input: {
     },
     promptInstructions,
     commandNotes: selectedSkills.length > 0
-      ? [`Materialized ${selectedSkills.length} Paperclip skill(s) for ACPX Claude at ${skillsHome}.`]
+      ? [`Materialized ${selectedSkills.length} Bullpen skill(s) for ACPX Claude at ${skillsHome}.`]
       : [],
   };
 }
 
 async function readManagedCodexSkillsManifest(skillsHome: string): Promise<Set<string>> {
-  const manifestPath = path.join(skillsHome, PAPERCLIP_MANAGED_CODEX_SKILLS_MANIFEST);
+  const manifestPath = path.join(skillsHome, BULLPEN_MANAGED_CODEX_SKILLS_MANIFEST);
   try {
     const raw = JSON.parse(await fs.readFile(manifestPath, "utf8")) as unknown;
     const parsed = parseObject(raw);
@@ -878,7 +878,7 @@ async function readManagedCodexSkillsManifest(skillsHome: string): Promise<Set<s
 async function writeManagedCodexSkillsManifest(skillsHome: string, skillNames: Iterable<string>): Promise<void> {
   const managedSkillNames = Array.from(new Set(skillNames)).sort();
   await fs.writeFile(
-    path.join(skillsHome, PAPERCLIP_MANAGED_CODEX_SKILLS_MANIFEST),
+    path.join(skillsHome, BULLPEN_MANAGED_CODEX_SKILLS_MANIFEST),
     `${JSON.stringify({ version: 1, managedSkillNames }, null, 2)}\n`,
     "utf8",
   );
@@ -893,8 +893,8 @@ async function removeSkillTarget(target: string): Promise<boolean> {
 
 async function reconcileManagedCodexSkills(input: {
   skillsHome: string;
-  allSkills: PaperclipSkillEntry[];
-  selectedSkills: PaperclipSkillEntry[];
+  allSkills: BullpenSkillEntry[];
+  selectedSkills: BullpenSkillEntry[];
   onLog: AdapterExecutionContext["onLog"];
 }): Promise<void> {
   const desired = new Set(input.selectedSkills.map((entry) => entry.runtimeName));
@@ -904,7 +904,7 @@ async function reconcileManagedCodexSkills(input: {
   for (const name of managed) {
     if (desired.has(name)) continue;
     if (await removeSkillTarget(path.join(input.skillsHome, name))) {
-      await input.onLog("stdout", `[paperclip] Revoked ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
+      await input.onLog("stdout", `[bullpen] Revoked ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
     }
   }
 
@@ -918,14 +918,14 @@ async function reconcileManagedCodexSkills(input: {
     const resolvedLinkedPath = path.resolve(path.dirname(target), linkedPath);
     if (resolvedLinkedPath !== path.resolve(entry.source)) continue;
     if (await removeSkillTarget(target)) {
-      await input.onLog("stdout", `[paperclip] Revoked legacy ACPX Codex skill "${entry.runtimeName}" from ${input.skillsHome}\n`);
+      await input.onLog("stdout", `[bullpen] Revoked legacy ACPX Codex skill "${entry.runtimeName}" from ${input.skillsHome}\n`);
     }
   }
 
   for (const name of managed) {
     if (desired.has(name) || availableByRuntimeName.has(name)) continue;
     if (await removeSkillTarget(path.join(input.skillsHome, name))) {
-      await input.onLog("stdout", `[paperclip] Revoked unavailable ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
+      await input.onLog("stdout", `[bullpen] Revoked unavailable ACPX Codex skill "${name}" from ${input.skillsHome}\n`);
     }
   }
 }
@@ -986,17 +986,17 @@ async function prepareCodexSkillRuntime(input: {
   for (const entry of selectedSkills) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {
-      const result = await materializePaperclipSkillCopy(entry.source, target);
+      const result = await materializeBullpenSkillCopy(entry.source, target);
       if (result.skippedSymlinks.length > 0) {
         await input.onLog(
           "stdout",
-          `[paperclip] Materialized ACPX Codex skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
+          `[bullpen] Materialized ACPX Codex skill "${entry.runtimeName}" into ${skillsHome} and skipped ${result.skippedSymlinks.length} symlink(s).\n`,
         );
       }
     } catch (err) {
       await input.onLog(
         "stderr",
-        `[paperclip] Failed to inject ACPX Codex skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[bullpen] Failed to inject ACPX Codex skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
@@ -1039,31 +1039,31 @@ async function prepareGeminiSkillRuntime(input: {
   const allowedSkillNames = selectedSkills.map((entry) => entry.runtimeName);
   const removedSkills = await removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames);
   for (const skillName of removedSkills) {
-    await input.onLog("stdout", `[paperclip] Removed maintainer-only ACPX Gemini skill "${skillName}" from ${skillsHome}\n`);
+    await input.onLog("stdout", `[bullpen] Removed maintainer-only ACPX Gemini skill "${skillName}" from ${skillsHome}\n`);
   }
 
   for (const entry of selectedSkills) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {
-      const result = await ensurePaperclipSkillSymlink(entry.source, target);
+      const result = await ensureBullpenSkillSymlink(entry.source, target);
       if (result === "created" || result === "repaired") {
         await input.onLog(
           "stdout",
-          `[paperclip] ${result === "repaired" ? "Repaired" : "Linked"} ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome}\n`,
+          `[bullpen] ${result === "repaired" ? "Repaired" : "Linked"} ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome}\n`,
         );
       }
     } catch (err) {
       if (isErrnoException(err, "EPERM")) {
-        const result = await materializePaperclipSkillCopy(entry.source, target);
+        const result = await materializeBullpenSkillCopy(entry.source, target);
         await input.onLog(
           "stdout",
-          `[paperclip] Copied ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome} because symlinks are unavailable.${result.skippedSymlinks.length > 0 ? ` Skipped ${result.skippedSymlinks.length} nested symlink(s).` : ""}\n`,
+          `[bullpen] Copied ACPX Gemini skill "${entry.runtimeName}" into ${skillsHome} because symlinks are unavailable.${result.skippedSymlinks.length > 0 ? ` Skipped ${result.skippedSymlinks.length} nested symlink(s).` : ""}\n`,
         );
         continue;
       }
       await input.onLog(
         "stderr",
-        `[paperclip] Failed to link ACPX Gemini skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
+        `[bullpen] Failed to link ACPX Gemini skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
@@ -1193,7 +1193,7 @@ function buildSessionParams(input: {
   };
 }
 
-interface PaperclipClaudeSettingsResult {
+interface BullpenClaudeSettingsResult {
   filePath: string;
   allow: string[];
   additionalDirectories: string[];
@@ -1210,28 +1210,28 @@ function uniqueSorted(values: Array<string | null | undefined>): string[] {
 // `.claude/settings.local.json` we override the user's potentially-restrictive
 // `~/.claude/settings.json` (e.g. `defaultMode: "dontAsk"`, which silently
 // denies every non-allowlisted tool and never reaches `canUseTool`), and we
-// widen the SDK's Read sandbox to include the Paperclip state dirs the agent
+// widen the SDK's Read sandbox to include the Bullpen state dirs the agent
 // needs to talk to its own control plane.
-async function writePaperclipClaudeSettings(input: {
+async function writeBullpenClaudeSettings(input: {
   cwd: string;
   stateDir: string;
   agentHome: string;
   companyId: string;
-}): Promise<PaperclipClaudeSettingsResult> {
+}): Promise<BullpenClaudeSettingsResult> {
   const filePath = path.join(input.cwd, ".claude", "settings.local.json");
-  const instanceRoot = defaultPaperclipInstanceDir();
+  const instanceRoot = defaultBullpenInstanceDir();
   const companyRoot = path.join(instanceRoot, "companies", input.companyId);
-  const paperclipAdditionalDirectories = uniqueSorted([
+  const bullpenAdditionalDirectories = uniqueSorted([
     input.stateDir,
     input.agentHome,
     companyRoot,
   ]);
-  const paperclipAllow = uniqueSorted([
+  const bullpenAllow = uniqueSorted([
     "Bash(curl:*)",
     "Bash(env:*)",
     "Bash(env)",
-    `Bash(${input.cwd}/scripts/paperclip-issue-update.sh:*)`,
-    `Bash(${input.cwd}/scripts/paperclip:*)`,
+    `Bash(${input.cwd}/scripts/bullpen-issue-update.sh:*)`,
+    `Bash(${input.cwd}/scripts/bullpen:*)`,
   ]);
 
   let existing: Record<string, unknown> = {};
@@ -1254,10 +1254,10 @@ async function writePaperclipClaudeSettings(input: {
   const existingAdditionalDirectories = Array.isArray(existingPerms.additionalDirectories)
     ? (existingPerms.additionalDirectories as unknown[]).filter((value): value is string => typeof value === "string")
     : [];
-  const mergedAllow = uniqueSorted([...existingAllow, ...paperclipAllow]);
+  const mergedAllow = uniqueSorted([...existingAllow, ...bullpenAllow]);
   const mergedAdditionalDirectories = uniqueSorted([
     ...existingAdditionalDirectories,
-    ...paperclipAdditionalDirectories,
+    ...bullpenAdditionalDirectories,
   ]);
   const existingDefaultMode =
     typeof existingPerms.defaultMode === "string" ? (existingPerms.defaultMode as string) : "";
@@ -1317,7 +1317,7 @@ async function stageAcpRemoteRuntime(input: {
 }): Promise<PreparedAdapterExecutionTargetRuntime> {
   await input.onLog(
     "stdout",
-    `[paperclip] Syncing workspace to ${describeAdapterExecutionTarget(input.target)}.\n`,
+    `[bullpen] Syncing workspace to ${describeAdapterExecutionTarget(input.target)}.\n`,
   );
   return await prepareAdapterExecutionTargetRuntime({
     runId: input.runId,
@@ -1365,8 +1365,8 @@ async function buildRuntime(input: {
   // first instrumented boundary (step 1 `workspace.resolve`, below) so every
   // `measureStartupStep` call in this function shares one deterministic clock.
   const nowMs = input.deps.now ?? (() => Date.now());
-  const workspaceContext = parseObject(context.paperclipWorkspace);
-  const secretsContext = parseObject(context.paperclipSecrets);
+  const workspaceContext = parseObject(context.bullpenWorkspace);
+  const secretsContext = parseObject(context.bullpenSecrets);
   const secretManifest = Array.isArray(secretsContext.manifest) ? secretsContext.manifest : [];
   const workspaceCwd = asString(workspaceContext.cwd, "");
   const workspaceSource = asString(workspaceContext.source, "");
@@ -1418,12 +1418,12 @@ async function buildRuntime(input: {
       contentSignature: await referencedSourceContentSignature(entry.localPath),
     })),
   );
-  // Referenced-project workspace hints exposed to the agent through PAPERCLIP_WORKSPACES_JSON. The
+  // Referenced-project workspace hints exposed to the agent through BULLPEN_WORKSPACES_JSON. The
   // list joins the anchor project's alternative workspaces with the referenced (mentioned) projects.
   // On the confined sandbox lane the run repoints each referenced hint at its staged directory after
   // staging below. Empty unless run prep resolved referenced projects or alternative workspaces.
-  const workspaceHints = Array.isArray(context.paperclipWorkspaces)
-    ? context.paperclipWorkspaces.filter(
+  const workspaceHints = Array.isArray(context.bullpenWorkspaces)
+    ? context.bullpenWorkspaces.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
@@ -1460,7 +1460,7 @@ async function buildRuntime(input: {
   // bridge steps still emit duration telemetry (and a span), just not
   // misleading per-step round-trip/provider deltas.
   const concurrentBridgeStepMetrics: StartupStepMeasureOptions = { ...input.spanParent };
-  const shapedWorkspaceEnv = shapePaperclipWorkspaceEnvForExecution({
+  const shapedWorkspaceEnv = shapeBullpenWorkspaceEnvForExecution({
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceWorktreePath,
     executionTargetIsRemote,
@@ -1504,7 +1504,7 @@ async function buildRuntime(input: {
   await fs.mkdir(stateDir, { recursive: true });
 
   const envConfig = parseObject(config.env);
-  const env: Record<string, string> = { ...buildPaperclipEnv(agent), PAPERCLIP_RUN_ID: runId };
+  const env: Record<string, string> = { ...buildBullpenEnv(agent), BULLPEN_RUN_ID: runId };
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim()) ||
     (typeof context.issueId === "string" && context.issueId.trim()) ||
@@ -1519,17 +1519,17 @@ async function buildRuntime(input: {
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
-  if (issueWorkMode) env.PAPERCLIP_ISSUE_WORK_MODE = issueWorkMode;
-  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  if (wakePayloadJson) env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
-  applyPaperclipWorkspaceEnv(env, {
+  const wakePayloadJson = stringifyBullpenWakePayload(context.bullpenWake);
+  const issueWorkMode = readBullpenIssueWorkModeFromContext(context);
+  if (wakeTaskId) env.BULLPEN_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.BULLPEN_ISSUE_WORK_MODE = issueWorkMode;
+  if (wakeReason) env.BULLPEN_WAKE_REASON = wakeReason;
+  if (wakeCommentId) env.BULLPEN_WAKE_COMMENT_ID = wakeCommentId;
+  if (approvalId) env.BULLPEN_APPROVAL_ID = approvalId;
+  if (approvalStatus) env.BULLPEN_APPROVAL_STATUS = approvalStatus;
+  if (linkedIssueIds.length > 0) env.BULLPEN_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+  if (wakePayloadJson) env.BULLPEN_WAKE_PAYLOAD_JSON = wakePayloadJson;
+  applyBullpenWorkspaceEnv(env, {
     workspaceCwd: shapedWorkspaceEnv.workspaceCwd,
     workspaceSource,
     workspaceStrategy,
@@ -1550,24 +1550,24 @@ async function buildRuntime(input: {
   // forward to the spawned agent process. Captured so a stable hash of it can be
   // folded into the session fingerprint below — a change here must invalidate a
   // warm/resumable session so the next launch picks up the latest env. Only
-  // user/adapter-configured env flows through this loop; per-wake PAPERCLIP_*
-  // runtime vars (PAPERCLIP_RUN_ID, wake/approval ids, ...) were assigned to
+  // user/adapter-configured env flows through this loop; per-wake BULLPEN_*
+  // runtime vars (BULLPEN_RUN_ID, wake/approval ids, ...) were assigned to
   // `env` above and are never present in shapedEnvConfig, so they inherently
   // stay out of the hash and don't reset the session every heartbeat.
   const resolvedAdapterEnv: Record<string, string> = {};
   for (const [key, value] of Object.entries(shapedEnvConfig)) {
     if (typeof value !== "string") continue;
-    // Runtime PAPERCLIP_* always wins over config: skip a PAPERCLIP_* key that
-    // Paperclip has already assigned this run. PAPERCLIP_API_KEY is never
+    // Runtime BULLPEN_* always wins over config: skip a BULLPEN_* key that
+    // Bullpen has already assigned this run. BULLPEN_API_KEY is never
     // accepted from config — the harness-minted run token is the only source.
-    // A PAPERCLIP_* key Paperclip did NOT set is stable per-run config, so it
+    // A BULLPEN_* key Bullpen did NOT set is stable per-run config, so it
     // applies and feeds the fingerprint hash below.
     if (isForbiddenConfigEnvKey(key)) continue;
-    if (isPaperclipRuntimeEnvKey(key) && key in env) continue;
+    if (isBullpenRuntimeEnvKey(key) && key in env) continue;
     env[key] = value;
     resolvedAdapterEnv[key] = value;
   }
-  if (authToken) env.PAPERCLIP_API_KEY = authToken;
+  if (authToken) env.BULLPEN_API_KEY = authToken;
   // For the claude agent, set model via ANTHROPIC_MODEL at startup rather than
   // via session/set_config_option — the ACP server's set_config_option handler
   // validates the value against its internal available-models list and rejects
@@ -1587,7 +1587,7 @@ async function buildRuntime(input: {
     if (codexStartupConfig.invalidExistingConfig) {
       await input.ctx.onLog(
         "stderr",
-        "[paperclip] Ignoring invalid user CODEX_CONFIG while applying runtime Codex settings; expected a JSON object.\n",
+        "[bullpen] Ignoring invalid user CODEX_CONFIG while applying runtime Codex settings; expected a JSON object.\n",
       );
     }
     if (codexStartupConfig.value) env.CODEX_CONFIG = codexStartupConfig.value;
@@ -1596,7 +1596,7 @@ async function buildRuntime(input: {
   let skillPromptInstructions = "";
   let skillsIdentity: Record<string, unknown> = { mode: "unsupported" };
   const skillCommandNotes: string[] = [];
-  let paperclipClaudeSettings: PaperclipClaudeSettingsResult | null = null;
+  let bullpenClaudeSettings: BullpenClaudeSettingsResult | null = null;
   if (acpxAgent === "claude") {
     const preparedSkills = await prepareClaudeSkillRuntime({
       stateDir,
@@ -1607,16 +1607,16 @@ async function buildRuntime(input: {
     skillPromptInstructions = preparedSkills.promptInstructions;
     skillsIdentity = preparedSkills.identity;
     skillCommandNotes.push(...preparedSkills.commandNotes);
-    paperclipClaudeSettings = await writePaperclipClaudeSettings({
+    bullpenClaudeSettings = await writeBullpenClaudeSettings({
       cwd,
       stateDir,
       agentHome,
       companyId: agent.companyId,
     });
     skillCommandNotes.push(
-      `Wrote Paperclip-managed Claude settings to ${paperclipClaudeSettings.filePath} (defaultMode=${paperclipClaudeSettings.defaultMode}${
-        paperclipClaudeSettings.overrodeDontAsk ? "; overrode user dontAsk" : ""
-      }, +${paperclipClaudeSettings.additionalDirectories.length} read root(s), +${paperclipClaudeSettings.allow.length} allow rule(s)).`,
+      `Wrote Bullpen-managed Claude settings to ${bullpenClaudeSettings.filePath} (defaultMode=${bullpenClaudeSettings.defaultMode}${
+        bullpenClaudeSettings.overrodeDontAsk ? "; overrode user dontAsk" : ""
+      }, +${bullpenClaudeSettings.additionalDirectories.length} read root(s), +${bullpenClaudeSettings.allow.length} allow rule(s)).`,
     );
   } else if (acpxAgent === "codex") {
     // Step 2 — codex-home.seed: the codex managed-home + skills preparation.
@@ -1646,13 +1646,13 @@ async function buildRuntime(input: {
     skillsIdentity = preparedSkills.identity;
     skillCommandNotes.push(...preparedSkills.commandNotes);
   } else {
-    const desired = resolvePaperclipDesiredSkillNames(
+    const desired = resolveBullpenDesiredSkillNames(
       config,
-      await readPaperclipRuntimeSkillEntries(config, input.engine.moduleDir),
+      await readBullpenRuntimeSkillEntries(config, input.engine.moduleDir),
     );
     skillsIdentity = { mode: "custom_unsupported", desiredSkillNames: desired };
     if (desired.length > 0) {
-      skillCommandNotes.push("Selected Paperclip skills are tracked only; ACPX custom commands do not expose a runtime skill contract yet.");
+      skillCommandNotes.push("Selected Bullpen skills are tracked only; ACPX custom commands do not expose a runtime skill contract yet.");
     }
   }
 
@@ -1722,18 +1722,18 @@ async function buildRuntime(input: {
     additionalSourcesIdentity,
     skillsIdentity,
     skillPromptInstructions,
-    paperclipClaudeSettings: paperclipClaudeSettings
+    bullpenClaudeSettings: bullpenClaudeSettings
       ? {
-          allow: paperclipClaudeSettings.allow,
-          additionalDirectories: paperclipClaudeSettings.additionalDirectories,
-          defaultMode: paperclipClaudeSettings.defaultMode,
+          allow: bullpenClaudeSettings.allow,
+          additionalDirectories: bullpenClaudeSettings.additionalDirectories,
+          defaultMode: bullpenClaudeSettings.defaultMode,
         }
       : null,
     mcpServers: mcpIdentity,
     secretManifestHash: shortHash(secretManifest),
     // Fold the resolved adapter env (all applied user-configured values —
-    // plain, secret_ref, and stable PAPERCLIP_* config such as an explicit
-    // PAPERCLIP_API_KEY) into the fingerprint so a change to any forwarded value
+    // plain, secret_ref, and stable BULLPEN_* config such as an explicit
+    // BULLPEN_API_KEY) into the fingerprint so a change to any forwarded value
     // invalidates a warm handle / resumable session and forces a fresh launch
     // that sources the latest env. secretManifestHash alone misses plain-value
     // edits and same-version secret rotations. Per-wake runtime vars never enter
@@ -1741,7 +1741,7 @@ async function buildRuntime(input: {
     adapterEnvHash: shortHash(resolvedAdapterEnv),
   });
   const taskKey = asString(input.ctx.runtime.taskKey, "") || wakeTaskId || workspaceId || "default";
-  const sessionKey = `paperclip:${agent.companyId}:${agent.id}:${taskKey}:${fingerprint}`;
+  const sessionKey = `bullpen:${agent.companyId}:${agent.id}:${taskKey}:${fingerprint}`;
 
   // Ship the workspace into the sandbox and capture `{ workspaceRemoteDir,
   // runtimeRootDir, assetDirs, restoreWorkspace }`. Done once here, before the
@@ -1821,7 +1821,7 @@ async function buildRuntime(input: {
         cachedStaged.lastUsedAt = nowMs();
         await input.ctx.onLog(
           "stdout",
-          "[paperclip] Reusing the staged in-sandbox runtime for this resumed session (no workspace re-ship / managed-home re-seed).\n",
+          "[bullpen] Reusing the staged in-sandbox runtime for this resumed session (no workspace re-ship / managed-home re-seed).\n",
         );
         return {
           stagedRuntime: cachedStaged.stagedRuntime,
@@ -1918,7 +1918,7 @@ async function buildRuntime(input: {
     // over an inherited value in the merged launch env.
     const stagedProjectDirs = stagedRuntime?.additionalSourceDirs ?? {};
     if (Object.keys(stagedProjectDirs).length > 0) {
-      const shapedHints = shapePaperclipWorkspaceEnvForExecution({
+      const shapedHints = shapeBullpenWorkspaceEnvForExecution({
         workspaceCwd: effectiveWorkspaceCwd,
         workspaceWorktreePath,
         workspaceHints,
@@ -1927,57 +1927,57 @@ async function buildRuntime(input: {
         stagedProjectDirs,
       }).workspaceHints;
       if (shapedHints.length > 0) {
-        env.PAPERCLIP_WORKSPACES_JSON = JSON.stringify(shapedHints);
+        env.BULLPEN_WORKSPACES_JSON = JSON.stringify(shapedHints);
       }
     }
   }
   // Both bridge starts run under one try so a failure at EITHER — including the
-  // paperclip callback bridge — fires the same abandon-path cleanup. The
-  // paperclip bridge starts after the workspace + managed home were already
+  // bullpen callback bridge — fires the same abandon-path cleanup. The
+  // bullpen bridge starts after the workspace + managed home were already
   // staged and the per-session staging lease is already held, so leaving it
   // outside the catch would strand the lease (and the staged temp) on a
   // start failure and deadlock the next run of this session.
-  let paperclipBridge: AdapterExecutionTargetPaperclipBridgeHandle | null = null;
+  let bullpenBridge: AdapterExecutionTargetBullpenBridgeHandle | null = null;
   let processSessionBridge: AdapterExecutionTargetProcessSessionBridgeHandle | null = null;
   let runtimeEnv: Record<string, string> = {};
   try {
     if (useRemoteProcessSession) {
       // Steps 5 + 6 — bring up BOTH host-side sandbox bridges concurrently. Their
-      // remote subtrees are disjoint (`…/paperclip-bridge/…` vs
+      // remote subtrees are disjoint (`…/bullpen-bridge/…` vs
       // `…/process-sessions/…`), so the env-INDEPENDENT setup of each overlaps,
-      // trending wall time from serial (~bridge.paperclip + ~bridge.process-session)
-      // toward ~max(the two). The ONE real dependency — the paperclip bridge's
+      // trending wall time from serial (~bridge.bullpen + ~bridge.process-session)
+      // toward ~max(the two). The ONE real dependency — the bullpen bridge's
       // returned `env` must reach the process-session LAUNCH — is sequenced by
       // `finalizeLaunchEnv`: the process-session bridge runs its env-independent
       // dir/script setup first, then awaits that thunk right before its launch, so
-      // the launch always observes the merged paperclip env.
+      // the launch always observes the merged bullpen env.
       //
       // Measurement caveat: both starts share ONE runner counter, so their
       // overlapping `providerExecMs`/`roundTrips` deltas are approximate (the same
       // caveat as `acp.handshake`). Both `run.startup.step` events still emit —
       // `measureStartupStep` records them in a `finally`, even on a start failure.
-      const paperclipStart = measureStartupStep(input.ctx, nowMs, "bridge.paperclip", () =>
-        startAdapterExecutionTargetPaperclipBridge({
+      const bullpenStart = measureStartupStep(input.ctx, nowMs, "bridge.bullpen", () =>
+        startAdapterExecutionTargetBullpenBridge({
           runId,
           target: { ...executionTarget, streamRunLogs: false },
           runtimeRootDir: stagedRuntime?.runtimeRootDir ?? null,
           adapterKey: input.engine.adapterType,
           timeoutSec,
-          hostApiToken: env.PAPERCLIP_API_KEY,
+          hostApiToken: env.BULLPEN_API_KEY,
           onLog: input.ctx.onLog,
         }),
         concurrentBridgeStepMetrics,
       );
-      // The single sequencing point (paperclip `env` → process-session launch).
+      // The single sequencing point (bullpen `env` → process-session launch).
       // Memoized so the merge + log + `runtimeEnv` build run EXACTLY once whether
       // the process-session bridge consumes it at launch or we finalize it below.
       let launchEnvPromise: Promise<Record<string, string>> | null = null;
       const finalizeLaunchEnv = (): Promise<Record<string, string>> =>
         (launchEnvPromise ??= (async () => {
-          const paperclip = await paperclipStart;
-          if (paperclip) {
-            Object.assign(env, paperclip.env);
-            await input.ctx.onLog("stdout", "[paperclip] Sandbox ACP API callback bridge enabled for this run.\n");
+          const bullpen = await bullpenStart;
+          if (bullpen) {
+            Object.assign(env, bullpen.env);
+            await input.ctx.onLog("stdout", "[bullpen] Sandbox ACP API callback bridge enabled for this run.\n");
           }
           return (runtimeEnv = resolveRuntimeEnv(env));
         })());
@@ -1991,7 +1991,7 @@ async function buildRuntime(input: {
           args: ["-lc", `exec ${agentCommandShell}`],
           cwd: sessionCwd,
           // Deferred: the process-session bridge runs its env-independent setup,
-          // then calls this to get the launch env AFTER the paperclip env merge.
+          // then calls this to get the launch env AFTER the bullpen env merge.
           env: finalizeLaunchEnv,
           timeoutSec,
           onLog: input.ctx.onLog,
@@ -2001,11 +2001,11 @@ async function buildRuntime(input: {
       // Settle BOTH starts (mirrors `cleanupRemoteBridges`' `Promise.allSettled`):
       // collect whichever handles started plus the first failure. Both handles
       // stay individually declared so the catch below can stop whichever started.
-      const started = await settleRemoteBridgeStarts(paperclipStart, processSessionStart);
-      paperclipBridge = started.paperclipBridge;
+      const started = await settleRemoteBridgeStarts(bullpenStart, processSessionStart);
+      bullpenBridge = started.bullpenBridge;
       processSessionBridge = started.processSessionBridge;
       if (started.failure) throw started.failure;
-      // Guarantee the paperclip env merge ran even if the process-session bridge
+      // Guarantee the bullpen env merge ran even if the process-session bridge
       // returned without consuming the launch env (memoized ⇒ a no-op if it did).
       await finalizeLaunchEnv();
     } else {
@@ -2018,7 +2018,7 @@ async function buildRuntime(input: {
     // the other threw; `Promise.allSettled` stops whichever started so no live
     // bridge leaks (mirrors `cleanupRemoteBridges`). Both handles are individually
     // declared above, so either may be non-null here.
-    await Promise.allSettled([paperclipBridge?.stop(), processSessionBridge?.stop()]);
+    await Promise.allSettled([bullpenBridge?.stop(), processSessionBridge?.stop()]);
     // The staged home / copy-back teardown must run even if a bridge fails to
     // start after the workspace + managed home were already staged into the
     // sandbox, so a refreshed credential is copied back on this error path too.
@@ -2071,7 +2071,7 @@ async function buildRuntime(input: {
     agentCommand,
     agentRegistry,
     processSessionBridge,
-    paperclipBridge,
+    bullpenBridge,
     stagedRuntime,
     remoteManagedHomeTeardown,
     remoteStagingDispose,
@@ -2084,7 +2084,7 @@ async function buildRuntime(input: {
       commandNotes: skillCommandNotes,
     },
     childStderrLogPath,
-    paperclipClaudeSettings,
+    bullpenClaudeSettings,
     mcpServers,
     mcpIdentity,
     stepMetrics,
@@ -2129,7 +2129,7 @@ async function applySessionConfigOptions(input: {
   if (!input.runtime.setConfigOption) {
     const message =
       "ACPX runtime does not expose session config controls; upgrade ACPX or remove configured model, effort, and fast mode overrides.";
-    await input.onLog("stderr", `[paperclip] ${message}\n`);
+    await input.onLog("stderr", `[bullpen] ${message}\n`);
     throw new Error(message);
   }
   for (const option of options) {
@@ -2140,14 +2140,14 @@ async function applySessionConfigOptions(input: {
     });
     await input.onLog(
       "stdout",
-      `[paperclip] Applied ACPX ${input.prepared.acpxAgent} config ${option.key}=${option.value}\n`,
+      `[bullpen] Applied ACPX ${input.prepared.acpxAgent} config ${option.key}=${option.value}\n`,
     );
   }
 }
 
 /**
  * Build the process-session launch env: the host env overlaid with the run's
- * `env` (so the merged paperclip bridge vars win) and a guaranteed `PATH`,
+ * `env` (so the merged bullpen bridge vars win) and a guaranteed `PATH`,
  * narrowed to string values. Shared by the remote concurrent bring-up and the
  * local / runner-less lane so both resolve the runtime env identically.
  */
@@ -2166,27 +2166,27 @@ function resolveRuntimeEnv(env: Record<string, string>): Record<string, string> 
  * `Promise.all`): running BOTH starts to completion is what lets the caller STOP
  * a bridge that DID start when its sibling threw — so a partial failure never
  * leaks a live bridge. Returns whichever handles started plus the first failure
- * (paperclip before process-session) for the caller to rethrow through the
+ * (bullpen before process-session) for the caller to rethrow through the
  * shared abandon path.
  */
 async function settleRemoteBridgeStarts(
-  paperclipStart: Promise<AdapterExecutionTargetPaperclipBridgeHandle | null>,
+  bullpenStart: Promise<AdapterExecutionTargetBullpenBridgeHandle | null>,
   processSessionStart: Promise<AdapterExecutionTargetProcessSessionBridgeHandle | null>,
 ): Promise<{
-  paperclipBridge: AdapterExecutionTargetPaperclipBridgeHandle | null;
+  bullpenBridge: AdapterExecutionTargetBullpenBridgeHandle | null;
   processSessionBridge: AdapterExecutionTargetProcessSessionBridgeHandle | null;
   failure: unknown;
 }> {
-  const [paperclip, processSession] = await Promise.allSettled([
-    paperclipStart,
+  const [bullpen, processSession] = await Promise.allSettled([
+    bullpenStart,
     processSessionStart,
   ]);
   return {
-    paperclipBridge: paperclip.status === "fulfilled" ? paperclip.value : null,
+    bullpenBridge: bullpen.status === "fulfilled" ? bullpen.value : null,
     processSessionBridge: processSession.status === "fulfilled" ? processSession.value : null,
     failure:
-      paperclip.status === "rejected"
-        ? paperclip.reason
+      bullpen.status === "rejected"
+        ? bullpen.reason
         : processSession.status === "rejected"
           ? processSession.reason
           : null,
@@ -2196,7 +2196,7 @@ async function settleRemoteBridgeStarts(
 async function cleanupRemoteBridges(prepared: AcpxPreparedRuntime): Promise<void> {
   await Promise.allSettled([
     prepared.processSessionBridge?.stop(),
-    prepared.paperclipBridge?.stop(),
+    prepared.bullpenBridge?.stop(),
   ]);
   // Runs AFTER the bridges stop (mirrors the CLI finally: stop bridge → restore
   // workspace). Fires the codex auth copy-back via `restoreWorkspace()` and
@@ -2210,32 +2210,32 @@ async function cleanupRemoteBridges(prepared: AcpxPreparedRuntime): Promise<void
   prepared.sessionStagingLeaseRelease?.();
 }
 
-function renderPaperclipEnvNote(env: Record<string, string>): string {
-  const paperclipKeys = Object.keys(env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
+function renderBullpenEnvNote(env: Record<string, string>): string {
+  const bullpenKeys = Object.keys(env)
+    .filter((key) => key.startsWith("BULLPEN_"))
     .sort();
-  if (paperclipKeys.length === 0) return "";
+  if (bullpenKeys.length === 0) return "";
   return [
-    "Paperclip runtime note:",
-    `The following PAPERCLIP_* environment variables are available in this run: ${paperclipKeys.join(", ")}`,
+    "Bullpen runtime note:",
+    `The following BULLPEN_* environment variables are available in this run: ${bullpenKeys.join(", ")}`,
     "Do not assume these variables are missing without checking your shell environment.",
   ].join("\n");
 }
 
 function renderApiAccessNote(env: Record<string, string>): string {
-  if (!env.PAPERCLIP_API_URL || !env.PAPERCLIP_API_KEY) return "";
+  if (!env.BULLPEN_API_URL || !env.BULLPEN_API_KEY) return "";
   const lines = [
-    "Paperclip API access note:",
-    "Use terminal commands with curl to make Paperclip API requests.",
+    "Bullpen API access note:",
+    "Use terminal commands with curl to make Bullpen API requests.",
     "Normalize the base URL before adding API paths:",
-    `  PAPERCLIP_API_BASE="\${PAPERCLIP_API_URL%/}"; PAPERCLIP_API_BASE="\${PAPERCLIP_API_BASE%/api}"`,
+    `  BULLPEN_API_BASE="\${BULLPEN_API_URL%/}"; BULLPEN_API_BASE="\${BULLPEN_API_BASE%/api}"`,
     "GET example:",
-    `  curl -s -H "Authorization: Bearer $PAPERCLIP_API_KEY" "$PAPERCLIP_API_BASE/api/agents/me"`,
+    `  curl -s -H "Authorization: Bearer $BULLPEN_API_KEY" "$BULLPEN_API_BASE/api/agents/me"`,
   ];
-  if (env.PAPERCLIP_TASK_ID) {
+  if (env.BULLPEN_TASK_ID) {
     lines.push(
       "Scoped issue comment example:",
-      `  curl -s -X POST -H "Authorization: Bearer $PAPERCLIP_API_KEY" -H "Content-Type: application/json" -H "X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID" -d '{"body":"Status update from agent."}' "$PAPERCLIP_API_BASE/api/issues/$PAPERCLIP_TASK_ID/comments"`,
+      `  curl -s -X POST -H "Authorization: Bearer $BULLPEN_API_KEY" -H "Content-Type: application/json" -H "X-Bullpen-Run-Id: $BULLPEN_RUN_ID" -d '{"body":"Status update from agent."}' "$BULLPEN_API_BASE/api/issues/$BULLPEN_TASK_ID/comments"`,
     );
   } else {
     lines.push("Use a real issue id from the current context before making issue write requests.");
@@ -2249,7 +2249,7 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
   commandNotes: string[];
 }> {
   const { agent, runId, config, context, onLog } = ctx;
-  const promptTemplate = asString(config.promptTemplate, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE);
+  const promptTemplate = asString(config.promptTemplate, DEFAULT_BULLPEN_AGENT_PROMPT_TEMPLATE);
   const instructionsFilePath = asString(config.instructionsFilePath, "").trim();
   const instructionsDir = instructionsFilePath ? `${path.dirname(instructionsFilePath)}/` : "";
   let instructionsPrefix = "";
@@ -2269,7 +2269,7 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
       const reason = err instanceof Error ? err.message : String(err);
       await onLog(
         "stderr",
-        `[paperclip] Warning: could not read agent instructions file "${instructionsFilePath}": ${reason}\n`,
+        `[bullpen] Warning: could not read agent instructions file "${instructionsFilePath}": ${reason}\n`,
       );
       commandNotes.push(`Configured instructionsFilePath ${instructionsFilePath}, but file could not be read.`);
     }
@@ -2289,8 +2289,8 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
     !resumedSession && bootstrapPromptTemplate.trim().length > 0
       ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
       : "";
-  const taskContextNote = selectPaperclipTaskMarkdown(context, { resumedSession });
-  const wakePrompt = renderPaperclipWakePrompt(context.paperclipWake, {
+  const taskContextNote = selectBullpenTaskMarkdown(context, { resumedSession });
+  const wakePrompt = renderBullpenWakePrompt(context.bullpenWake, {
     resumedSession,
     // The task-context markdown is the authoritative brief on this lane; keep
     // the wake prompt's description copy out so the prompt carries it once.
@@ -2299,8 +2299,8 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
   const shouldUseResumeDeltaPrompt = resumedSession && wakePrompt.length > 0;
   const promptInstructionsPrefix = shouldUseResumeDeltaPrompt ? "" : instructionsPrefix;
   const renderedPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
-  const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
-  const paperclipEnvNote = renderPaperclipEnvNote(env);
+  const sessionHandoffNote = asString(context.bullpenSessionHandoffMarkdown, "").trim();
+  const bullpenEnvNote = renderBullpenEnvNote(env);
   const apiAccessNote = renderApiAccessNote(env);
   const prompt = joinPromptSections([
     promptInstructionsPrefix,
@@ -2308,7 +2308,7 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
     wakePrompt,
     sessionHandoffNote,
     taskContextNote,
-    paperclipEnvNote,
+    bullpenEnvNote,
     apiAccessNote,
     renderedPrompt,
   ]);
@@ -2323,7 +2323,7 @@ async function buildPrompt(ctx: AdapterExecutionContext, resumedSession: boolean
       wakePromptChars: wakePrompt.length,
       sessionHandoffChars: sessionHandoffNote.length,
       taskContextChars: taskContextNote.length,
-      runtimeNoteChars: paperclipEnvNote.length + apiAccessNote.length,
+      runtimeNoteChars: bullpenEnvNote.length + apiAccessNote.length,
       heartbeatPromptChars: renderedPrompt.length,
     },
   };
@@ -2656,7 +2656,7 @@ async function emitAcpxFailure(input: {
   if (childStderrTail) {
     await ctx.onLog(
       "stderr",
-      `[paperclip] ACPX child stderr tail (${phase}):\n${childStderrTail}\n`,
+      `[bullpen] ACPX child stderr tail (${phase}):\n${childStderrTail}\n`,
     );
   }
   await emitAcpxLog(ctx, {
@@ -2690,7 +2690,7 @@ async function cleanupIdleHandles(input: {
       handles: input.handles,
       key,
       entry,
-      reason: "paperclip idle cleanup",
+      reason: "bullpen idle cleanup",
     });
   }
 }
@@ -2854,7 +2854,7 @@ function scheduleIdleHandleCleanup(input: {
         handles: input.handles,
         key: input.key,
         entry: input.entry,
-        reason: "paperclip idle cleanup",
+        reason: "bullpen idle cleanup",
       });
     })();
   }, delayMs);
@@ -2997,7 +2997,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
     // stay machine-parseable line by line.
     await ctx.onLog(
       "stderr",
-      `[paperclip] ${formatAdapterExecutionTimeoutStartLogLine(prepared.timeoutResolution)}\n`,
+      `[bullpen] ${formatAdapterExecutionTimeoutStartLogLine(prepared.timeoutResolution)}\n`,
     );
     await cleanupIdleHandles({ handles: warmHandles, now: now(), idleMs: warmIdleMs });
 
@@ -3016,7 +3016,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
     processIdentitySink.current = ctx.onSpawn;
     flushChildStderr(childStderrState);
     childStderrState.logPath = prepared.childStderrLogPath;
-    const runtimeOptions: PaperclipAcpRuntimeOptions = {
+    const runtimeOptions: BullpenAcpRuntimeOptions = {
       cwd: prepared.cwd,
       // Host-only spawn cwd for the relay proxy on the remote process-session
       // lane; `undefined` elsewhere so acpx falls back to `cwd` (byte-identical).
@@ -3067,7 +3067,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
     if (!canResume && asString(previousParams.runtimeSessionName, "")) {
       await ctx.onLog(
         "stdout",
-        `[paperclip] ACPX session "${asString(previousParams.runtimeSessionName, "")}" does not match the current agent/cwd/mode/runtime identity; starting fresh in "${prepared.cwd}".\n`,
+        `[bullpen] ACPX session "${asString(previousParams.runtimeSessionName, "")}" does not match the current agent/cwd/mode/runtime identity; starting fresh in "${prepared.cwd}".\n`,
       );
     }
 
@@ -3109,7 +3109,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
           resumedSession = false;
           await ctx.onLog(
             "stdout",
-            `[paperclip] ACPX resume session "${resumeSessionId}" is unavailable; retrying with a fresh session.\n`,
+            `[bullpen] ACPX resume session "${resumeSessionId}" is unavailable; retrying with a fresh session.\n`,
           );
           // Fresh-session retry: the runtime was already constructed on the
           // first attempt (never re-created), so this event reports only its
@@ -3209,7 +3209,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       });
       await runtime.close({
         handle: sessionHandle,
-        reason: "paperclip config cleanup",
+        reason: "bullpen config cleanup",
         discardPersistentState: false,
       }).catch(() => {});
       const existing = warmHandles.get(prepared.sessionKey);
@@ -3260,7 +3260,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         command: prepared.agentCommand ?? prepared.acpxAgent,
         cwd: prepared.cwd,
         commandNotes: [
-          `ACPX runtime embedded in Paperclip with ${prepared.mode} session mode.`,
+          `ACPX runtime embedded in Bullpen with ${prepared.mode} session mode.`,
           `Effective ACPX permission mode: ${prepared.permissionMode}.`,
           ...(prepared.requestedModel
             ? [
@@ -3342,13 +3342,13 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             handles: warmHandles,
             key: prepared.sessionKey,
             entry: existing,
-            reason: timedOut ? "paperclip timeout cleanup" : `paperclip turn ${terminal.status}`,
+            reason: timedOut ? "bullpen timeout cleanup" : `bullpen turn ${terminal.status}`,
             discardPersistentState: terminal.status === "cancelled" || timedOut,
           });
         } else {
           await runtime.close({
             handle: sessionHandle,
-            reason: timedOut ? "paperclip timeout cleanup" : `paperclip turn ${terminal.status}`,
+            reason: timedOut ? "bullpen timeout cleanup" : `bullpen turn ${terminal.status}`,
             discardPersistentState: terminal.status === "cancelled" || timedOut,
           }).catch(() => {});
         }
@@ -3357,7 +3357,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
         if (existing && !warmHandleMatches(existing, runtime, sessionHandle)) {
           await runtime.close({
             handle: sessionHandle,
-            reason: "paperclip duplicate warm handle cleanup",
+            reason: "bullpen duplicate warm handle cleanup",
             discardPersistentState: false,
           }).catch(() => {});
         } else {
@@ -3385,12 +3385,12 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
             handles: warmHandles,
             key: prepared.sessionKey,
             entry: existing,
-            reason: "paperclip completed turn cleanup",
+            reason: "bullpen completed turn cleanup",
           });
         } else {
           await runtime.close({
             handle: sessionHandle,
-            reason: "paperclip completed turn cleanup",
+            reason: "bullpen completed turn cleanup",
             discardPersistentState: false,
           }).catch(() => {});
         }
@@ -3460,7 +3460,7 @@ export function createAcpxEngineExecutor(deps: AcpxEngineExecutorOptions = {}) {
       if (cancel) await cancel(preEmitMessage).catch(() => {});
       await runtime.close({
         handle: sessionHandle,
-        reason: timedOut ? "paperclip timeout cleanup" : "paperclip error cleanup",
+        reason: timedOut ? "bullpen timeout cleanup" : "bullpen error cleanup",
         discardPersistentState: timedOut,
       }).catch(() => {});
       const existing = warmHandles.get(prepared.sessionKey);

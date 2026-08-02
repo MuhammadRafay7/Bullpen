@@ -8,7 +8,7 @@ import type {
   AttentionItem,
   DecisionTrainingExample,
   DecisionTrainingPreview,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 
 const mockApi = vi.hoisted(() => ({
   preview: vi.fn(),

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { nextWorkMode, workModeMetaFor, workModeMetaList } from "@/lib/work-mode-meta";
 import type { InlineEntityOption } from "@/components/InlineEntitySelector";
-import type { IssueAttachment, IssueWorkMode } from "@paperclipai/shared";
+import type { IssueAttachment, IssueWorkMode } from "@bullpen/shared";
 
 /** Structurally identical to IssueChatThread's module-private CommentReassignment. */
 interface CommentReassignment {

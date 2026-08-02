@@ -8,7 +8,7 @@ import path from "node:path";
 const script = new URL("../provision-worktree.sh", import.meta.url).pathname;
 
 // Keep the PATH minimal so the fallback ladder is deterministic: node must be
-// reachable, but a globally installed `paperclipai` must not shadow the paths
+// reachable, but a globally installed `bullpen` must not shadow the paths
 // under test.
 const testPath = [path.dirname(process.execPath), "/usr/bin", "/bin"].join(":");
 
@@ -35,7 +35,7 @@ test.after(() => {
  *           writes a marker config so tests can tell CLI init from fallback.
  */
 function makeBaseWorkspace({ helpExit, initExit }) {
-  const baseCwd = makeTempDir("paperclip-provision-base-");
+  const baseCwd = makeTempDir("bullpen-provision-base-");
   const runnerPath = path.join(baseCwd, "cli", "node_modules", "tsx", "dist", "cli.mjs");
   const entryPath = path.join(baseCwd, "cli", "src", "index.ts");
   fs.mkdirSync(path.dirname(runnerPath), { recursive: true });
@@ -55,9 +55,9 @@ if (cliArgs[0] === "worktree" && cliArgs[1] === "init") {
     console.error("fake worktree init failure");
     process.exit(${initExit});
   }
-  fs.mkdirSync(".paperclip", { recursive: true });
-  fs.writeFileSync(".paperclip/config.json", JSON.stringify({ $meta: { source: "fake-cli" } }));
-  fs.writeFileSync(".paperclip/.env", "PAPERCLIP_IN_WORKTREE=true\\n");
+  fs.mkdirSync(".bullpen", { recursive: true });
+  fs.writeFileSync(".bullpen/config.json", JSON.stringify({ $meta: { source: "fake-cli" } }));
+  fs.writeFileSync(".bullpen/.env", "BULLPEN_IN_WORKTREE=true\\n");
   process.exit(0);
 }
 process.exit(0);
@@ -67,26 +67,26 @@ process.exit(0);
 }
 
 function runProvision(baseCwd, { pathPrefix } = {}) {
-  const worktreeCwd = makeTempDir("paperclip-provision-worktree-");
-  const worktreesHome = makeTempDir("paperclip-provision-home-");
+  const worktreeCwd = makeTempDir("bullpen-provision-worktree-");
+  const worktreesHome = makeTempDir("bullpen-provision-home-");
   const result = spawnSync("bash", [script], {
     cwd: worktreeCwd,
     encoding: "utf8",
     env: {
       PATH: pathPrefix ? `${pathPrefix}:${testPath}` : testPath,
       HOME: os.homedir(),
-      PAPERCLIP_WORKSPACE_BASE_CWD: baseCwd,
-      PAPERCLIP_WORKSPACE_CWD: worktreeCwd,
-      PAPERCLIP_WORKSPACE_BRANCH: "feature/provision-test",
-      PAPERCLIP_WORKTREES_DIR: worktreesHome,
-      PAPERCLIP_HOME: path.join(worktreesHome, "no-such-instance-home"),
+      BULLPEN_WORKSPACE_BASE_CWD: baseCwd,
+      BULLPEN_WORKSPACE_CWD: worktreeCwd,
+      BULLPEN_WORKSPACE_BRANCH: "feature/provision-test",
+      BULLPEN_WORKTREES_DIR: worktreesHome,
+      BULLPEN_HOME: path.join(worktreesHome, "no-such-instance-home"),
     },
   });
   return { result, worktreeCwd, worktreesHome };
 }
 
 function readWorktreeConfig(worktreeCwd) {
-  const configPath = path.join(worktreeCwd, ".paperclip", "config.json");
+  const configPath = path.join(worktreeCwd, ".bullpen", "config.json");
   assert.ok(fs.existsSync(configPath), `expected ${configPath} to exist`);
   return JSON.parse(fs.readFileSync(configPath, "utf8"));
 }
@@ -117,8 +117,8 @@ test("falls back to an isolated config when the base CLI cannot boot", () => {
     !path.relative(worktreesHome, dataDir).startsWith(".."),
     `expected ${dataDir} to live under ${worktreesHome}`,
   );
-  const env = fs.readFileSync(path.join(worktreeCwd, ".paperclip", ".env"), "utf8");
-  assert.match(env, /PAPERCLIP_IN_WORKTREE=true/);
+  const env = fs.readFileSync(path.join(worktreeCwd, ".bullpen", ".env"), "utf8");
+  assert.match(env, /BULLPEN_IN_WORKTREE=true/);
 });
 
 test("repairs an unhealthy base install under the lock and then uses the CLI", (t) => {
@@ -132,7 +132,7 @@ test("repairs an unhealthy base install under the lock and then uses the CLI", (
 
   // The CLI's health is controlled by a flag file, and a fake `pnpm install`
   // creates that flag — modeling a forced reinstall that relinks the store.
-  const baseCwd = makeTempDir("paperclip-provision-repair-base-");
+  const baseCwd = makeTempDir("bullpen-provision-repair-base-");
   const healthFlag = path.join(baseCwd, "cli-healthy.flag");
   const runnerPath = path.join(baseCwd, "cli", "node_modules", "tsx", "dist", "cli.mjs");
   const entryPath = path.join(baseCwd, "cli", "src", "index.ts");
@@ -148,9 +148,9 @@ if (cliArgs.includes("--help")) {
   process.exit(fs.existsSync(${JSON.stringify(healthFlag)}) ? 0 : 1);
 }
 if (cliArgs[0] === "worktree" && cliArgs[1] === "init") {
-  fs.mkdirSync(".paperclip", { recursive: true });
-  fs.writeFileSync(".paperclip/config.json", JSON.stringify({ $meta: { source: "fake-cli" } }));
-  fs.writeFileSync(".paperclip/.env", "PAPERCLIP_IN_WORKTREE=true\\n");
+  fs.mkdirSync(".bullpen", { recursive: true });
+  fs.writeFileSync(".bullpen/config.json", JSON.stringify({ $meta: { source: "fake-cli" } }));
+  fs.writeFileSync(".bullpen/.env", "BULLPEN_IN_WORKTREE=true\\n");
   process.exit(0);
 }
 process.exit(0);
@@ -160,7 +160,7 @@ process.exit(0);
   fs.writeFileSync(path.join(baseCwd, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
   spawnSync("git", ["init", "-q", baseCwd], { env: { PATH: testPath } });
 
-  const fakeBin = makeTempDir("paperclip-provision-fakebin-");
+  const fakeBin = makeTempDir("bullpen-provision-fakebin-");
   const installLog = path.join(baseCwd, "pnpm-invocations.log");
   fs.writeFileSync(
     path.join(fakeBin, "pnpm"),
@@ -185,7 +185,7 @@ exit 1
   assert.match(installs[0], /--force/);
   assert.match(installs[0], /--frozen-lockfile/);
   assert.ok(
-    fs.existsSync(path.join(baseCwd, ".git", "paperclip-provision-repair.lock")),
+    fs.existsSync(path.join(baseCwd, ".git", "bullpen-provision-repair.lock")),
     "expected the repair lock file inside the resolved git dir",
   );
 });
@@ -200,5 +200,5 @@ test("a failed CLI init fails provisioning instead of being masked as success", 
 
   assert.equal(result.status, 3, result.stderr);
   assert.match(result.stderr, /fake worktree init failure/);
-  assert.ok(!fs.existsSync(path.join(worktreeCwd, ".paperclip", "config.json")));
+  assert.ok(!fs.existsSync(path.join(worktreeCwd, ".bullpen", "config.json")));
 });

@@ -46,7 +46,7 @@ function createMockSandbox(overrides: {
 } = {}) {
   return {
     id: overrides.id ?? "sandbox-123",
-    name: overrides.name ?? "paperclip-sandbox",
+    name: overrides.name ?? "bullpen-sandbox",
     state: overrides.state ?? "started",
     recoverable: overrides.recoverable ?? false,
     target: "us",
@@ -271,7 +271,7 @@ describe("Daytona sandbox provider plugin", () => {
     });
 
     expect(mockCreate).toHaveBeenCalled();
-    expect(sandbox.fs.createFolder).toHaveBeenCalledWith("/home/daytona/paperclip-workspace", "755");
+    expect(sandbox.fs.createFolder).toHaveBeenCalledWith("/home/daytona/bullpen-workspace", "755");
     expect(sandbox.delete).toHaveBeenCalledWith(300);
     expect(result).toMatchObject({
       ok: true,
@@ -279,7 +279,7 @@ describe("Daytona sandbox provider plugin", () => {
         provider: "daytona",
         shellCommand: "bash",
         sandboxId: "sandbox-123",
-        remoteCwd: "/home/daytona/paperclip-workspace",
+        remoteCwd: "/home/daytona/bullpen-workspace",
       },
     });
   });
@@ -310,21 +310,21 @@ describe("Daytona sandbox provider plugin", () => {
         provider: "daytona",
         shellCommand: "bash",
         sandboxId: "sandbox-123",
-        remoteCwd: "/home/daytona/paperclip-workspace",
+        remoteCwd: "/home/daytona/bullpen-workspace",
         reuseLease: true,
         workspaceSentinel: {
-          path: "/home/daytona/paperclip-workspace/.paperclip-runtime/reusable-sandbox-lease.json",
+          path: "/home/daytona/bullpen-workspace/.bullpen-runtime/reusable-sandbox-lease.json",
           result: "written",
         },
       },
     });
     expect(sandbox.fs.createFolder).toHaveBeenCalledWith(
-      "/home/daytona/paperclip-workspace/.paperclip-runtime",
+      "/home/daytona/bullpen-workspace/.bullpen-runtime",
       "755",
     );
     expect(sandbox.fs.uploadFile).toHaveBeenCalledWith(
       expect.any(Buffer),
-      "/home/daytona/paperclip-workspace/.paperclip-runtime/reusable-sandbox-lease.json",
+      "/home/daytona/bullpen-workspace/.bullpen-runtime/reusable-sandbox-lease.json",
       300,
     );
   });
@@ -353,9 +353,9 @@ describe("Daytona sandbox provider plugin", () => {
     expect(createParams).toMatchObject({
       snapshot: "existing-secret-snapshot",
       labels: {
-        "paperclip-provider": "daytona",
-        "paperclip-setup-session-id": "setup-1",
-        "paperclip-purpose": "interactive_setup",
+        "bullpen-provider": "daytona",
+        "bullpen-setup-session-id": "setup-1",
+        "bullpen-purpose": "interactive_setup",
       },
     });
     expect(createParams).not.toHaveProperty("image");
@@ -410,9 +410,9 @@ describe("Daytona sandbox provider plugin", () => {
     expect(createParams).toMatchObject({
       image: "node:20",
       labels: {
-        "paperclip-provider": "daytona",
-        "paperclip-setup-session-id": "setup-image-1",
-        "paperclip-purpose": "interactive_setup",
+        "bullpen-provider": "daytona",
+        "bullpen-setup-session-id": "setup-image-1",
+        "bullpen-purpose": "interactive_setup",
       },
     });
     expect(createParams).not.toHaveProperty("snapshot");
@@ -507,7 +507,7 @@ describe("Daytona sandbox provider plugin", () => {
       companyId: "company-1",
       environmentId: "env-1",
       providerLeaseId: "sandbox-setup",
-      templateLabel: " Paperclip Env 1 ",
+      templateLabel: " Bullpen Env 1 ",
       sourceTemplateRef: "source-secret-snapshot",
       previousTemplateRef: "previous-secret-snapshot",
       timeoutMs: 120000,
@@ -518,10 +518,10 @@ describe("Daytona sandbox provider plugin", () => {
       },
     });
 
-    expect(sandbox._experimental_createSnapshot).toHaveBeenCalledWith("paperclip-env-1", 120);
+    expect(sandbox._experimental_createSnapshot).toHaveBeenCalledWith("bullpen-env-1", 120);
     expect(result).toMatchObject({
       templateKind: "snapshot",
-      templateRef: "paperclip-env-1",
+      templateRef: "bullpen-env-1",
       metadata: {
         provider: "daytona",
         sandboxId: "sandbox-setup",
@@ -888,7 +888,7 @@ describe("Daytona sandbox provider plugin", () => {
       },
       leaseMetadata: {
         workspaceSentinel: {
-          path: "/home/daytona/paperclip-workspace/.paperclip-runtime/reusable-sandbox-lease.json",
+          path: "/home/daytona/bullpen-workspace/.bullpen-runtime/reusable-sandbox-lease.json",
           token: "sentinel-token",
           result: "written",
         },
@@ -929,7 +929,7 @@ describe("Daytona sandbox provider plugin", () => {
       },
       leaseMetadata: {
         workspaceSentinel: {
-          path: "/home/daytona/paperclip-workspace/.paperclip-runtime/reusable-sandbox-lease.json",
+          path: "/home/daytona/bullpen-workspace/.bullpen-runtime/reusable-sandbox-lease.json",
           token: "sentinel-token",
           result: "written",
         },
@@ -939,7 +939,7 @@ describe("Daytona sandbox provider plugin", () => {
       metadata: {
         expired: true,
         workspaceSentinel: {
-          path: "/home/daytona/paperclip-workspace/.paperclip-runtime/reusable-sandbox-lease.json",
+          path: "/home/daytona/bullpen-workspace/.bullpen-runtime/reusable-sandbox-lease.json",
           token: "sentinel-token",
           result: "mismatch",
         },
@@ -1180,16 +1180,16 @@ describe("Daytona sandbox provider plugin", () => {
 
     expect(sandbox.fs.uploadFile).toHaveBeenCalledWith(
       Buffer.from("input payload", "utf8"),
-      expect.stringMatching(/^\/tmp\/paperclip-stdin-/),
+      expect.stringMatching(/^\/tmp\/bullpen-stdin-/),
       1,
     );
     const [command] = sandbox.process.executeCommand.mock.calls[0] as [string];
     expect(command).toMatch(/\/etc\/profile/);
     expect(command).not.toMatch(/nvm\.sh/);
     expect(command).toMatch(/&& cd '\/workspace'/);
-    expect(command).toMatch(/env .* 'cat' < '\/tmp\/paperclip-stdin-/);
+    expect(command).toMatch(/env .* 'cat' < '\/tmp\/bullpen-stdin-/);
     expect(command).not.toMatch(/(?:^|&& )exec /);
-    expect(sandbox.fs.deleteFile).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/paperclip-stdin-/));
+    expect(sandbox.fs.deleteFile).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/bullpen-stdin-/));
     expect(result).toMatchObject({
       exitCode: 0,
       timedOut: false,
@@ -1209,7 +1209,7 @@ describe("Daytona sandbox provider plugin", () => {
       lease: {
         providerLeaseId: "sandbox-123",
         metadata: {
-          remoteCwd: "/home/daytona/paperclip-workspace",
+          remoteCwd: "/home/daytona/bullpen-workspace",
           bwrapAvailable: true,
           sandboxUid: 1000,
           sandboxGid: 1000,
@@ -1226,7 +1226,7 @@ describe("Daytona sandbox provider plugin", () => {
     expect(command.startsWith("sudo -n bwrap")).toBe(true);
     expect(command).toContain("--unshare-user --uid 1000 --gid 1000");
     expect(command).toContain(
-      "--bind-try '/home/daytona/paperclip-workspace' '/home/daytona/paperclip-workspace'",
+      "--bind-try '/home/daytona/bullpen-workspace' '/home/daytona/bullpen-workspace'",
     );
     // The login-shell script still rides inside the wrapper through `sh -c`.
     expect(command).toContain("/etc/profile");
@@ -1234,7 +1234,7 @@ describe("Daytona sandbox provider plugin", () => {
 
   it("binds collected rw sync directories", async () => {
     process.env.DAYTONA_API_KEY = "host-key";
-    const remoteCwd = "/home/daytona/paperclip-workspace";
+    const remoteCwd = "/home/daytona/bullpen-workspace";
     const collectedDir = `${remoteCwd}/data`;
     const hostDir = await fs.mkdtemp(path.join(os.tmpdir(), "daytona-bwrap-test-"));
     const source = path.join(hostDir, "in-place.txt");
@@ -1294,7 +1294,7 @@ describe("Daytona sandbox provider plugin", () => {
     // `--bind`) for the collected path, which stops a stale path from failing
     // every later command for the scope.
     process.env.DAYTONA_API_KEY = "host-key";
-    const remoteCwd = "/home/daytona/paperclip-workspace";
+    const remoteCwd = "/home/daytona/bullpen-workspace";
     const collectedDir = `${remoteCwd}/scratch`;
     const hostDir = await fs.mkdtemp(path.join(os.tmpdir(), "daytona-bwrap-stale-"));
     const source = path.join(hostDir, "note.txt");
@@ -1361,7 +1361,7 @@ describe("Daytona sandbox provider plugin", () => {
       lease: {
         providerLeaseId: "sandbox-123",
         metadata: {
-          remoteCwd: "/home/daytona/paperclip-workspace",
+          remoteCwd: "/home/daytona/bullpen-workspace",
           bwrapAvailable: true,
           sandboxUid: 1000,
           sandboxGid: 1000,
@@ -1374,7 +1374,7 @@ describe("Daytona sandbox provider plugin", () => {
     });
 
     const stdinPath = sandbox.fs.uploadFile.mock.calls[0][1] as string;
-    expect(stdinPath).toMatch(/^\/tmp\/paperclip-stdin-/);
+    expect(stdinPath).toMatch(/^\/tmp\/bullpen-stdin-/);
     const [command] = sandbox.process.executeCommand.mock.calls[0] as [string];
     // The `--tmpfs /tmp` flag hides the uploaded stdin file, so the wrapper must
     // re-bind it read-only after the tmpfs.
@@ -1395,7 +1395,7 @@ describe("Daytona sandbox provider plugin", () => {
       lease: {
         providerLeaseId: "sandbox-123",
         metadata: {
-          remoteCwd: "/home/daytona/paperclip-workspace",
+          remoteCwd: "/home/daytona/bullpen-workspace",
           bwrapAvailable: false,
           sandboxUid: 1000,
           sandboxGid: 1000,
@@ -1418,7 +1418,7 @@ describe("Daytona sandbox provider plugin", () => {
       lease: {
         providerLeaseId: "sandbox-123",
         metadata: {
-          remoteCwd: "/home/daytona/paperclip-workspace",
+          remoteCwd: "/home/daytona/bullpen-workspace",
           bwrapAvailable: true,
           sandboxUid: null,
           sandboxGid: null,
@@ -1966,7 +1966,7 @@ describe("Daytona sandbox provider plugin", () => {
       const hostDir = await fs.mkdtemp(path.join(os.tmpdir(), "daytona-cancel-sync-"));
       const source = path.join(hostDir, "payload.txt");
       await fs.writeFile(source, "payload");
-      const remoteDir = "/home/daytona/paperclip-workspace";
+      const remoteDir = "/home/daytona/bullpen-workspace";
 
       const sandbox = createMockSandbox({ id: "lease-a" });
       let resolveUpload!: () => void;
@@ -2190,7 +2190,7 @@ describe("Daytona sandbox provider plugin", () => {
         config: { timeoutMs: 300000, reuseLease: true },
         leaseMetadata: {
           workspaceSentinel: {
-            path: "/home/daytona/paperclip-workspace/.paperclip-runtime/reusable-sandbox-lease.json",
+            path: "/home/daytona/bullpen-workspace/.bullpen-runtime/reusable-sandbox-lease.json",
             token: "expected-token",
             result: "written",
           },
@@ -2392,21 +2392,21 @@ describe("Daytona sandbox provider plugin", () => {
       const realize = await plugin.definition.onEnvironmentRealizeWorkspace?.({
         ...base,
         lease: { providerLeaseId: lease!.providerLeaseId, metadata: lease!.metadata },
-        workspace: { remotePath: "/home/daytona/paperclip-workspace" },
+        workspace: { remotePath: "/home/daytona/bullpen-workspace" },
         config,
       });
 
       // Acquire seeded the handle under the exact scope realize reads, so realize
       // reuses it and never pays a real REST re-fetch.
       expect(mockGet).not.toHaveBeenCalled();
-      expect(sandbox.fs.createFolder).toHaveBeenCalledWith("/home/daytona/paperclip-workspace", "755");
-      expect(realize?.cwd).toBe("/home/daytona/paperclip-workspace");
+      expect(sandbox.fs.createFolder).toHaveBeenCalledWith("/home/daytona/bullpen-workspace", "755");
+      expect(realize?.cwd).toBe("/home/daytona/bullpen-workspace");
     });
   });
 });
 
 describe("daytona native file-sync hooks", () => {
-  const REMOTE_DIR = "/home/daytona/paperclip-workspace";
+  const REMOTE_DIR = "/home/daytona/bullpen-workspace";
   const tempDirs: string[] = [];
 
   async function makeHostDir(): Promise<string> {
@@ -2460,7 +2460,7 @@ describe("daytona native file-sync hooks", () => {
               // post-upload command extracts it into the workspace directory. So
               // `writablePath` names the real read-write destination.
               sourcePath: source,
-              targetPath: `${REMOTE_DIR}/.paperclip-runtime/workspace-upload.tar`,
+              targetPath: `${REMOTE_DIR}/.bullpen-runtime/workspace-upload.tar`,
               kind: "file" as const,
               access: "rw" as const,
               writablePath: REMOTE_DIR,
@@ -2474,7 +2474,7 @@ describe("daytona native file-sync hooks", () => {
     // The set holds the extract destination, not the staging archive parent.
     const recorded = __getDaytonaWritableDirsForTest(params);
     expect(recorded).toContain(REMOTE_DIR);
-    expect(recorded).not.toContain(`${REMOTE_DIR}/.paperclip-runtime`);
+    expect(recorded).not.toContain(`${REMOTE_DIR}/.bullpen-runtime`);
   });
 
   it("falls back to the parent directory of an rw mapping with no writablePath", async () => {
@@ -2535,14 +2535,14 @@ describe("daytona native file-sync hooks", () => {
           files: [
             {
               sourcePath: roSource,
-              targetPath: `${REMOTE_DIR}/.paperclip-runtime/project-proj-first`,
+              targetPath: `${REMOTE_DIR}/.bullpen-runtime/project-proj-first`,
               kind: "directory" as const,
               access: "ro" as const,
             },
             {
               // An absent `access` defaults to read-only, so it is not recorded.
               sourcePath: defaultSource,
-              targetPath: `${REMOTE_DIR}/.paperclip-runtime/default-upload.tar`,
+              targetPath: `${REMOTE_DIR}/.bullpen-runtime/default-upload.tar`,
               kind: "file" as const,
             },
           ],
@@ -2589,7 +2589,7 @@ describe("daytona native file-sync hooks", () => {
     // String sources stream from the local path; destinations are reserved temps.
     expect(uploads[0].source).toBe(secretSource);
     for (const upload of uploads) {
-      expect(path.posix.basename(upload.destination)).toMatch(/^\.paperclip-upload-/);
+      expect(path.posix.basename(upload.destination)).toMatch(/^\.bullpen-upload-/);
       expect(upload.destination).not.toBe(`${REMOTE_DIR}/.secret/auth.json`);
       // TOCTOU-hardened: the privileged upload destination is a DIRECT child of the
       // workspace root, never a sibling under the target's (sandbox-swappable)
@@ -2601,7 +2601,7 @@ describe("daytona native file-sync hooks", () => {
     // never appears at a widened window; applied via setFilePermissions as "600".
     expect(sandbox.fs.setFilePermissions).toHaveBeenCalledTimes(1);
     const [permPath, perms] = sandbox.fs.setFilePermissions.mock.calls[0] as [string, { mode: string }];
-    expect(path.posix.basename(permPath)).toMatch(/^\.paperclip-upload-/);
+    expect(path.posix.basename(permPath)).toMatch(/^\.bullpen-upload-/);
     expect(perms).toEqual({ mode: "600" });
 
     // The setFilePermissions on the temp precedes the mv that promotes it.
@@ -2662,7 +2662,7 @@ describe("daytona native file-sync hooks", () => {
           files: [
             {
               sourcePath: sourceDir,
-              targetPath: `${REMOTE_DIR}/.paperclip-runtime/assets`,
+              targetPath: `${REMOTE_DIR}/.bullpen-runtime/assets`,
               kind: "directory",
               exclude: ["*.log"],
             },
@@ -2675,7 +2675,7 @@ describe("daytona native file-sync hooks", () => {
     const [uploads] = sandbox.fs.uploadFiles.mock.calls[0] as [Array<{ source: string; destination: string }>];
     expect(uploads).toHaveLength(1);
     expect(uploads[0].source).toMatch(/\.tar$/);
-    expect(path.posix.basename(uploads[0].destination)).toMatch(/^\.paperclip-upload-.*\.tar$/);
+    expect(path.posix.basename(uploads[0].destination)).toMatch(/^\.bullpen-upload-.*\.tar$/);
     expect(uploads[0].destination.startsWith(`${REMOTE_DIR}/`)).toBe(true);
 
     // Inspect the real host tar: excluded file gone; symlink preserved AS a link.
@@ -2688,7 +2688,7 @@ describe("daytona native file-sync hooks", () => {
     const mkdirCall = sandbox.process.executeCommand.mock.calls.find(
       ([cmd]) =>
         String(cmd).includes("mkdir -p") &&
-        String(cmd).includes(`'${REMOTE_DIR}/.paperclip-runtime/assets'`) &&
+        String(cmd).includes(`'${REMOTE_DIR}/.bullpen-runtime/assets'`) &&
         !String(cmd).includes("tar -xf"),
     );
     expect(mkdirCall).toBeDefined();
@@ -2707,12 +2707,12 @@ describe("daytona native file-sync hooks", () => {
     // race in the `open()` itself — then extracts via /proc/self/fd/9, binding
     // extraction to the directory inode rather than the path string.
     expect(extractCommand).toContain("_pc_resolve");
-    expect(extractCommand).toContain(".paperclip-runtime/assets");
+    expect(extractCommand).toContain(".bullpen-runtime/assets");
     expect(extractCommand).toContain("tar -xf");
     expect(extractCommand).toContain('exec 9<"$_pc_real"');
     expect(extractCommand).toContain("_pc_fd_real=$(_pc_resolve /proc/self/fd/9)");
     expect(extractCommand).toContain("-C /proc/self/fd/9");
-    expect(extractCommand).toMatch(/rm -f .*\.paperclip-upload-.*\.tar/);
+    expect(extractCommand).toMatch(/rm -f .*\.bullpen-upload-.*\.tar/);
   });
 
   it("syncIn dereferences symlinks to bytes when followSymlinks is true (tar -h)", async () => {
@@ -2787,11 +2787,11 @@ describe("daytona native file-sync hooks", () => {
     const [requests] = sandbox.fs.downloadFiles.mock.calls[0] as [Array<{ source: string; destination: string }>];
     expect(requests).toHaveLength(2);
     for (const req of requests) {
-      expect(path.basename(req.destination)).toMatch(/^\.paperclip-upload-/);
+      expect(path.basename(req.destination)).toMatch(/^\.bullpen-upload-/);
       // TOCTOU-closed: the download reads a reserved snapshot inside the remote
       // dir, never the mutable original source path.
       expect(req.source.startsWith(`${REMOTE_DIR}/`)).toBe(true);
-      expect(path.posix.basename(req.source)).toMatch(/^\.paperclip-upload-/);
+      expect(path.posix.basename(req.source)).toMatch(/^\.bullpen-upload-/);
     }
     expect(requests.map((req) => req.source)).not.toContain(`${REMOTE_DIR}/out/result.txt`);
     expect(requests.map((req) => req.source)).not.toContain(`${REMOTE_DIR}/out/secret.key`);
@@ -3069,7 +3069,7 @@ describe("daytona native file-sync hooks", () => {
 
     const sandbox = createMockSandbox();
     // mkdir + realpath guard succeed; the promoting `mv -f` fails, leaving staged
-    // `.paperclip-upload-*` temps that the error path must sweep with `rm -f`.
+    // `.bullpen-upload-*` temps that the error path must sweep with `rm -f`.
     sandbox.process.executeCommand.mockImplementation(async (command: string) => {
       if (command.includes("mv -f")) {
         return { exitCode: 1, result: "mv: permission denied", artifacts: { stdout: "mv: permission denied" } };
@@ -3097,7 +3097,7 @@ describe("daytona native file-sync hooks", () => {
     // The upload happened, so a temp was staged; the error path cleans it up.
     expect(sandbox.fs.uploadFiles).toHaveBeenCalledTimes(1);
     const cleanupCall = sandbox.process.executeCommand.mock.calls.find(
-      ([cmd]) => String(cmd).includes("rm -f") && String(cmd).includes(".paperclip-upload-"),
+      ([cmd]) => String(cmd).includes("rm -f") && String(cmd).includes(".bullpen-upload-"),
     );
     expect(cleanupCall).toBeDefined();
   });
@@ -3325,7 +3325,7 @@ describe("daytona native file-sync hooks", () => {
     const overlayTar = path.join(hostDir, "workspace.tar");
     await fs.writeFile(gitTar, "git-bytes");
     await fs.writeFile(overlayTar, "overlay-bytes");
-    const runtimeDir = `${REMOTE_DIR}/.paperclip-runtime/adapter`;
+    const runtimeDir = `${REMOTE_DIR}/.bullpen-runtime/adapter`;
 
     const sandbox = createMockSandbox();
     mockGet.mockResolvedValue(sandbox);
@@ -3383,7 +3383,7 @@ describe("daytona native file-sync hooks", () => {
     const overlayTar = path.join(hostDir, "workspace.tar");
     await fs.writeFile(gitTar, "git-bytes");
     await fs.writeFile(overlayTar, "overlay-bytes");
-    const runtimeDir = `${REMOTE_DIR}/.paperclip-runtime/adapter`;
+    const runtimeDir = `${REMOTE_DIR}/.bullpen-runtime/adapter`;
 
     const sandbox = createMockSandbox();
     mockGet.mockResolvedValue(sandbox);
@@ -3419,7 +3419,7 @@ describe("daytona native file-sync hooks", () => {
     const overlayTar = path.join(hostDir, "workspace.tar");
     await fs.writeFile(gitTar, "git-bytes");
     await fs.writeFile(overlayTar, "overlay-bytes");
-    const runtimeDir = `${REMOTE_DIR}/.paperclip-runtime/adapter`;
+    const runtimeDir = `${REMOTE_DIR}/.bullpen-runtime/adapter`;
 
     const sandbox = createMockSandbox();
     // The first (git-history) extract exits non-zero; every transfer/guard script
@@ -3604,7 +3604,7 @@ describe("buildBwrapCommand advisory wrapper builder", () => {
   it("emits user-namespace, ro-bind root, fresh dev/proc/tmp, writable binds, new-session, and sh -c", () => {
     const command = buildBwrapCommand(
       "echo hi",
-      ["/home/daytona/paperclip-workspace"],
+      ["/home/daytona/bullpen-workspace"],
       null,
       { uid: 1000, gid: 1000 },
     );
@@ -3612,7 +3612,7 @@ describe("buildBwrapCommand advisory wrapper builder", () => {
     expect(command).toBe(
       "sudo -n bwrap --unshare-user --uid 1000 --gid 1000 "
       + "--ro-bind / / --dev /dev --proc /proc --tmpfs /tmp "
-      + "--bind-try '/home/daytona/paperclip-workspace' '/home/daytona/paperclip-workspace' "
+      + "--bind-try '/home/daytona/bullpen-workspace' '/home/daytona/bullpen-workspace' "
       + "--new-session -- sh -c 'echo hi'",
     );
   });
@@ -3672,13 +3672,13 @@ describe("buildBwrapCommand advisory wrapper builder", () => {
     // them, so one stale path never poisons a later command.
     const command = buildBwrapCommand(
       "echo hi",
-      ["/home/daytona/paperclip-workspace", "/home/daytona/data"],
+      ["/home/daytona/bullpen-workspace", "/home/daytona/data"],
       null,
       { uid: 1000, gid: 1000 },
     );
 
     expect(command).toContain(
-      "--bind-try '/home/daytona/paperclip-workspace' '/home/daytona/paperclip-workspace'",
+      "--bind-try '/home/daytona/bullpen-workspace' '/home/daytona/bullpen-workspace'",
     );
     expect(command).toContain("--bind-try '/home/daytona/data' '/home/daytona/data'");
     // The only plain `--bind` family in the command is the read-only bind
@@ -3827,7 +3827,7 @@ describe("advisory bwrap capability probe at lease time", () => {
       config: { timeoutMs: 300000, reuseLease: true },
       leaseMetadata: {
         workspaceSentinel: {
-          path: "/home/daytona/paperclip-workspace/.paperclip-runtime/reusable-sandbox-lease.json",
+          path: "/home/daytona/bullpen-workspace/.bullpen-runtime/reusable-sandbox-lease.json",
           token: "sentinel-token",
           result: "written",
         },

@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import { resolvePaperclipInstanceId } from "./config/home.js";
+import { resolveBullpenInstanceId } from "./config/home.js";
 import {
   detectServiceManager,
   type ServiceManagerDetection,
@@ -25,14 +25,14 @@ const defaultDependencies: OnboardServiceDependencies = {
   detect: (instanceId) => detectServiceManager({ instanceId }),
   confirm: async () => {
     const answer = await p.confirm({
-      message: "Install Paperclip as a background service?",
+      message: "Install Bullpen as a background service?",
       initialValue: true,
     });
     return !p.isCancel(answer) && answer === true;
   },
   confirmLinger: async () => {
     const answer = await p.confirm({
-      message: "Allow Paperclip to keep running after logout? This may request system authorization.",
+      message: "Allow Bullpen to keep running after logout? This may request system authorization.",
       initialValue: false,
     });
     return !p.isCancel(answer) && answer === true;
@@ -54,12 +54,12 @@ export async function handleOnboardService(
   const canPrompt = options.yes !== true && deps.isInteractive();
   if (!explicitlyRequested && !canPrompt) {
     deps.info(
-      "Background service not installed. Use `paperclipai onboard --install-service` or `paperclipai service install` to opt in.",
+      "Background service not installed. Use `bullpen onboard --install-service` or `bullpen service install` to opt in.",
     );
     return false;
   }
 
-  const instanceId = resolvePaperclipInstanceId();
+  const instanceId = resolveBullpenInstanceId();
   const detection = await deps.detect(instanceId);
   if (!detection.supported) {
     if (explicitlyRequested) deps.warn(detection.reason);

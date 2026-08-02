@@ -216,7 +216,7 @@ import {
   importMcpJsonSchema,
   toolPolicyTestRequestSchema,
   createToolMcpGatewaySchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 
 type JsonSchema = Record<string, unknown>;
 type OpenApiResponse = Record<string, unknown>;
@@ -1001,9 +1001,9 @@ function applyDocumentFixups(document: any): any {
     [BOARD_SESSION_AUTH_SCHEME]: {
       type: "apiKey",
       in: "cookie",
-      name: "paperclip_session",
+      name: "bullpen_session",
       description:
-        "Board session cookie in authenticated mode. Paperclip uses Better Auth; cookie transport may vary by deployment.",
+        "Board session cookie in authenticated mode. Bullpen uses Better Auth; cookie transport may vary by deployment.",
     },
     [BOARD_API_KEY_AUTH_SCHEME]: {
       type: "http",
@@ -1016,7 +1016,7 @@ function applyDocumentFixups(document: any): any {
       scheme: "bearer",
       bearerFormat: "Agent API Key or Agent JWT",
       description:
-        "Agent API key or Paperclip-issued local agent JWT presented in the Authorization bearer header.",
+        "Agent API key or Bullpen-issued local agent JWT presented in the Authorization bearer header.",
     },
   };
   document.security = AUTHENTICATED_SECURITY;
@@ -1032,7 +1032,7 @@ function applyDocumentFixups(document: any): any {
         operation.security = BOARD_SECURITY;
       }
 
-      operation["x-paperclip-authorization"] =
+      operation["x-bullpen-authorization"] =
         authLevel === "instance_admin"
           ? { actor: "board", instanceAdmin: true }
           : authLevel === "board"
@@ -5676,8 +5676,8 @@ registry.registerPath({
     "JSON `meta` field, or a bare `application/zip` body with the `meta` JSON in the `meta` " +
     "query parameter); the zip is unzipped server-side into the same import bundle. " +
     "Callers can opt into asynchronous processing: trusted Cloud tenants set the " +
-    "`x-paperclip-cloud-async-import: 1` header (browsers cannot — the Cloud harness proxy " +
-    "strips inbound `x-paperclip-cloud-*` headers), while board sessions use the proxy-safe " +
+    "`x-bullpen-cloud-async-import: 1` header (browsers cannot — the Cloud harness proxy " +
+    "strips inbound `x-bullpen-cloud-*` headers), while board sessions use the proxy-safe " +
     "`?async=1` query parameter. Either way the server responds 202 with a job id and status " +
     "URL instead of holding the connection open for the whole import. While a board actor " +
     "already has an async job running, a resubmit returns 409 carrying the running job's id " +
@@ -7119,9 +7119,9 @@ export function buildOpenApiDocument(): any {
   return applyDocumentFixups({
     openapi: "3.0.0",
     info: {
-      title: "Paperclip API",
+      title: "Bullpen API",
       version: "1.0.0",
-      description: "REST API for the Paperclip AI agent management platform",
+      description: "REST API for the Bullpen AI agent management platform",
     },
     servers: [{ url: "/" }],
     components: registry.buildComponents(),

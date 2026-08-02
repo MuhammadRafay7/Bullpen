@@ -26,7 +26,7 @@ import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
 import { Card } from "@/components/ui/card";
-import type { Agent, Issue } from "@paperclipai/shared";
+import type { Agent, Issue } from "@bullpen/shared";
 import { PluginSlotOutlet } from "@/plugins/slots";
 import { SmokeLabDashboardCard } from "../components/SmokeLabDashboardCard";
 
@@ -195,7 +195,7 @@ export function Dashboard() {
       return (
         <EmptyState
           icon={LayoutDashboard}
-          message="Welcome to Paperclip. Set up your first company and agent to get started."
+          message="Welcome to Bullpen. Set up your first company and agent to get started."
           action="Get Started"
           onAction={openOnboarding}
         />

@@ -1,0 +1,29 @@
+{
+  "name": "@bullpen/plugin-fake-sandbox",
+  "version": "0.1.0",
+  "description": "First-party deterministic fake sandbox provider plugin for Bullpen environments",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bullpenPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @bullpen/plugin-sdk ensure-build-deps",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "pnpm --filter @bullpen/plugin-sdk ensure-build-deps && tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@bullpen/plugin-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.10"
+  }
+}

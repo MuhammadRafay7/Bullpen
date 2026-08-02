@@ -1,0 +1,23 @@
+[Unit]
+Description=Bullpen AI Agent Orchestrator
+Requires=bullpen-db.service
+After=bullpen-db.service
+
+[Container]
+Image=bullpen-local
+ContainerName=bullpen
+Pod=bullpen.pod
+Volume=%h/.local/share/bullpen:/bullpen:Z
+Environment=HOST=0.0.0.0
+Environment=BULLPEN_HOME=/bullpen
+Environment=BULLPEN_DEPLOYMENT_MODE=authenticated
+Environment=BULLPEN_DEPLOYMENT_EXPOSURE=private
+Environment=BULLPEN_PUBLIC_URL=http://localhost:3100
+EnvironmentFile=%h/.config/containers/systemd/bullpen.env
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

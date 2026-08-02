@@ -30,9 +30,9 @@ export type {
   RegisteredPluginEventName,
 } from "./types.js";
 export type {
-  AnyPaperclipTelemetryEvent,
+  AnyBullpenTelemetryEvent,
   EventDimensionsMap,
-  PaperclipEventName,
-} from "./generated/paperclip-telemetry.js";
+  BullpenEventName,
+} from "./generated/bullpen-telemetry.js";
 export { EVENT_RETENTION_CLASS, RETENTION_DAYS } from "./retention.js";
 export type { RetentionClass } from "./retention.js";

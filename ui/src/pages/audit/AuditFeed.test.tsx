@@ -136,7 +136,7 @@ describe("AuditFeed", () => {
     expect(container.textContent).toContain("Looks good to me");
     expect(container.textContent).toContain("on behalf of Dotta");
     expect(container.querySelector('a[href="/agents/agent-1/runs/run-1"]')).toBeTruthy();
-    expect(container.textContent).toContain("Recorded by Paperclip");
+    expect(container.textContent).toContain("Recorded by Bullpen");
   });
 
   it("shows the permission-denied upsell when the feed 403s", async () => {
@@ -145,10 +145,10 @@ describe("AuditFeed", () => {
     );
     await render();
 
-    expect(container.textContent).toContain("Paperclip Enterprise view");
+    expect(container.textContent).toContain("Bullpen Enterprise view");
     expect(container.textContent).toContain("audit:view_agent_actions");
     // The feed chrome (filters, footer) is not rendered in the denied state.
-    expect(container.textContent).not.toContain("Recorded by Paperclip");
+    expect(container.textContent).not.toContain("Recorded by Bullpen");
   });
 
   it("hides the agent filter and pins the query when lockedAgentId is set", async () => {

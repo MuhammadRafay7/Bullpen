@@ -38,13 +38,13 @@ export type EmbeddedPostgresTestDatabase = {
 
 let embeddedPostgresSupportPromise: Promise<EmbeddedPostgresTestSupport> | null = null;
 
-const DEFAULT_PAPERCLIP_EMBEDDED_POSTGRES_PORT = 54329;
+const DEFAULT_BULLPEN_EMBEDDED_POSTGRES_PORT = 54329;
 
 function getReservedTestPorts(): Set<number> {
   const configuredPorts = [
-    DEFAULT_PAPERCLIP_EMBEDDED_POSTGRES_PORT,
-    Number.parseInt(process.env.PAPERCLIP_EMBEDDED_POSTGRES_PORT ?? "", 10),
-    ...String(process.env.PAPERCLIP_TEST_POSTGRES_RESERVED_PORTS ?? "")
+    DEFAULT_BULLPEN_EMBEDDED_POSTGRES_PORT,
+    Number.parseInt(process.env.BULLPEN_EMBEDDED_POSTGRES_PORT ?? "", 10),
+    ...String(process.env.BULLPEN_TEST_POSTGRES_RESERVED_PORTS ?? "")
       .split(",")
       .map((value) => Number.parseInt(value.trim(), 10)),
   ];
@@ -99,7 +99,7 @@ async function getAvailablePort(): Promise<number> {
   }
 
   throw new Error(
-    `Failed to allocate embedded Postgres test port outside reserved Paperclip ports: ${[
+    `Failed to allocate embedded Postgres test port outside reserved Bullpen ports: ${[
       ...reservedPorts,
     ].join(", ")}`,
   );
@@ -116,8 +116,8 @@ async function createEmbeddedPostgresTestInstance(tempDirPrefix: string) {
   const logBuffer = createEmbeddedPostgresLogBuffer();
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
-    user: "paperclip",
-    password: "paperclip",
+    user: "bullpen",
+    password: "bullpen",
     port,
     persistent: true,
     initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
@@ -239,7 +239,7 @@ async function probeEmbeddedPostgresSupport(): Promise<EmbeddedPostgresTestSuppo
   let started: { dataDir: string; instance: EmbeddedPostgresInstance } | null = null;
 
   try {
-    started = await startEmbeddedPostgresWithRetry("paperclip-embedded-postgres-probe-");
+    started = await startEmbeddedPostgresWithRetry("bullpen-embedded-postgres-probe-");
     return { supported: true };
   } catch (error) {
     return {
@@ -271,9 +271,9 @@ export async function startEmbeddedPostgresTestDatabase(
   const { port, dataDir, instance } = await startEmbeddedPostgresWithRetry(tempDirPrefix);
 
   try {
-    const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/postgres`;
-    await ensurePostgresDatabase(adminConnectionString, "paperclip");
-    const connectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/paperclip`;
+    const adminConnectionString = `postgres://bullpen:bullpen@127.0.0.1:${port}/postgres`;
+    await ensurePostgresDatabase(adminConnectionString, "bullpen");
+    const connectionString = `postgres://bullpen:bullpen@127.0.0.1:${port}/bullpen`;
     await applyPendingMigrations(connectionString);
 
     return {

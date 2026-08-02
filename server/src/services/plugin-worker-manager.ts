@@ -22,7 +22,7 @@ import { fork, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { createInterface, type Interface as ReadlineInterface } from "node:readline";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+import type { BullpenPluginManifestV1 } from "@bullpen/shared";
 import {
   JSONRPC_VERSION,
   JSONRPC_ERROR_CODES,
@@ -37,7 +37,7 @@ import {
   isJsonRpcSuccessResponse,
   JsonRpcParseError,
   JsonRpcCallError,
-} from "@paperclipai/plugin-sdk";
+} from "@bullpen/plugin-sdk";
 import type {
   JsonRpcId,
   PluginInvocationContext,
@@ -51,7 +51,7 @@ import type {
   WorkerToHostMethodName,
   WorkerToHostMethods,
   InitializeParams,
-} from "@paperclipai/plugin-sdk";
+} from "@bullpen/plugin-sdk";
 import { logger } from "../middleware/logger.js";
 
 // ---------------------------------------------------------------------------
@@ -199,7 +199,7 @@ export interface WorkerStartOptions {
   /** Absolute path to the plugin worker entrypoint (CJS bundle). */
   entrypointPath: string;
   /** Plugin manifest. */
-  manifest: PaperclipPluginManifestV1;
+  manifest: BullpenPluginManifestV1;
   /** Resolved plugin configuration. */
   config: Record<string, unknown>;
   /** Host instance information for the initialize call. */
@@ -461,7 +461,7 @@ export function createPluginWorkerHandle(
   // A proactive plugin (e.g. the chat gateway) does company-scoped work from
   // its own timers/loops — not inside a host-issued top-level invocation
   // (onEvent/performAction/executeTool/configChanged). Those worker→host calls
-  // carry no `paperclipInvocationId`, so the governed-access gate
+  // carry no `bullpenInvocationId`, so the governed-access gate
   // (host-client-factory.ts) rejects any company-scoped request with
   // "company context is required" (regression class from #9557). The host
   // authorizes a bounded set of companies — the plugin's configured companies,
@@ -680,7 +680,7 @@ export function createPluginWorkerHandle(
 
   function contextForWorkerMessage(message: JsonRpcRequest | JsonRpcNotification): WorkerHostCallContext {
     const invocationId = readNonEmptyString(
-      (message as { paperclipInvocationId?: unknown }).paperclipInvocationId,
+      (message as { bullpenInvocationId?: unknown }).bullpenInvocationId,
     );
     if (!invocationId) {
       // No host-issued invocation is being echoed. This is a genuinely
@@ -860,7 +860,7 @@ export function createPluginWorkerHandle(
       ...options.env,
       PATH: process.env.PATH ?? "",
       NODE_PATH: process.env.NODE_PATH ?? "",
-      PAPERCLIP_PLUGIN_ID: pluginId,
+      BULLPEN_PLUGIN_ID: pluginId,
       NODE_ENV: process.env.NODE_ENV ?? "production",
       TZ: process.env.TZ ?? "UTC",
     };
@@ -1321,7 +1321,7 @@ export function createPluginWorkerHandle(
       try {
         const request = {
           ...createRequest(method, params, id),
-          ...(invocation ? { paperclipInvocation: invocation } : {}),
+          ...(invocation ? { bullpenInvocation: invocation } : {}),
         };
         sendMessage(request);
       } catch (err) {
@@ -1404,7 +1404,7 @@ export function createPluginWorkerHandle(
           jsonrpc: JSONRPC_VERSION,
           method,
           params,
-          ...(invocation ? { paperclipInvocation: invocation } : {}),
+          ...(invocation ? { bullpenInvocation: invocation } : {}),
         });
       } catch {
         clearInvocation(invocation);

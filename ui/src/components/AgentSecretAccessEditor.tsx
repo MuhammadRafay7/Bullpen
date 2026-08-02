@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyRound, Plus, ServerCog, Trash2, Variable } from "lucide-react";
-import type { CompanySecret, EnvSecretRefBinding, SecretVersionSelector } from "@paperclipai/shared";
+import type { CompanySecret, EnvSecretRefBinding, SecretVersionSelector } from "@bullpen/shared";
 import { cn } from "../lib/utils";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

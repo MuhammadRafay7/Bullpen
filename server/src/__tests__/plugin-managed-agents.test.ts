@@ -15,8 +15,8 @@ import {
   pluginCompanySettings,
   pluginManagedResources,
   plugins,
-} from "@paperclipai/db";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+} from "@bullpen/db";
+import type { BullpenPluginManifestV1 } from "@bullpen/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -41,14 +41,14 @@ function issuePrefix(id: string) {
   return `T${id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
-function manifest(): PaperclipPluginManifestV1 {
+function manifest(): BullpenPluginManifestV1 {
   return {
-    id: "paperclip.managed-agents-test",
+    id: "bullpen.managed-agents-test",
     apiVersion: 1,
     version: "0.1.0",
     displayName: "Managed Agents Test",
     description: "Test plugin",
-    author: "Paperclip",
+    author: "Bullpen",
     categories: ["automation"],
     capabilities: ["agents.managed"],
     entrypoints: { worker: "./dist/worker.js" },
@@ -80,7 +80,7 @@ describeEmbeddedPostgres("plugin-managed agents", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-plugin-managed-agents-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-plugin-managed-agents-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -100,20 +100,20 @@ describeEmbeddedPostgres("plugin-managed agents", () => {
     await tempDb?.cleanup();
   });
 
-  async function seedCompanyAndPlugin(options: { requireApproval?: boolean; manifest?: PaperclipPluginManifestV1 } = {}) {
+  async function seedCompanyAndPlugin(options: { requireApproval?: boolean; manifest?: BullpenPluginManifestV1 } = {}) {
     const companyId = randomUUID();
     const pluginId = randomUUID();
     const pluginManifest = options.manifest ?? manifest();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: issuePrefix(companyId),
       requireBoardApprovalForNewAgents: options.requireApproval ?? false,
     });
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: pluginManifest.id,
-      packageName: "@paperclipai/plugin-managed-agents-test",
+      packageName: "@bullpen/plugin-managed-agents-test",
       version: pluginManifest.version,
       apiVersion: pluginManifest.apiVersion,
       categories: pluginManifest.categories,
@@ -242,12 +242,12 @@ describeEmbeddedPostgres("plugin-managed agents", () => {
   });
 
   it("materializes declared managed agent instructions with local folder paths", async () => {
-    const previousHome = process.env.PAPERCLIP_HOME;
-    const previousInstance = process.env.PAPERCLIP_INSTANCE_ID;
-    const tempHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-managed-agent-home-"));
-    const wikiRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-managed-agent-wiki-")));
-    process.env.PAPERCLIP_HOME = tempHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "test";
+    const previousHome = process.env.BULLPEN_HOME;
+    const previousInstance = process.env.BULLPEN_INSTANCE_ID;
+    const tempHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-managed-agent-home-"));
+    const wikiRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-managed-agent-wiki-")));
+    process.env.BULLPEN_HOME = tempHome;
+    process.env.BULLPEN_INSTANCE_ID = "test";
     try {
       const pluginManifest = manifest();
       pluginManifest.localFolders = [
@@ -302,10 +302,10 @@ describeEmbeddedPostgres("plugin-managed agents", () => {
       expect(content).toContain(`Wiki root: \`${wikiRoot}\``);
       expect(content).toContain(`Wiki schema: \`${path.join(wikiRoot, "AGENTS.md")}\``);
     } finally {
-      if (previousHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousHome;
-      if (previousInstance === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousInstance;
+      if (previousHome === undefined) delete process.env.BULLPEN_HOME;
+      else process.env.BULLPEN_HOME = previousHome;
+      if (previousInstance === undefined) delete process.env.BULLPEN_INSTANCE_ID;
+      else process.env.BULLPEN_INSTANCE_ID = previousInstance;
       await fs.rm(tempHome, { recursive: true, force: true });
       await fs.rm(wikiRoot, { recursive: true, force: true });
     }
@@ -325,7 +325,7 @@ describeEmbeddedPostgres("plugin-managed agents", () => {
       runtimeConfig: {},
       permissions: {},
       metadata: {
-        paperclipManagedResource: {
+        bullpenManagedResource: {
           pluginId,
           pluginKey: pluginManifest.id,
           resourceKind: "agent",
@@ -358,7 +358,7 @@ describeEmbeddedPostgres("plugin-managed agents", () => {
     });
     expect(approval?.payload).toMatchObject({
       agentId: created.agentId,
-      sourcePluginKey: "paperclip.managed-agents-test",
+      sourcePluginKey: "bullpen.managed-agents-test",
       managedResourceKey: "wiki-maintainer",
     });
   });

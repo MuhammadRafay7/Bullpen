@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, like, ne, notInArray, notLike, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   agents,
   companies,
@@ -17,7 +17,7 @@ import {
   secretAccessEvents,
   userSecretDeclarations,
   userSecretDefinitions,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import type {
   AgentApiKeyScope,
   AgentEnvConfig,
@@ -34,7 +34,7 @@ import type {
   SecretProviderConfigHealthStatus,
   SecretProviderConfigStatus,
   SecretVersionSelector,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
   CLASS3_STATIC_LEASE_ALLOWLIST,
   createSecretProviderConfigSchema,
@@ -45,7 +45,7 @@ import {
   secretProviderConfigPayloadSchema,
   secretProviderConfigDiscoveryPreviewSchema,
   updateSecretProviderConfigSchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { conflict, forbidden, HttpError, notFound, unprocessable } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import {
@@ -178,7 +178,7 @@ async function throwProviderWriteOrReservedRowRollbackError(input: {
       },
       "remote secret provider write failed and reserved secret rollback failed",
     );
-    throw new HttpError(500, "Secret create failed and Paperclip could not roll back the local secret reservation.", {
+    throw new HttpError(500, "Secret create failed and Bullpen could not roll back the local secret reservation.", {
       code: "secret_create_rollback_failed",
       provider: input.provider,
       operation: input.operation,
@@ -224,7 +224,7 @@ async function deleteLocalSecretCreateReservationOrThrow(input: {
       },
       "secret create failed and local reserved secret rollback failed",
     );
-    throw new HttpError(500, "Secret create failed and Paperclip could not roll back the local secret reservation.", {
+    throw new HttpError(500, "Secret create failed and Bullpen could not roll back the local secret reservation.", {
       code: "secret_create_rollback_failed",
       provider: input.provider,
       operation: input.operation,
@@ -241,7 +241,7 @@ function throwProviderCleanupFailedAfterCreateRollback(input: {
   operation: string;
 }): never {
   const providerConfigId = providerConfigIdentifier(input);
-  throw new HttpError(500, "Secret create failed and Paperclip could not clean up the remote provider secret.", {
+  throw new HttpError(500, "Secret create failed and Bullpen could not clean up the remote provider secret.", {
     code: "secret_create_provider_cleanup_failed",
     provider: input.provider,
     operation: input.operation,
@@ -274,14 +274,14 @@ function safeRemoteProviderErrorDetails(
     };
     const region = safeString(context.providerConfig?.region);
     if (region) details.region = region;
-    details.credentialPath = "Paperclip server runtime/provider credential path";
+    details.credentialPath = "Bullpen server runtime/provider credential path";
     if (error?.code === "access_denied") {
       if (context.operation === "secret.create") {
         details.requiredCapability = "secretsmanager:CreateSecret";
         details.actionableMessage =
           "AWS managed secret creation needs secretsmanager:CreateSecret in the selected region for this provider vault. If the vault config uses a KMS key, the runtime credentials also need KMS write permissions for that key.";
         details.safeAlternative =
-          "If the secret already exists in AWS, link it as an external reference instead of creating a Paperclip-managed value.";
+          "If the secret already exists in AWS, link it as an external reference instead of creating a Bullpen-managed value.";
       } else if (context.operation === "secret.rotate") {
         details.requiredCapability = "secretsmanager:PutSecretValue";
         details.actionableMessage =
@@ -299,11 +299,11 @@ function safeRemoteProviderErrorDetails(
   const region = safeString(context.providerConfig?.region);
   if (region) details.region = region;
   details.providerVaultContext = context.providerConfigId === "discovery-preview" ? "draft_config" : "provider_config";
-  details.credentialPath = "Paperclip server runtime/provider credential path";
+  details.credentialPath = "Bullpen server runtime/provider credential path";
   if (error?.code === "access_denied") {
     details.requiredCapability = "secretsmanager:ListSecrets";
     details.actionableMessage =
-      "AWS discovery preview needs secretsmanager:ListSecrets in the selected region for the Paperclip server runtime/provider credential path.";
+      "AWS discovery preview needs secretsmanager:ListSecrets in the selected region for the Bullpen server runtime/provider credential path.";
     details.safeAlternative =
       "If the operator already knows the exact AWS Secrets Manager ARN, paste/link that ARN instead of using discovery. Exact-resource DescribeSecret and runtime read permissions are still required.";
   }
@@ -1321,7 +1321,7 @@ export function secretService(db: Db) {
       if (!binding) throw forbidden("Secret access is not granted for this agent");
 
       const runContext = asRecord(run.contextSnapshot) ?? {};
-      const manifest = (asRecord(runContext.paperclipSecrets) ?? {}).manifest;
+      const manifest = (asRecord(runContext.bullpenSecrets) ?? {}).manifest;
       const manifestBindingIds = new Set(
         Array.isArray(manifest)
           ? manifest.flatMap((entry) => {
@@ -1345,8 +1345,8 @@ export function secretService(db: Db) {
     const effectiveIssueId = context.issueId ?? (
       typeof runContext.issueId === "string"
         ? runContext.issueId
-        : typeof (asRecord(runContext.paperclipIssue) ?? {}).id === "string"
-          ? String((asRecord(runContext.paperclipIssue) ?? {}).id)
+        : typeof (asRecord(runContext.bullpenIssue) ?? {}).id === "string"
+          ? String((asRecord(runContext.bullpenIssue) ?? {}).id)
           : null
     );
     bindingContext.issueId = effectiveIssueId;
@@ -1449,7 +1449,7 @@ export function secretService(db: Db) {
     if (!decision.allowed) throw forbidden(decision.explanation, authorizationDeniedDetails(decision));
 
     const runContext = asRecord(run.contextSnapshot) ?? {};
-    const manifest = (asRecord(runContext.paperclipSecrets) ?? {}).manifest;
+    const manifest = (asRecord(runContext.bullpenSecrets) ?? {}).manifest;
     const manifestBindingIds = Array.isArray(manifest)
       ? manifest.flatMap((entry) => {
           const bindingId = (asRecord(entry) ?? {}).bindingId;
@@ -1736,7 +1736,7 @@ export function secretService(db: Db) {
         provider: "local_encrypted",
         providerConfigId: null,
         status: "archived",
-        managedMode: "paperclip_managed",
+        managedMode: "bullpen_managed",
         externalRef: null,
         providerMetadata: null,
         latestVersion: 0,
@@ -2095,14 +2095,14 @@ export function secretService(db: Db) {
     if (existing) throw conflict("User secret value already exists");
 
     const providerId = definition.provider as SecretProvider;
-    const managedMode = definition.managedMode as "paperclip_managed" | "external_reference";
+    const managedMode = definition.managedMode as "bullpen_managed" | "external_reference";
     if (managedMode === "external_reference" && !input.externalRef?.trim()) {
       throw unprocessable("External reference user secrets require externalRef");
     }
-    if (managedMode === "paperclip_managed" && input.externalRef?.trim()) {
+    if (managedMode === "bullpen_managed" && input.externalRef?.trim()) {
       throw unprocessable("Managed user secrets cannot override externalRef");
     }
-    if (managedMode === "paperclip_managed" && !input.value?.trim()) {
+    if (managedMode === "bullpen_managed" && !input.value?.trim()) {
       throw unprocessable("Managed user secrets require value");
     }
 
@@ -2211,7 +2211,7 @@ export function secretService(db: Db) {
         return secret;
       });
     } catch (error) {
-      if (managedMode === "paperclip_managed") {
+      if (managedMode === "bullpen_managed") {
         const cleaned = await cleanupPreparedProviderWrite({
           provider,
           prepared,
@@ -2658,7 +2658,7 @@ export function secretService(db: Db) {
         status?: string;
         provider: SecretProvider;
         providerConfigId?: string | null;
-        managedMode?: "paperclip_managed" | "external_reference";
+        managedMode?: "bullpen_managed" | "external_reference";
         providerMetadata?: Record<string, unknown> | null;
         usageGuidance?: string | null;
       },
@@ -2679,7 +2679,7 @@ export function secretService(db: Db) {
             status: input.status ?? "active",
             provider: input.provider,
             providerConfigId: input.providerConfigId ?? null,
-            managedMode: input.managedMode ?? "paperclip_managed",
+            managedMode: input.managedMode ?? "bullpen_managed",
             providerMetadata: input.providerMetadata ?? null,
             usageGuidance: input.usageGuidance ?? null,
             createdByAgentId: actor?.agentId ?? null,
@@ -3379,7 +3379,7 @@ export function secretService(db: Db) {
         providerConfigId?: string | null;
         value?: string | null;
         key?: string | null;
-        managedMode?: "paperclip_managed" | "external_reference";
+        managedMode?: "bullpen_managed" | "external_reference";
         description?: string | null;
         externalRef?: string | null;
         providerVersionRef?: string | null;
@@ -3403,7 +3403,7 @@ export function secretService(db: Db) {
         .then((rows) => rows[0] ?? null);
       if (duplicateKey) throw conflict(`Secret key already exists: ${key}`);
 
-      const managedMode = input.managedMode ?? "paperclip_managed";
+      const managedMode = input.managedMode ?? "bullpen_managed";
       const provider = getSecretProvider(input.provider);
       const providerConfig = await getSelectableRuntimeProviderConfig({
         companyId,
@@ -3413,10 +3413,10 @@ export function secretService(db: Db) {
       if (managedMode === "external_reference" && !input.externalRef?.trim()) {
         throw unprocessable("External reference secrets require externalRef");
       }
-      if (managedMode === "paperclip_managed" && input.externalRef?.trim()) {
+      if (managedMode === "bullpen_managed" && input.externalRef?.trim()) {
         throw unprocessable("Managed secrets cannot override externalRef");
       }
-      if (managedMode === "paperclip_managed" && !input.value?.trim()) {
+      if (managedMode === "bullpen_managed" && !input.value?.trim()) {
         throw unprocessable("Managed secrets require value");
       }
       const providerWriteContext = {
@@ -3494,7 +3494,7 @@ export function secretService(db: Db) {
           createdByUserId: actor?.userId ?? null,
         });
       } catch (error) {
-        if (managedMode === "paperclip_managed") {
+        if (managedMode === "bullpen_managed") {
           const cleaned = await cleanupPreparedProviderWrite({
             provider,
             prepared,
@@ -3552,7 +3552,7 @@ export function secretService(db: Db) {
           return secret;
         });
       } catch (error) {
-        if (managedMode === "paperclip_managed") {
+        if (managedMode === "bullpen_managed") {
           const cleaned = await cleanupPreparedProviderWrite({
             provider,
             prepared,
@@ -3798,7 +3798,7 @@ export function secretService(db: Db) {
         }
       }
       const deleting = patch.status === "deleted";
-      if (deleting && secret.managedMode === "paperclip_managed") {
+      if (deleting && secret.managedMode === "bullpen_managed") {
         throw unprocessable("Managed secrets must be deleted through DELETE /secrets/:id");
       }
       if (secret.managedMode !== "external_reference" && patch.externalRef !== undefined) {
@@ -3823,7 +3823,7 @@ export function secretService(db: Db) {
         );
       }
       if (
-        secret.managedMode === "paperclip_managed" &&
+        secret.managedMode === "bullpen_managed" &&
         patch.providerConfigId !== undefined &&
         patch.providerConfigId !== secret.providerConfigId
       ) {

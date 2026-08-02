@@ -8,7 +8,7 @@ import {
   budgetPolicies,
   companies,
   createDb,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -34,7 +34,7 @@ describeEmbeddedPostgres("pending approval agent config integrity", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-pending-agent-config-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-pending-agent-config-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -54,7 +54,7 @@ describeEmbeddedPostgres("pending approval agent config integrity", () => {
     const companyId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: issuePrefix(companyId),
       requireBoardApprovalForNewAgents: true,
     });

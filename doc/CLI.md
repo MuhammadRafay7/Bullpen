@@ -1,6 +1,6 @@
 # CLI Reference
 
-Paperclip CLI now supports both:
+Bullpen CLI now supports both:
 
 - installation and lifecycle management (`install`, `uninstall`, `update`, `upgrade`, `service`)
 - instance setup/diagnostics (`onboard`, `doctor`, `configure`, `env`, `allowed-hostname`, `env-lab`)
@@ -11,7 +11,7 @@ Paperclip CLI now supports both:
 Use repo script in development:
 
 ```sh
-pnpm paperclipai --help
+pnpm bullpen --help
 ```
 
 Recommended installation and interactive onboarding:
@@ -36,35 +36,35 @@ allowing it to bootstrap Node.js with privileged package-manager commands.
 First-time local bootstrap from a source checkout:
 
 ```sh
-pnpm paperclipai run
+pnpm bullpen run
 ```
 
 Choose local instance:
 
 ```sh
-pnpm paperclipai run --instance dev
+pnpm bullpen run --instance dev
 ```
 
 ## Install, Update, And Uninstall
 
-Managed installs keep CLI payloads under `~/.paperclip/cli`, expose a stable
-`~/.local/bin/paperclipai` shim, switch versions atomically, and retain two
+Managed installs keep CLI payloads under `~/.bullpen/cli`, expose a stable
+`~/.local/bin/bullpen` shim, switch versions atomically, and retain two
 previous payloads for rollback.
 
 ```sh
-paperclipai install
-paperclipai install --canary
-paperclipai install --version <version>
-paperclipai install --ref <branch|tag|sha> [--repo owner/repo]
-paperclipai update
-paperclipai update --latest|--canary|--version <version>
-paperclipai update --rollback
-paperclipai upgrade
-paperclipai uninstall
+bullpen install
+bullpen install --canary
+bullpen install --version <version>
+bullpen install --ref <branch|tag|sha> [--repo owner/repo]
+bullpen update
+bullpen update --latest|--canary|--version <version>
+bullpen update --rollback
+bullpen upgrade
+bullpen uninstall
 ```
 
 `upgrade` aliases `update`. `uninstall` removes managed code and the shim but
-preserves instance data under `~/.paperclip/instances/`. See
+preserves instance data under `~/.bullpen/instances/`. See
 `doc/INSTALLING.md` for installation methods, security notes, PATH setup, and
 the complete update and rollback behavior.
 
@@ -74,29 +74,29 @@ Interactive onboarding offers to install a background service on supported
 platforms. `--yes` never installs it implicitly; automation must opt in.
 
 ```sh
-paperclipai onboard
-paperclipai onboard --yes
-paperclipai onboard --yes --install-service
-paperclipai onboard --yes --no-install-service
+bullpen onboard
+bullpen onboard --yes
+bullpen onboard --yes --install-service
+bullpen onboard --yes --no-install-service
 ```
 
 Service lifecycle commands remain under the `service` namespace:
 
 ```sh
-paperclipai service install [--no-start-now] [--no-start-on-login]
-paperclipai service uninstall
-paperclipai service start
-paperclipai service stop
-paperclipai service restart [--wait]
-paperclipai service status [--json]
-paperclipai service logs [-f]
+bullpen service install [--no-start-now] [--no-start-on-login]
+bullpen service uninstall
+bullpen service start
+bullpen service stop
+bullpen service restart [--wait]
+bullpen service status [--json]
+bullpen service logs [-f]
 ```
 
 Every service verb supports `--instance <id>` and `--json`. Linux and WSL2 use
 a systemd user unit when available; macOS uses a LaunchAgent. Unsupported
-environments receive foreground `paperclipai run` guidance.
+environments receive foreground `bullpen run` guidance.
 
-`paperclipai doctor` includes managed-install and service-health diagnostics in
+`bullpen doctor` includes managed-install and service-health diagnostics in
 addition to configuration, storage, database, logging, and port checks.
 
 ## Deployment Modes
@@ -105,27 +105,27 @@ Mode taxonomy and design intent are documented in `doc/DEPLOYMENT-MODES.md`.
 
 Current CLI behavior:
 
-- `paperclipai onboard` and `paperclipai configure --section server` set deployment mode in config
+- `bullpen onboard` and `bullpen configure --section server` set deployment mode in config
 - server onboarding/configure ask for reachability intent and write `server.bind`
-- `paperclipai run --bind <loopback|lan|tailnet>` passes a quickstart bind preset into first-run onboarding when config is missing
-- runtime can override mode with `PAPERCLIP_DEPLOYMENT_MODE`
-- `paperclipai run` and `paperclipai doctor` still do not expose a direct low-level `--mode` flag
+- `bullpen run --bind <loopback|lan|tailnet>` passes a quickstart bind preset into first-run onboarding when config is missing
+- runtime can override mode with `BULLPEN_DEPLOYMENT_MODE`
+- `bullpen run` and `bullpen doctor` still do not expose a direct low-level `--mode` flag
 
 Canonical behavior is documented in `doc/DEPLOYMENT-MODES.md`.
 
 Allow an authenticated/private hostname (for example custom Tailscale DNS):
 
 ```sh
-pnpm paperclipai allowed-hostname dotta-macbook-pro
+pnpm bullpen allowed-hostname dotta-macbook-pro
 ```
 
 Bring up the default local SSH fixture for environment testing:
 
 ```sh
-pnpm paperclipai env-lab up
-pnpm paperclipai env-lab doctor
-pnpm paperclipai env-lab status --json
-pnpm paperclipai env-lab down
+pnpm bullpen env-lab up
+pnpm bullpen env-lab doctor
+pnpm bullpen env-lab status --json
+pnpm bullpen env-lab down
 ```
 
 All client commands support:
@@ -142,9 +142,9 @@ Company-scoped commands also support `--company-id <id>`.
 API base resolution order:
 
 1. `--api-base <url>`
-2. `PAPERCLIP_API_URL`
+2. `BULLPEN_API_URL`
 3. selected context profile `apiBase`
-4. local Paperclip config server port
+4. local Bullpen config server port
 5. `http://localhost:3100`
 
 Connection failures include the attempted URL and a `GET /api/health` check hint.
@@ -152,7 +152,7 @@ Connection failures include the attempted URL and a `GET /api/health` check hint
 ## Connect Wizard
 
 ```sh
-pnpm paperclipai connect
+pnpm bullpen connect
 ```
 
 `connect` confirms the resolved API base, verifies `GET /api/health`, authenticates board access when needed, and saves a persona-aware profile:
@@ -162,231 +162,231 @@ pnpm paperclipai connect
 
 Profiles store token env-var names, not plaintext tokens. The wizard prints shell exports for the newly created token.
 
-Use `--data-dir` on any CLI command to isolate all default local state (config/context/db/logs/storage/secrets) away from `~/.paperclip`:
+Use `--data-dir` on any CLI command to isolate all default local state (config/context/db/logs/storage/secrets) away from `~/.bullpen`:
 
 ```sh
-pnpm paperclipai run --data-dir ./tmp/paperclip-dev
-pnpm paperclipai issue list --data-dir ./tmp/paperclip-dev
+pnpm bullpen run --data-dir ./tmp/bullpen-dev
+pnpm bullpen issue list --data-dir ./tmp/bullpen-dev
 ```
 
 ## Context Profiles
 
-Store local defaults in `~/.paperclip/context.json`:
+Store local defaults in `~/.bullpen/context.json`:
 
 ```sh
-pnpm paperclipai context set --api-base http://localhost:3100 --company-id <company-id>
-pnpm paperclipai context set --persona agent --agent-id <agent-id> --api-key-env-var-name PAPERCLIP_API_KEY
-pnpm paperclipai context show
-pnpm paperclipai context list
-pnpm paperclipai context use default
+pnpm bullpen context set --api-base http://localhost:3100 --company-id <company-id>
+pnpm bullpen context set --persona agent --agent-id <agent-id> --api-key-env-var-name BULLPEN_API_KEY
+pnpm bullpen context show
+pnpm bullpen context list
+pnpm bullpen context use default
 ```
 
 To avoid storing secrets in context, set `apiKeyEnvVarName` and keep the key in env:
 
 ```sh
-pnpm paperclipai context set --api-key-env-var-name PAPERCLIP_API_KEY
-export PAPERCLIP_API_KEY=...
+pnpm bullpen context set --api-key-env-var-name BULLPEN_API_KEY
+export BULLPEN_API_KEY=...
 ```
 
 ## Company Commands
 
 ```sh
-pnpm paperclipai company list
-pnpm paperclipai company get <company-id>
-pnpm paperclipai company current [--company-id <company-id>]
-pnpm paperclipai company stats
-pnpm paperclipai company create --payload-json '{...}'
-pnpm paperclipai company update <company-id> --payload-json '{...}'
-pnpm paperclipai company branding:update <company-id> --payload-json '{...}'
-pnpm paperclipai company archive <company-id>
-pnpm paperclipai company export <company-id> --out ./company --include company,agents,projects,issues,skills
-pnpm paperclipai company export:preview <company-id> --payload-json '{...}'
-pnpm paperclipai company export:api <company-id> --payload-json '{...}'
-pnpm paperclipai company import ./company --target new --new-company-name "Imported Company"
-pnpm paperclipai company import:preview <company-id> --payload-json '{...}'
-pnpm paperclipai company import:apply <company-id> --payload-json '{...}'
-pnpm paperclipai company delete <company-id-or-prefix> --yes --confirm <same-id-or-prefix>
+pnpm bullpen company list
+pnpm bullpen company get <company-id>
+pnpm bullpen company current [--company-id <company-id>]
+pnpm bullpen company stats
+pnpm bullpen company create --payload-json '{...}'
+pnpm bullpen company update <company-id> --payload-json '{...}'
+pnpm bullpen company branding:update <company-id> --payload-json '{...}'
+pnpm bullpen company archive <company-id>
+pnpm bullpen company export <company-id> --out ./company --include company,agents,projects,issues,skills
+pnpm bullpen company export:preview <company-id> --payload-json '{...}'
+pnpm bullpen company export:api <company-id> --payload-json '{...}'
+pnpm bullpen company import ./company --target new --new-company-name "Imported Company"
+pnpm bullpen company import:preview <company-id> --payload-json '{...}'
+pnpm bullpen company import:apply <company-id> --payload-json '{...}'
+pnpm bullpen company delete <company-id-or-prefix> --yes --confirm <same-id-or-prefix>
 ```
 
 Examples:
 
 ```sh
-pnpm paperclipai company delete PAP --yes --confirm PAP
-pnpm paperclipai company delete 5cbe79ee-acb3-4597-896e-7662742593cd --yes --confirm 5cbe79ee-acb3-4597-896e-7662742593cd
+pnpm bullpen company delete PAP --yes --confirm PAP
+pnpm bullpen company delete 5cbe79ee-acb3-4597-896e-7662742593cd --yes --confirm 5cbe79ee-acb3-4597-896e-7662742593cd
 ```
 
 Notes:
 
 - With agent authentication, `company list` and `company current` are
   agent-safe company selectors. `company list` first tries the board-wide list;
-  if that is forbidden, it uses `--company-id`, `PAPERCLIP_COMPANY_ID`, context,
+  if that is forbidden, it uses `--company-id`, `BULLPEN_COMPANY_ID`, context,
   or `/api/agents/me` and then reads only that scoped company.
 - `company create` requires board/instance-admin authentication because it is
   an instance-wide setup command.
-- Deletion is server-gated by `PAPERCLIP_ENABLE_COMPANY_DELETION`.
-- With agent authentication, company deletion is company-scoped. Use the current company ID/prefix (for example via `--company-id` or `PAPERCLIP_COMPANY_ID`), not another company.
+- Deletion is server-gated by `BULLPEN_ENABLE_COMPANY_DELETION`.
+- With agent authentication, company deletion is company-scoped. Use the current company ID/prefix (for example via `--company-id` or `BULLPEN_COMPANY_ID`), not another company.
 
 ## Issue Commands
 
 ```sh
-pnpm paperclipai issue list --company-id <company-id> [--status todo,in_progress] [--assignee-agent-id <agent-id>] [--match text]
-pnpm paperclipai issue get <issue-id-or-identifier>
-pnpm paperclipai issue create --company-id <company-id> --title "..." [--description "..."] [--status todo] [--priority high]
-pnpm paperclipai issue update <issue-id> [--status in_progress] [--comment "..."]
-pnpm paperclipai issue delete <issue-id> --yes
-pnpm paperclipai issue comment <issue-id> --body "..." [--reopen]
-pnpm paperclipai issue comments <issue-id> [--limit 50]
-pnpm paperclipai issue comment:get <issue-id> <comment-id>
-pnpm paperclipai issue comment:delete <issue-id> <comment-id>
-pnpm paperclipai issue runs <issue-id-or-identifier>
-pnpm paperclipai issue live-runs <issue-id-or-identifier>
-pnpm paperclipai issue active-run <issue-id-or-identifier>
-pnpm paperclipai issue heartbeat-context <issue-id>
-pnpm paperclipai issue checkout <issue-id> --agent-id <agent-id> [--expected-statuses todo,backlog,blocked]
-pnpm paperclipai issue release <issue-id>
-pnpm paperclipai issue force-release <issue-id>
+pnpm bullpen issue list --company-id <company-id> [--status todo,in_progress] [--assignee-agent-id <agent-id>] [--match text]
+pnpm bullpen issue get <issue-id-or-identifier>
+pnpm bullpen issue create --company-id <company-id> --title "..." [--description "..."] [--status todo] [--priority high]
+pnpm bullpen issue update <issue-id> [--status in_progress] [--comment "..."]
+pnpm bullpen issue delete <issue-id> --yes
+pnpm bullpen issue comment <issue-id> --body "..." [--reopen]
+pnpm bullpen issue comments <issue-id> [--limit 50]
+pnpm bullpen issue comment:get <issue-id> <comment-id>
+pnpm bullpen issue comment:delete <issue-id> <comment-id>
+pnpm bullpen issue runs <issue-id-or-identifier>
+pnpm bullpen issue live-runs <issue-id-or-identifier>
+pnpm bullpen issue active-run <issue-id-or-identifier>
+pnpm bullpen issue heartbeat-context <issue-id>
+pnpm bullpen issue checkout <issue-id> --agent-id <agent-id> [--expected-statuses todo,backlog,blocked]
+pnpm bullpen issue release <issue-id>
+pnpm bullpen issue force-release <issue-id>
 ```
 
-Issue subresources are exposed as Paperclip API wrappers. Commands that map to broad server schemas accept JSON payloads and validate them with shared schemas before sending.
+Issue subresources are exposed as Bullpen API wrappers. Commands that map to broad server schemas accept JSON payloads and validate them with shared schemas before sending.
 
 ```sh
-pnpm paperclipai issue child:create <issue-id> --payload-json '{"title":"Child task"}'
-pnpm paperclipai issue approvals <issue-id>
-pnpm paperclipai issue approval:link <issue-id> <approval-id>
-pnpm paperclipai issue approval:unlink <issue-id> <approval-id>
-pnpm paperclipai issue read <issue-id>
-pnpm paperclipai issue unread <issue-id>
-pnpm paperclipai issue archive <issue-id>
-pnpm paperclipai issue unarchive <issue-id>
-pnpm paperclipai issue recovery-actions <issue-id>
-pnpm paperclipai issue recovery:resolve <issue-id> --outcome restored --source-issue-status todo
-```
-
-```sh
-pnpm paperclipai issue documents <issue-id> [--include-system]
-pnpm paperclipai issue document:get <issue-id> <key>
-pnpm paperclipai issue document:put <issue-id> <key> --body-file ./plan.md [--title Plan]
-pnpm paperclipai issue document:lock <issue-id> <key>
-pnpm paperclipai issue document:unlock <issue-id> <key>
-pnpm paperclipai issue document:revisions <issue-id> <key>
-pnpm paperclipai issue document:restore <issue-id> <key> <revision-id>
-pnpm paperclipai issue document:delete <issue-id> <key>
+pnpm bullpen issue child:create <issue-id> --payload-json '{"title":"Child task"}'
+pnpm bullpen issue approvals <issue-id>
+pnpm bullpen issue approval:link <issue-id> <approval-id>
+pnpm bullpen issue approval:unlink <issue-id> <approval-id>
+pnpm bullpen issue read <issue-id>
+pnpm bullpen issue unread <issue-id>
+pnpm bullpen issue archive <issue-id>
+pnpm bullpen issue unarchive <issue-id>
+pnpm bullpen issue recovery-actions <issue-id>
+pnpm bullpen issue recovery:resolve <issue-id> --outcome restored --source-issue-status todo
 ```
 
 ```sh
-pnpm paperclipai issue work-products <issue-id>
-pnpm paperclipai issue work-product:create <issue-id> --payload-json '{"type":"pull_request","provider":"github","title":"PR"}'
-pnpm paperclipai issue work-product:update <work-product-id> --payload-json '{"status":"archived"}'
-pnpm paperclipai issue work-product:delete <work-product-id>
-pnpm paperclipai issue interactions <issue-id>
-pnpm paperclipai issue interaction:create <issue-id> --payload-json '{"kind":"request_confirmation","payload":{"version":1,"prompt":"Continue?"}}'
-pnpm paperclipai issue interaction:accept <issue-id> <interaction-id> [--selected-client-keys key1,key2]
-pnpm paperclipai issue interaction:reject <issue-id> <interaction-id> [--reason "..."]
-pnpm paperclipai issue interaction:respond <issue-id> <interaction-id> --answers-json '[{"questionId":"q1","optionIds":["yes"]}]'
-pnpm paperclipai issue interaction:cancel <issue-id> <interaction-id> [--reason "..."]
+pnpm bullpen issue documents <issue-id> [--include-system]
+pnpm bullpen issue document:get <issue-id> <key>
+pnpm bullpen issue document:put <issue-id> <key> --body-file ./plan.md [--title Plan]
+pnpm bullpen issue document:lock <issue-id> <key>
+pnpm bullpen issue document:unlock <issue-id> <key>
+pnpm bullpen issue document:revisions <issue-id> <key>
+pnpm bullpen issue document:restore <issue-id> <key> <revision-id>
+pnpm bullpen issue document:delete <issue-id> <key>
 ```
 
 ```sh
-pnpm paperclipai issue tree-state <issue-id>
-pnpm paperclipai issue tree-preview <issue-id> --payload-json '{"mode":"pause"}'
-pnpm paperclipai issue tree-holds <issue-id> [--status active] [--include-members]
-pnpm paperclipai issue tree-hold:create <issue-id> --payload-json '{"mode":"pause","reason":"review"}'
-pnpm paperclipai issue tree-hold:get <issue-id> <hold-id>
-pnpm paperclipai issue tree-hold:release <issue-id> <hold-id> [--payload-json '{"reason":"done"}']
-pnpm paperclipai issue attachments <issue-id>
-pnpm paperclipai issue attachment:upload <issue-id> --company-id <company-id> --file ./artifact.txt
-pnpm paperclipai issue attachment:download <attachment-id> [--out ./artifact.txt]
-pnpm paperclipai issue attachment:delete <attachment-id>
-pnpm paperclipai issue label:list --company-id <company-id>
-pnpm paperclipai issue label:create --company-id <company-id> --name bug --color '#ff0000'
-pnpm paperclipai issue label:delete <label-id>
-pnpm paperclipai issue feedback:votes <issue-id>
-pnpm paperclipai issue feedback:vote <issue-id> --payload-json '{"targetType":"issue_comment","targetId":"...","vote":"up"}'
+pnpm bullpen issue work-products <issue-id>
+pnpm bullpen issue work-product:create <issue-id> --payload-json '{"type":"pull_request","provider":"github","title":"PR"}'
+pnpm bullpen issue work-product:update <work-product-id> --payload-json '{"status":"archived"}'
+pnpm bullpen issue work-product:delete <work-product-id>
+pnpm bullpen issue interactions <issue-id>
+pnpm bullpen issue interaction:create <issue-id> --payload-json '{"kind":"request_confirmation","payload":{"version":1,"prompt":"Continue?"}}'
+pnpm bullpen issue interaction:accept <issue-id> <interaction-id> [--selected-client-keys key1,key2]
+pnpm bullpen issue interaction:reject <issue-id> <interaction-id> [--reason "..."]
+pnpm bullpen issue interaction:respond <issue-id> <interaction-id> --answers-json '[{"questionId":"q1","optionIds":["yes"]}]'
+pnpm bullpen issue interaction:cancel <issue-id> <interaction-id> [--reason "..."]
+```
+
+```sh
+pnpm bullpen issue tree-state <issue-id>
+pnpm bullpen issue tree-preview <issue-id> --payload-json '{"mode":"pause"}'
+pnpm bullpen issue tree-holds <issue-id> [--status active] [--include-members]
+pnpm bullpen issue tree-hold:create <issue-id> --payload-json '{"mode":"pause","reason":"review"}'
+pnpm bullpen issue tree-hold:get <issue-id> <hold-id>
+pnpm bullpen issue tree-hold:release <issue-id> <hold-id> [--payload-json '{"reason":"done"}']
+pnpm bullpen issue attachments <issue-id>
+pnpm bullpen issue attachment:upload <issue-id> --company-id <company-id> --file ./artifact.txt
+pnpm bullpen issue attachment:download <attachment-id> [--out ./artifact.txt]
+pnpm bullpen issue attachment:delete <attachment-id>
+pnpm bullpen issue label:list --company-id <company-id>
+pnpm bullpen issue label:create --company-id <company-id> --name bug --color '#ff0000'
+pnpm bullpen issue label:delete <label-id>
+pnpm bullpen issue feedback:votes <issue-id>
+pnpm bullpen issue feedback:vote <issue-id> --payload-json '{"targetType":"issue_comment","targetId":"...","vote":"up"}'
 ```
 
 ## Project Commands
 
 ```sh
-pnpm paperclipai project list --company-id <company-id>
-pnpm paperclipai project get <project-id-or-shortname> [--company-id <company-id>]
-pnpm paperclipai project create --company-id <company-id> --name "Launch Site" [--goal-ids <id1,id2>] [--lead-agent-id <id>]
-pnpm paperclipai project update <project-id-or-shortname> [--status in_progress] [--company-id <company-id>]
-pnpm paperclipai project delete <project-id-or-shortname> --yes [--company-id <company-id>]
+pnpm bullpen project list --company-id <company-id>
+pnpm bullpen project get <project-id-or-shortname> [--company-id <company-id>]
+pnpm bullpen project create --company-id <company-id> --name "Launch Site" [--goal-ids <id1,id2>] [--lead-agent-id <id>]
+pnpm bullpen project update <project-id-or-shortname> [--status in_progress] [--company-id <company-id>]
+pnpm bullpen project delete <project-id-or-shortname> --yes [--company-id <company-id>]
 ```
 
 Advanced project fields accept JSON:
 
 ```sh
-pnpm paperclipai project create --company-id <company-id> --name "Ops" --env-json '{"OPENAI_API_KEY":{"kind":"secret","secretName":"openai-api-key"}}'
-pnpm paperclipai project update <project-id> --execution-workspace-policy-json '{"enabled":true,"defaultMode":"shared_workspace"}'
+pnpm bullpen project create --company-id <company-id> --name "Ops" --env-json '{"OPENAI_API_KEY":{"kind":"secret","secretName":"openai-api-key"}}'
+pnpm bullpen project update <project-id> --execution-workspace-policy-json '{"enabled":true,"defaultMode":"shared_workspace"}'
 ```
 
 ## Goal Commands
 
 ```sh
-pnpm paperclipai goal list --company-id <company-id>
-pnpm paperclipai goal get <goal-id>
-pnpm paperclipai goal create --company-id <company-id> --title "Grow revenue" [--level company] [--status active]
-pnpm paperclipai goal update <goal-id> [--title "..."] [--status achieved]
-pnpm paperclipai goal delete <goal-id> --yes
+pnpm bullpen goal list --company-id <company-id>
+pnpm bullpen goal get <goal-id>
+pnpm bullpen goal create --company-id <company-id> --title "Grow revenue" [--level company] [--status active]
+pnpm bullpen goal update <goal-id> [--title "..."] [--status achieved]
+pnpm bullpen goal delete <goal-id> --yes
 ```
 
 ## Agent Commands
 
 ```sh
-pnpm paperclipai agent list --company-id <company-id>
-pnpm paperclipai agent get <agent-id>
-pnpm paperclipai agent create --company-id <company-id> --payload-json '{"name":"Builder","adapterType":"codex_local"}'
-pnpm paperclipai agent hire --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai agent update <agent-id> --payload-json '{"title":"Senior Builder"}'
-pnpm paperclipai agent delete <agent-id> --yes
-pnpm paperclipai agent me
-pnpm paperclipai agent inbox
-pnpm paperclipai agent inbox-mine --user-id <board-user-id>
-pnpm paperclipai agent wake <agent-id-or-shortname> [--company-id <company-id>] [--reason "..."] [--payload '{"issueId":"..."}']
-pnpm paperclipai agent pause <agent-id>
-pnpm paperclipai agent resume <agent-id>
-pnpm paperclipai agent approve <agent-id>
-pnpm paperclipai agent terminate <agent-id>
-pnpm paperclipai agent heartbeat:invoke <agent-id>
-pnpm paperclipai agent claude-login <agent-id>
-pnpm paperclipai agent local-cli <agent-id-or-shortname> --company-id <company-id>
+pnpm bullpen agent list --company-id <company-id>
+pnpm bullpen agent get <agent-id>
+pnpm bullpen agent create --company-id <company-id> --payload-json '{"name":"Builder","adapterType":"codex_local"}'
+pnpm bullpen agent hire --company-id <company-id> --payload-json '{...}'
+pnpm bullpen agent update <agent-id> --payload-json '{"title":"Senior Builder"}'
+pnpm bullpen agent delete <agent-id> --yes
+pnpm bullpen agent me
+pnpm bullpen agent inbox
+pnpm bullpen agent inbox-mine --user-id <board-user-id>
+pnpm bullpen agent wake <agent-id-or-shortname> [--company-id <company-id>] [--reason "..."] [--payload '{"issueId":"..."}']
+pnpm bullpen agent pause <agent-id>
+pnpm bullpen agent resume <agent-id>
+pnpm bullpen agent approve <agent-id>
+pnpm bullpen agent terminate <agent-id>
+pnpm bullpen agent heartbeat:invoke <agent-id>
+pnpm bullpen agent claude-login <agent-id>
+pnpm bullpen agent local-cli <agent-id-or-shortname> --company-id <company-id>
 ```
 
 Agent configuration and runtime endpoints:
 
 ```sh
-pnpm paperclipai agent permissions:update <agent-id> --payload-json '{"canCreateAgents":true,"canCreateSkills":true,"canAssignTasks":true}'
-pnpm paperclipai agent configuration <agent-id>
-pnpm paperclipai agent config-revisions <agent-id>
-pnpm paperclipai agent config-revision:get <agent-id> <revision-id>
-pnpm paperclipai agent config-revision:rollback <agent-id> <revision-id>
-pnpm paperclipai agent runtime-state <agent-id>
-pnpm paperclipai agent runtime-state:reset-session <agent-id> [--task-key <key>]
-pnpm paperclipai agent task-sessions <agent-id>
-pnpm paperclipai agent skills <agent-id>
-pnpm paperclipai agent skills:sync <agent-id> --desired-skills paperclip,github
-pnpm paperclipai agent instructions-path:update <agent-id> --payload-json '{"path":"/path/to/AGENTS.md"}'
-pnpm paperclipai agent instructions-bundle <agent-id>
-pnpm paperclipai agent instructions-bundle:update <agent-id> --payload-json '{"mode":"managed"}'
-pnpm paperclipai agent instructions-file:get <agent-id> --path AGENTS.md
-pnpm paperclipai agent instructions-file:put <agent-id> --path AGENTS.md --content-file ./AGENTS.md
-pnpm paperclipai agent instructions-file:delete <agent-id> --path AGENTS.md
+pnpm bullpen agent permissions:update <agent-id> --payload-json '{"canCreateAgents":true,"canCreateSkills":true,"canAssignTasks":true}'
+pnpm bullpen agent configuration <agent-id>
+pnpm bullpen agent config-revisions <agent-id>
+pnpm bullpen agent config-revision:get <agent-id> <revision-id>
+pnpm bullpen agent config-revision:rollback <agent-id> <revision-id>
+pnpm bullpen agent runtime-state <agent-id>
+pnpm bullpen agent runtime-state:reset-session <agent-id> [--task-key <key>]
+pnpm bullpen agent task-sessions <agent-id>
+pnpm bullpen agent skills <agent-id>
+pnpm bullpen agent skills:sync <agent-id> --desired-skills bullpen,github
+pnpm bullpen agent instructions-path:update <agent-id> --payload-json '{"path":"/path/to/AGENTS.md"}'
+pnpm bullpen agent instructions-bundle <agent-id>
+pnpm bullpen agent instructions-bundle:update <agent-id> --payload-json '{"mode":"managed"}'
+pnpm bullpen agent instructions-file:get <agent-id> --path AGENTS.md
+pnpm bullpen agent instructions-file:put <agent-id> --path AGENTS.md --content-file ./AGENTS.md
+pnpm bullpen agent instructions-file:delete <agent-id> --path AGENTS.md
 ```
 
-Agent config, instructions, skills, project env, environment, secret, and workspace edits affect the next run. Active runs finish with the config they started with. When a saved session, reused workspace, or sandbox lease no longer matches the effective next-run config, Paperclip may start fresh execution and records non-sensitive freshness categories in run result JSON and workspace operation logs.
+Agent config, instructions, skills, project env, environment, secret, and workspace edits affect the next run. Active runs finish with the config they started with. When a saved session, reused workspace, or sandbox lease no longer matches the effective next-run config, Bullpen may start fresh execution and records non-sensitive freshness categories in run result JSON and workspace operation logs.
 
-`agent local-cli` is the quickest way to run local Claude/Codex manually as a Paperclip agent:
+`agent local-cli` is the quickest way to run local Claude/Codex manually as a Bullpen agent:
 
 - creates a new long-lived agent API key
-- installs missing Paperclip skills into `~/.codex/skills` and `~/.claude/skills`
-- prints `export ...` lines for `PAPERCLIP_API_URL`, `PAPERCLIP_COMPANY_ID`, `PAPERCLIP_AGENT_ID`, and `PAPERCLIP_API_KEY`
+- installs missing Bullpen skills into `~/.codex/skills` and `~/.claude/skills`
+- prints `export ...` lines for `BULLPEN_API_URL`, `BULLPEN_COMPANY_ID`, `BULLPEN_AGENT_ID`, and `BULLPEN_API_KEY`
 
 Example for shortname-based local setup:
 
 ```sh
-pnpm paperclipai agent local-cli codexcoder --company-id <company-id>
-pnpm paperclipai agent local-cli claudecoder --company-id <company-id>
+pnpm bullpen agent local-cli codexcoder --company-id <company-id>
+pnpm bullpen agent local-cli claudecoder --company-id <company-id>
 ```
 
 ## Token Commands
@@ -394,73 +394,73 @@ pnpm paperclipai agent local-cli claudecoder --company-id <company-id>
 Agent API keys are scoped to one company and one agent. Plaintext tokens are printed once at creation.
 
 ```sh
-pnpm paperclipai token agent create --company-id <company-id> --agent <agent-id-or-name> --name external-worker
-pnpm paperclipai token agent list --company-id <company-id> --agent <agent-id-or-name>
-pnpm paperclipai token agent revoke --company-id <company-id> --agent <agent-id-or-name> <key-id>
+pnpm bullpen token agent create --company-id <company-id> --agent <agent-id-or-name> --name external-worker
+pnpm bullpen token agent list --company-id <company-id> --agent <agent-id-or-name>
+pnpm bullpen token agent revoke --company-id <company-id> --agent <agent-id-or-name> <key-id>
 ```
 
 Named board API keys use the board authorization model, support revocation and expiration metadata, and are audited server-side.
 
 ```sh
-pnpm paperclipai token board create --company-id <company-id> --name external-admin
-pnpm paperclipai token board create --name short-lived --ttl-days 7
-pnpm paperclipai token board list
-pnpm paperclipai token board revoke <key-id>
+pnpm bullpen token board create --company-id <company-id> --name external-admin
+pnpm bullpen token board create --name short-lived --ttl-days 7
+pnpm bullpen token board list
+pnpm bullpen token board revoke <key-id>
 ```
 
 ## Run Commands
 
-`paperclipai run` without a subcommand still bootstraps and starts a local Paperclip instance. The subcommands below inspect and control API heartbeat runs.
+`bullpen run` without a subcommand still bootstraps and starts a local Bullpen instance. The subcommands below inspect and control API heartbeat runs.
 
 ```sh
-pnpm paperclipai run list --company-id <company-id> [--agent-id <agent-id>] [--limit 50]
-pnpm paperclipai run live --company-id <company-id> [--limit 50] [--min-count 0]
-pnpm paperclipai run get <run-id>
-pnpm paperclipai run events <run-id> [--after-seq 0] [--limit 200]
-pnpm paperclipai run log <run-id> [--offset 0] [--limit-bytes 16384] [--text]
-pnpm paperclipai run cancel <run-id>
-pnpm paperclipai run issues <run-id>
-pnpm paperclipai run workspace-operations <run-id>
-pnpm paperclipai run workspace-log <operation-id> [--offset 0] [--limit-bytes 16384] [--text]
-pnpm paperclipai run watchdog-decision <run-id> --decision continue [--reason "..."]
+pnpm bullpen run list --company-id <company-id> [--agent-id <agent-id>] [--limit 50]
+pnpm bullpen run live --company-id <company-id> [--limit 50] [--min-count 0]
+pnpm bullpen run get <run-id>
+pnpm bullpen run events <run-id> [--after-seq 0] [--limit 200]
+pnpm bullpen run log <run-id> [--offset 0] [--limit-bytes 16384] [--text]
+pnpm bullpen run cancel <run-id>
+pnpm bullpen run issues <run-id>
+pnpm bullpen run workspace-operations <run-id>
+pnpm bullpen run workspace-log <operation-id> [--offset 0] [--limit-bytes 16384] [--text]
+pnpm bullpen run watchdog-decision <run-id> --decision continue [--reason "..."]
 ```
 
 ## Routine Commands
 
-`paperclipai routines disable-all` remains the local maintenance command. The singular `routine` group maps to the REST API.
+`bullpen routines disable-all` remains the local maintenance command. The singular `routine` group maps to the REST API.
 
 ```sh
-pnpm paperclipai routine list --company-id <company-id> [--project-id <project-id>]
-pnpm paperclipai routine create --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai routine get <routine-id>
-pnpm paperclipai routine update <routine-id> --payload-json '{...}'
-pnpm paperclipai routine revisions <routine-id>
-pnpm paperclipai routine revision:restore <routine-id> <revision-id>
-pnpm paperclipai routine runs <routine-id> [--limit 50]
-pnpm paperclipai routine run <routine-id> [--payload-json '{...}']
-pnpm paperclipai routine trigger:create <routine-id> --payload-json '{...}'
-pnpm paperclipai routine trigger:update <trigger-id> --payload-json '{...}'
-pnpm paperclipai routine trigger:delete <trigger-id>
-pnpm paperclipai routine trigger:rotate-secret <trigger-id>
-pnpm paperclipai routine trigger:fire <public-id> [--payload-json '{...}']
+pnpm bullpen routine list --company-id <company-id> [--project-id <project-id>]
+pnpm bullpen routine create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen routine get <routine-id>
+pnpm bullpen routine update <routine-id> --payload-json '{...}'
+pnpm bullpen routine revisions <routine-id>
+pnpm bullpen routine revision:restore <routine-id> <revision-id>
+pnpm bullpen routine runs <routine-id> [--limit 50]
+pnpm bullpen routine run <routine-id> [--payload-json '{...}']
+pnpm bullpen routine trigger:create <routine-id> --payload-json '{...}'
+pnpm bullpen routine trigger:update <trigger-id> --payload-json '{...}'
+pnpm bullpen routine trigger:delete <trigger-id>
+pnpm bullpen routine trigger:rotate-secret <trigger-id>
+pnpm bullpen routine trigger:fire <public-id> [--payload-json '{...}']
 ```
 
 ## Prompt Handoff
 
-Prompt handoff creates Paperclip work. It does not create a chat session.
+Prompt handoff creates Bullpen work. It does not create a chat session.
 
 ```sh
-pnpm paperclipai agent-prompt <agent-name-or-id> <agent-api-key> "Prompt here"
-pnpm paperclipai agent prompt --agent <agent-name-or-id> --api-key-env PAPERCLIP_API_KEY "Prompt here"
-pnpm paperclipai agent prompt --profile my-agent "Prompt here"
-pnpm paperclipai board prompt --company-id <company-id> --agent <agent-name-or-id> "Prompt here"
+pnpm bullpen agent-prompt <agent-name-or-id> <agent-api-key> "Prompt here"
+pnpm bullpen agent prompt --agent <agent-name-or-id> --api-key-env BULLPEN_API_KEY "Prompt here"
+pnpm bullpen agent prompt --profile my-agent "Prompt here"
+pnpm bullpen board prompt --company-id <company-id> --agent <agent-name-or-id> "Prompt here"
 ```
 
 By default the command creates a `todo` issue assigned to the target agent and wakes the agent. Use `--issue <issue-id>` to add a comment to existing work, and `--no-wake` to skip the wakeup.
 
 ## Skills Commands
 
-`paperclipai skills` covers three distinct operations:
+`bullpen skills` covers three distinct operations:
 
 1. **Company install** — adds or updates a row in `company_skills` for the
    whole company. This is what `skills install`, `skills import`, `skills create`,
@@ -472,7 +472,7 @@ By default the command creates a `todo` issue assigned to the target agent and w
    with files on disk and reports an `AgentSkillSnapshot` (`skills agent list`).
    `skills agent sync` triggers this automatically after updating desired state.
 
-Required Paperclip runtime skills (heartbeat, etc.) remain server-enforced and
+Required Bullpen runtime skills (heartbeat, etc.) remain server-enforced and
 are added on top of whatever the desired set names.
 
 Company skill mutations (`skills install`, `skills import`, `skills create`, and
@@ -484,22 +484,22 @@ also creates agents.
 
 ### Catalog (app-shipped skills)
 
-The Paperclip app ships a curated catalog under `@paperclipai/skills-catalog`.
+The Bullpen app ships a curated catalog under `@bullpen/skills-catalog`.
 Browse and inspect commands never mutate company state; `install` adds a catalog
 skill to the company library.
 
 ```sh
-pnpm paperclipai skills browse [--kind bundled|optional] [--category <slug>] [--query <text>]
-pnpm paperclipai skills search "<text>" [--kind bundled|optional] [--category <slug>]
-pnpm paperclipai skills inspect <catalog-id-or-key-or-slug>
-pnpm paperclipai skills install <catalog-id-or-key-or-slug> [--as <slug>] [--force] --company-id <company-id>
+pnpm bullpen skills browse [--kind bundled|optional] [--category <slug>] [--query <text>]
+pnpm bullpen skills search "<text>" [--kind bundled|optional] [--category <slug>]
+pnpm bullpen skills inspect <catalog-id-or-key-or-slug>
+pnpm bullpen skills install <catalog-id-or-key-or-slug> [--as <slug>] [--force] --company-id <company-id>
 ```
 
 Catalog semantics:
 
 - **Bundled** skills live in `packages/skills-catalog/catalog/bundled/<category>/<slug>`
   and are recommended defaults for most companies. They use canonical key
-  `paperclipai/bundled/<category>/<slug>`.
+  `bullpen/bundled/<category>/<slug>`.
 - **Optional** skills live in `packages/skills-catalog/catalog/optional/<category>/<slug>`
   and are role-specific or domain-specific (browser, AWS ops, etc.). Same key
   shape with `optional` in place of `bundled`.
@@ -513,11 +513,11 @@ Catalog semantics:
 Examples:
 
 ```sh
-pnpm paperclipai skills browse --kind bundled --company-id <company-id>
-pnpm paperclipai skills search "pull request" --kind bundled
-pnpm paperclipai skills inspect github-pr-workflow
-pnpm paperclipai skills install github-pr-workflow --company-id <company-id>
-pnpm paperclipai skills install paperclipai:optional:browser:agent-browser --company-id <company-id>
+pnpm bullpen skills browse --kind bundled --company-id <company-id>
+pnpm bullpen skills search "pull request" --kind bundled
+pnpm bullpen skills inspect github-pr-workflow
+pnpm bullpen skills install github-pr-workflow --company-id <company-id>
+pnpm bullpen skills install bullpen:optional:browser:agent-browser --company-id <company-id>
 ```
 
 External GitHub, skills.sh, local-path, and URL sources still go through
@@ -526,18 +526,18 @@ External GitHub, skills.sh, local-path, and URL sources still go through
 ### Company library
 
 ```sh
-pnpm paperclipai skills list --company-id <company-id>
-pnpm paperclipai skills show <skill-id-or-key-or-slug> --company-id <company-id>
-pnpm paperclipai skills file <skill-id-or-key-or-slug> [--path SKILL.md] --company-id <company-id>
-pnpm paperclipai skills import <source> --company-id <company-id>
-pnpm paperclipai skills create --name "Review PRs" [--slug review-prs] [--description "..."] [--body-file SKILL.md] --company-id <company-id>
-pnpm paperclipai skills scan-projects [--project-id <id>...] [--workspace-id <id>...] --company-id <company-id>
-pnpm paperclipai skills check [skill-id-or-key-or-slug] --company-id <company-id>
-pnpm paperclipai skills update <skill-id-or-key-or-slug> [--force] --company-id <company-id>
-pnpm paperclipai skills update --all [--force] --company-id <company-id>
-pnpm paperclipai skills audit [skill-id-or-key-or-slug] --company-id <company-id>
-pnpm paperclipai skills reset <skill-id-or-key-or-slug> [--yes] [--force] --company-id <company-id>
-pnpm paperclipai skills remove <skill-id-or-key-or-slug> --yes --company-id <company-id>
+pnpm bullpen skills list --company-id <company-id>
+pnpm bullpen skills show <skill-id-or-key-or-slug> --company-id <company-id>
+pnpm bullpen skills file <skill-id-or-key-or-slug> [--path SKILL.md] --company-id <company-id>
+pnpm bullpen skills import <source> --company-id <company-id>
+pnpm bullpen skills create --name "Review PRs" [--slug review-prs] [--description "..."] [--body-file SKILL.md] --company-id <company-id>
+pnpm bullpen skills scan-projects [--project-id <id>...] [--workspace-id <id>...] --company-id <company-id>
+pnpm bullpen skills check [skill-id-or-key-or-slug] --company-id <company-id>
+pnpm bullpen skills update <skill-id-or-key-or-slug> [--force] --company-id <company-id>
+pnpm bullpen skills update --all [--force] --company-id <company-id>
+pnpm bullpen skills audit [skill-id-or-key-or-slug] --company-id <company-id>
+pnpm bullpen skills reset <skill-id-or-key-or-slug> [--yes] [--force] --company-id <company-id>
+pnpm bullpen skills remove <skill-id-or-key-or-slug> --yes --company-id <company-id>
 ```
 
 `skills import <source>` accepts a skills.sh URL, the equivalent
@@ -563,14 +563,14 @@ maintenance loop for catalog-installed skills:
 ### Agent attach
 
 ```sh
-pnpm paperclipai skills agent list <agent-id-or-shortname> --company-id <company-id>
-pnpm paperclipai skills agent sync <agent-id-or-shortname> --skill <skill-id-or-key-or-slug> [--skill <skill-id-or-key-or-slug>...] --company-id <company-id>
-pnpm paperclipai skills agent clear <agent-id-or-shortname> --yes --company-id <company-id>
+pnpm bullpen skills agent list <agent-id-or-shortname> --company-id <company-id>
+pnpm bullpen skills agent sync <agent-id-or-shortname> --skill <skill-id-or-key-or-slug> [--skill <skill-id-or-key-or-slug>...] --company-id <company-id>
+pnpm bullpen skills agent clear <agent-id-or-shortname> --yes --company-id <company-id>
 ```
 
 `skills agent sync` replaces the agent's non-required desired skill set (it is
 not additive) and returns the resulting adapter `AgentSkillSnapshot`.
-`skills agent clear` sends an empty desired list. Required Paperclip skills are
+`skills agent clear` sends an empty desired list. Required Bullpen skills are
 still enforced by the server in both cases.
 
 ### Notes
@@ -585,31 +585,31 @@ still enforced by the server in both cases.
 
 ## Teams Commands
 
-`paperclipai teams` works with the app-shipped team catalog in
-`@paperclipai/teams-catalog`. Browse, search, inspect, and file reads do not
+`bullpen teams` works with the app-shipped team catalog in
+`@bullpen/teams-catalog`. Browse, search, inspect, and file reads do not
 change company state. `preview` runs the company import planner, and `install`
 imports the catalog team into an existing company.
 
 ```sh
-pnpm paperclipai teams browse [--kind bundled|optional] [--category <slug>] [--query <text>]
-pnpm paperclipai teams search "<text>" [--kind bundled|optional] [--category <slug>]
-pnpm paperclipai teams inspect <catalog-id-or-key-or-slug> [--file TEAM.md]
-pnpm paperclipai teams preview <catalog-id-or-key-or-slug> --company-id <company-id>
-pnpm paperclipai teams install <catalog-id-or-key-or-slug> --company-id <company-id>
+pnpm bullpen teams browse [--kind bundled|optional] [--category <slug>] [--query <text>]
+pnpm bullpen teams search "<text>" [--kind bundled|optional] [--category <slug>]
+pnpm bullpen teams inspect <catalog-id-or-key-or-slug> [--file TEAM.md]
+pnpm bullpen teams preview <catalog-id-or-key-or-slug> --company-id <company-id>
+pnpm bullpen teams install <catalog-id-or-key-or-slug> --company-id <company-id>
 ```
 
 Preview/install options:
 
-- Under agent authentication, use `paperclipai company list --json`,
-  `paperclipai company current --json`, or `PAPERCLIP_COMPANY_ID` to select the
+- Under agent authentication, use `bullpen company list --json`,
+  `bullpen company current --json`, or `BULLPEN_COMPANY_ID` to select the
   target company. `company list` falls back to the scoped current company when
   board-wide listing is forbidden. `teams install` creates agents and therefore
   requires board authentication, an `agents:create` grant, or an agent with
   explicit `canCreateAgents` permission.
 - `--request-approval-on-forbidden` turns a 403 install denial into a linked
   board approval request instead of a raw failed command; use
-  `--approval-issue-id <id>` to attach it to a specific issue. During Paperclip
-  task runs with `PAPERCLIP_TASK_ID` set, this fallback is automatic so
+  `--approval-issue-id <id>` to attach it to a specific issue. During Bullpen
+  task runs with `BULLPEN_TASK_ID` set, this fallback is automatic so
   agent-run walkthroughs leave a pending approval path instead of a raw 403.
 - `--target-manager-agent-id <id>` or `--target-manager-slug <slug>` reparents
   catalog root agents under an existing manager.
@@ -623,30 +623,30 @@ Preview/install options:
 ## Secrets Commands
 
 ```sh
-pnpm paperclipai secrets list --company-id <company-id>
-pnpm paperclipai secrets declarations --company-id <company-id> [--include agents,projects] [--kind secret]
-pnpm paperclipai secrets create --company-id <company-id> --name anthropic-api-key --value-env ANTHROPIC_API_KEY
-pnpm paperclipai secrets link --company-id <company-id> --name prod-stripe-key --provider aws_secrets_manager --external-ref <provider-ref>
-pnpm paperclipai secrets doctor --company-id <company-id>
-pnpm paperclipai secrets provider-configs --company-id <company-id>
-pnpm paperclipai secrets provider-config:create --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai secrets provider-config:discovery-preview --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai secrets provider-config:get <config-id>
-pnpm paperclipai secrets provider-config:update <config-id> --payload-json '{...}'
-pnpm paperclipai secrets provider-config:default <config-id>
-pnpm paperclipai secrets provider-config:health <config-id>
-pnpm paperclipai secrets provider-config:delete <config-id>
-pnpm paperclipai secrets remote-import:preview --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai secrets remote-import --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai secrets migrate-inline-env --company-id <company-id> [--apply]
+pnpm bullpen secrets list --company-id <company-id>
+pnpm bullpen secrets declarations --company-id <company-id> [--include agents,projects] [--kind secret]
+pnpm bullpen secrets create --company-id <company-id> --name anthropic-api-key --value-env ANTHROPIC_API_KEY
+pnpm bullpen secrets link --company-id <company-id> --name prod-stripe-key --provider aws_secrets_manager --external-ref <provider-ref>
+pnpm bullpen secrets doctor --company-id <company-id>
+pnpm bullpen secrets provider-configs --company-id <company-id>
+pnpm bullpen secrets provider-config:create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen secrets provider-config:discovery-preview --company-id <company-id> --payload-json '{...}'
+pnpm bullpen secrets provider-config:get <config-id>
+pnpm bullpen secrets provider-config:update <config-id> --payload-json '{...}'
+pnpm bullpen secrets provider-config:default <config-id>
+pnpm bullpen secrets provider-config:health <config-id>
+pnpm bullpen secrets provider-config:delete <config-id>
+pnpm bullpen secrets remote-import:preview --company-id <company-id> --payload-json '{...}'
+pnpm bullpen secrets remote-import --company-id <company-id> --payload-json '{...}'
+pnpm bullpen secrets migrate-inline-env --company-id <company-id> [--apply]
 ```
 
 Secret listing and declarations never print secret values. `create` accepts
 `--value-env` so shell history does not capture the value. `link` records
-provider-owned references without copying the secret value into Paperclip.
+provider-owned references without copying the secret value into Bullpen.
 For AWS-backed secrets, `secrets doctor` reports missing non-secret provider
 env and the expected AWS SDK runtime credential source; do not store AWS
-bootstrap credentials in Paperclip secrets.
+bootstrap credentials in Bullpen secrets.
 
 Per-company provider vaults (multiple vault instances per provider, default
 vault selection, coming-soon GCP/Vault) can be configured from the board UI under
@@ -658,78 +658,78 @@ commands above. See the
 ## Approval Commands
 
 ```sh
-pnpm paperclipai approval list --company-id <company-id> [--status pending]
-pnpm paperclipai approval get <approval-id>
-pnpm paperclipai approval create --company-id <company-id> --type hire_agent --payload '{"name":"..."}' [--issue-ids <id1,id2>]
-pnpm paperclipai approval approve <approval-id> [--decision-note "..."]
-pnpm paperclipai approval reject <approval-id> [--decision-note "..."]
-pnpm paperclipai approval request-revision <approval-id> [--decision-note "..."]
-pnpm paperclipai approval resubmit <approval-id> [--payload '{"...":"..."}']
-pnpm paperclipai approval comment <approval-id> --body "..."
+pnpm bullpen approval list --company-id <company-id> [--status pending]
+pnpm bullpen approval get <approval-id>
+pnpm bullpen approval create --company-id <company-id> --type hire_agent --payload '{"name":"..."}' [--issue-ids <id1,id2>]
+pnpm bullpen approval approve <approval-id> [--decision-note "..."]
+pnpm bullpen approval reject <approval-id> [--decision-note "..."]
+pnpm bullpen approval request-revision <approval-id> [--decision-note "..."]
+pnpm bullpen approval resubmit <approval-id> [--payload '{"...":"..."}']
+pnpm bullpen approval comment <approval-id> --body "..."
 ```
 
 ## Activity Commands
 
 ```sh
-pnpm paperclipai activity list --company-id <company-id> [--agent-id <agent-id>] [--entity-type issue] [--entity-id <id>]
-pnpm paperclipai activity create --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai activity issue <issue-id>
+pnpm bullpen activity list --company-id <company-id> [--agent-id <agent-id>] [--entity-type issue] [--entity-id <id>]
+pnpm bullpen activity create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen activity issue <issue-id>
 ```
 
 ## Dashboard Commands
 
 ```sh
-pnpm paperclipai dashboard get --company-id <company-id>
+pnpm bullpen dashboard get --company-id <company-id>
 ```
 
 ## Org And Agent Config Commands
 
 ```sh
-pnpm paperclipai whoami
-pnpm paperclipai openapi
-pnpm paperclipai org get --company-id <company-id>
-pnpm paperclipai org svg --company-id <company-id> [--out org.svg]
-pnpm paperclipai org png --company-id <company-id> [--out org.png]
-pnpm paperclipai agent-config list --company-id <company-id>
+pnpm bullpen whoami
+pnpm bullpen openapi
+pnpm bullpen org get --company-id <company-id>
+pnpm bullpen org svg --company-id <company-id> [--out org.svg]
+pnpm bullpen org png --company-id <company-id> [--out org.png]
+pnpm bullpen agent-config list --company-id <company-id>
 ```
 
 ## Access, Profile, And Instance Commands
 
 ```sh
-pnpm paperclipai profile session
-pnpm paperclipai profile get
-pnpm paperclipai profile update --payload-json '{...}'
-pnpm paperclipai profile company-user <user-slug> --company-id <company-id>
-pnpm paperclipai invite list --company-id <company-id>
-pnpm paperclipai invite create --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai invite revoke <invite-id>
-pnpm paperclipai invite show <token>
-pnpm paperclipai invite accept <token> [--payload-json '{...}']
-pnpm paperclipai invite onboarding:text <token>
-pnpm paperclipai join list --company-id <company-id> [--status pending_approval]
-pnpm paperclipai join approve <request-id> --company-id <company-id>
-pnpm paperclipai join reject <request-id> --company-id <company-id>
-pnpm paperclipai join claim-key <request-id> --claim-secret <secret>
-pnpm paperclipai member list --company-id <company-id>
-pnpm paperclipai member update <member-id> --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai member role-and-grants <member-id> --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai member permissions <member-id> --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai member archive <member-id> --company-id <company-id> [--payload-json '{...}']
-pnpm paperclipai admin user list [--query <text>]
-pnpm paperclipai admin user promote <user-id>
-pnpm paperclipai admin user demote <user-id>
-pnpm paperclipai admin user company-access <user-id>
-pnpm paperclipai admin user company-access:update <user-id> --payload-json '{...}'
+pnpm bullpen profile session
+pnpm bullpen profile get
+pnpm bullpen profile update --payload-json '{...}'
+pnpm bullpen profile company-user <user-slug> --company-id <company-id>
+pnpm bullpen invite list --company-id <company-id>
+pnpm bullpen invite create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen invite revoke <invite-id>
+pnpm bullpen invite show <token>
+pnpm bullpen invite accept <token> [--payload-json '{...}']
+pnpm bullpen invite onboarding:text <token>
+pnpm bullpen join list --company-id <company-id> [--status pending_approval]
+pnpm bullpen join approve <request-id> --company-id <company-id>
+pnpm bullpen join reject <request-id> --company-id <company-id>
+pnpm bullpen join claim-key <request-id> --claim-secret <secret>
+pnpm bullpen member list --company-id <company-id>
+pnpm bullpen member update <member-id> --company-id <company-id> --payload-json '{...}'
+pnpm bullpen member role-and-grants <member-id> --company-id <company-id> --payload-json '{...}'
+pnpm bullpen member permissions <member-id> --company-id <company-id> --payload-json '{...}'
+pnpm bullpen member archive <member-id> --company-id <company-id> [--payload-json '{...}']
+pnpm bullpen admin user list [--query <text>]
+pnpm bullpen admin user promote <user-id>
+pnpm bullpen admin user demote <user-id>
+pnpm bullpen admin user company-access <user-id>
+pnpm bullpen admin user company-access:update <user-id> --payload-json '{...}'
 ```
 
 CLI auth challenge endpoints are also exposed for tooling that needs the raw challenge lifecycle:
 
 ```sh
-pnpm paperclipai auth challenge create --payload-json '{...}'
-PAPERCLIP_CHALLENGE_SECRET=<challenge-secret> pnpm paperclipai auth challenge get <challenge-id> --token-env PAPERCLIP_CHALLENGE_SECRET
-PAPERCLIP_CHALLENGE_SECRET=<challenge-secret> pnpm paperclipai auth challenge approve <challenge-id> --token-env PAPERCLIP_CHALLENGE_SECRET
-PAPERCLIP_CHALLENGE_SECRET=<challenge-secret> pnpm paperclipai auth challenge cancel <challenge-id> --token-env PAPERCLIP_CHALLENGE_SECRET
-pnpm paperclipai auth revoke-current
+pnpm bullpen auth challenge create --payload-json '{...}'
+BULLPEN_CHALLENGE_SECRET=<challenge-secret> pnpm bullpen auth challenge get <challenge-id> --token-env BULLPEN_CHALLENGE_SECRET
+BULLPEN_CHALLENGE_SECRET=<challenge-secret> pnpm bullpen auth challenge approve <challenge-id> --token-env BULLPEN_CHALLENGE_SECRET
+BULLPEN_CHALLENGE_SECRET=<challenge-secret> pnpm bullpen auth challenge cancel <challenge-id> --token-env BULLPEN_CHALLENGE_SECRET
+pnpm bullpen auth revoke-current
 ```
 
 `--token <challenge-secret>` is still supported for compatibility, but `--token-env` avoids putting challenge secrets in shell history or process arguments.
@@ -737,33 +737,33 @@ pnpm paperclipai auth revoke-current
 ## Instance Settings Commands
 
 ```sh
-pnpm paperclipai instance scheduler-heartbeats
-pnpm paperclipai instance settings:general
-pnpm paperclipai instance settings:general:update --payload-json '{...}'
-pnpm paperclipai instance settings:experimental
-pnpm paperclipai instance settings:experimental:update --payload-json '{...}'
-pnpm paperclipai instance database-backup
+pnpm bullpen instance scheduler-heartbeats
+pnpm bullpen instance settings:general
+pnpm bullpen instance settings:general:update --payload-json '{...}'
+pnpm bullpen instance settings:experimental
+pnpm bullpen instance settings:experimental:update --payload-json '{...}'
+pnpm bullpen instance database-backup
 ```
 
 Experimental features are opt-in and are provided without compatibility guarantees. They may break, change, or be removed at any time. Use them at your own risk.
 
 ```sh
-pnpm paperclipai sidebar preferences
-pnpm paperclipai sidebar preferences:update --payload-json '{...}'
-pnpm paperclipai sidebar project-preferences --company-id <company-id>
-pnpm paperclipai sidebar project-preferences:update --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai sidebar badges --company-id <company-id>
-pnpm paperclipai inbox dismissals --company-id <company-id>
-pnpm paperclipai inbox dismiss --company-id <company-id> --payload-json '{"itemKey":"run:<run-id>"}'
-pnpm paperclipai board-claim show <token>
-pnpm paperclipai board-claim claim <token> [--payload-json '{...}']
-pnpm paperclipai openclaw invite-prompt --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai available-skill list
-pnpm paperclipai available-skill index
-pnpm paperclipai available-skill get <skill-name>
-pnpm paperclipai llm agent-configuration
-pnpm paperclipai llm agent-configuration:adapter <adapter-type>
-pnpm paperclipai llm agent-icons
+pnpm bullpen sidebar preferences
+pnpm bullpen sidebar preferences:update --payload-json '{...}'
+pnpm bullpen sidebar project-preferences --company-id <company-id>
+pnpm bullpen sidebar project-preferences:update --company-id <company-id> --payload-json '{...}'
+pnpm bullpen sidebar badges --company-id <company-id>
+pnpm bullpen inbox dismissals --company-id <company-id>
+pnpm bullpen inbox dismiss --company-id <company-id> --payload-json '{"itemKey":"run:<run-id>"}'
+pnpm bullpen board-claim show <token>
+pnpm bullpen board-claim claim <token> [--payload-json '{...}']
+pnpm bullpen openclaw invite-prompt --company-id <company-id> --payload-json '{...}'
+pnpm bullpen available-skill list
+pnpm bullpen available-skill index
+pnpm bullpen available-skill get <skill-name>
+pnpm bullpen llm agent-configuration
+pnpm bullpen llm agent-configuration:adapter <adapter-type>
+pnpm bullpen llm agent-icons
 ```
 
 Hermes gateway uses the generic invite/join commands above rather than
@@ -776,101 +776,101 @@ commands. See [HERMES_GATEWAY_ONBOARDING.md](./HERMES_GATEWAY_ONBOARDING.md).
 ## Adapter, Asset, And Skill Commands
 
 ```sh
-pnpm paperclipai adapter list
-pnpm paperclipai adapter install --payload-json '{"packageName":"@scope/adapter","version":"1.2.3"}'
-pnpm paperclipai adapter get <adapter-type>
-pnpm paperclipai adapter update <adapter-type> --payload-json '{"disabled":true}'
-pnpm paperclipai adapter override <adapter-type> --payload-json '{"paused":true}'
-pnpm paperclipai adapter reload <adapter-type>
-pnpm paperclipai adapter reinstall <adapter-type>
-pnpm paperclipai adapter delete <adapter-type>
-pnpm paperclipai adapter config-schema <adapter-type>
-pnpm paperclipai adapter ui-parser <adapter-type>
-pnpm paperclipai adapter models <adapter-type> --company-id <company-id> [--refresh] [--environment-id <id>]
-pnpm paperclipai adapter model-profiles <adapter-type> --company-id <company-id>
-pnpm paperclipai adapter detect-model <adapter-type> --company-id <company-id>
-pnpm paperclipai adapter test-environment <adapter-type> --company-id <company-id> --payload-json '{...}'
+pnpm bullpen adapter list
+pnpm bullpen adapter install --payload-json '{"packageName":"@scope/adapter","version":"1.2.3"}'
+pnpm bullpen adapter get <adapter-type>
+pnpm bullpen adapter update <adapter-type> --payload-json '{"disabled":true}'
+pnpm bullpen adapter override <adapter-type> --payload-json '{"paused":true}'
+pnpm bullpen adapter reload <adapter-type>
+pnpm bullpen adapter reinstall <adapter-type>
+pnpm bullpen adapter delete <adapter-type>
+pnpm bullpen adapter config-schema <adapter-type>
+pnpm bullpen adapter ui-parser <adapter-type>
+pnpm bullpen adapter models <adapter-type> --company-id <company-id> [--refresh] [--environment-id <id>]
+pnpm bullpen adapter model-profiles <adapter-type> --company-id <company-id>
+pnpm bullpen adapter detect-model <adapter-type> --company-id <company-id>
+pnpm bullpen adapter test-environment <adapter-type> --company-id <company-id> --payload-json '{...}'
 ```
 
 ```sh
-pnpm paperclipai asset image:upload --company-id <company-id> --file ./image.png [--namespace docs] [--alt "..."]
-pnpm paperclipai asset logo:upload --company-id <company-id> --file ./logo.svg
-pnpm paperclipai asset content <asset-id> --out ./asset.bin
+pnpm bullpen asset image:upload --company-id <company-id> --file ./image.png [--namespace docs] [--alt "..."]
+pnpm bullpen asset logo:upload --company-id <company-id> --file ./logo.svg
+pnpm bullpen asset content <asset-id> --out ./asset.bin
 ```
 
 ```sh
-pnpm paperclipai skill list --company-id <company-id>
-pnpm paperclipai skill get <skill-id> --company-id <company-id>
-pnpm paperclipai skill file <skill-id> --company-id <company-id> [--path SKILL.md]
-pnpm paperclipai skill create --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai skill file:update <skill-id> --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai skill import --company-id <company-id> --payload-json '{"source":"github:owner/repo/path"}'
-pnpm paperclipai skill scan-projects --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai skill update-status <skill-id> --company-id <company-id>
-pnpm paperclipai skill install-update <skill-id> --company-id <company-id>
-pnpm paperclipai skill delete <skill-id> --company-id <company-id>
+pnpm bullpen skill list --company-id <company-id>
+pnpm bullpen skill get <skill-id> --company-id <company-id>
+pnpm bullpen skill file <skill-id> --company-id <company-id> [--path SKILL.md]
+pnpm bullpen skill create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen skill file:update <skill-id> --company-id <company-id> --payload-json '{...}'
+pnpm bullpen skill import --company-id <company-id> --payload-json '{"source":"github:owner/repo/path"}'
+pnpm bullpen skill scan-projects --company-id <company-id> --payload-json '{...}'
+pnpm bullpen skill update-status <skill-id> --company-id <company-id>
+pnpm bullpen skill install-update <skill-id> --company-id <company-id>
+pnpm bullpen skill delete <skill-id> --company-id <company-id>
 ```
 
 ## Cost, Finance, And Budget Commands
 
 ```sh
-pnpm paperclipai cost summary --company-id <company-id>
-pnpm paperclipai cost by-agent --company-id <company-id>
-pnpm paperclipai cost by-agent-model --company-id <company-id>
-pnpm paperclipai cost by-provider --company-id <company-id>
-pnpm paperclipai cost by-biller --company-id <company-id>
-pnpm paperclipai cost by-project --company-id <company-id>
-pnpm paperclipai cost window-spend --company-id <company-id>
-pnpm paperclipai cost quota-windows --company-id <company-id>
-pnpm paperclipai cost issue <issue-id>
-pnpm paperclipai cost event:create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen cost summary --company-id <company-id>
+pnpm bullpen cost by-agent --company-id <company-id>
+pnpm bullpen cost by-agent-model --company-id <company-id>
+pnpm bullpen cost by-provider --company-id <company-id>
+pnpm bullpen cost by-biller --company-id <company-id>
+pnpm bullpen cost by-project --company-id <company-id>
+pnpm bullpen cost window-spend --company-id <company-id>
+pnpm bullpen cost quota-windows --company-id <company-id>
+pnpm bullpen cost issue <issue-id>
+pnpm bullpen cost event:create --company-id <company-id> --payload-json '{...}'
 ```
 
 ```sh
-pnpm paperclipai finance event:create --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai finance events --company-id <company-id>
-pnpm paperclipai finance summary --company-id <company-id>
-pnpm paperclipai finance by-biller --company-id <company-id>
-pnpm paperclipai finance by-kind --company-id <company-id>
-pnpm paperclipai budget overview --company-id <company-id>
-pnpm paperclipai budget policy:upsert --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai budget company:update --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai budget agent:update <agent-id> --payload-json '{...}'
-pnpm paperclipai budget incident:resolve <incident-id> --company-id <company-id> [--payload-json '{...}']
+pnpm bullpen finance event:create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen finance events --company-id <company-id>
+pnpm bullpen finance summary --company-id <company-id>
+pnpm bullpen finance by-biller --company-id <company-id>
+pnpm bullpen finance by-kind --company-id <company-id>
+pnpm bullpen budget overview --company-id <company-id>
+pnpm bullpen budget policy:upsert --company-id <company-id> --payload-json '{...}'
+pnpm bullpen budget company:update --company-id <company-id> --payload-json '{...}'
+pnpm bullpen budget agent:update <agent-id> --payload-json '{...}'
+pnpm bullpen budget incident:resolve <incident-id> --company-id <company-id> [--payload-json '{...}']
 ```
 
 ## Workspace And Environment Commands
 
 ```sh
-pnpm paperclipai workspace list --company-id <company-id>
-pnpm paperclipai workspace get <execution-workspace-id>
-pnpm paperclipai workspace close-readiness <execution-workspace-id>
-pnpm paperclipai workspace operations <execution-workspace-id>
-pnpm paperclipai workspace update <execution-workspace-id> --payload-json '{...}'
-pnpm paperclipai workspace runtime-service <execution-workspace-id> start --payload-json '{...}'
-pnpm paperclipai workspace runtime-command <execution-workspace-id> run --payload-json '{...}'
+pnpm bullpen workspace list --company-id <company-id>
+pnpm bullpen workspace get <execution-workspace-id>
+pnpm bullpen workspace close-readiness <execution-workspace-id>
+pnpm bullpen workspace operations <execution-workspace-id>
+pnpm bullpen workspace update <execution-workspace-id> --payload-json '{...}'
+pnpm bullpen workspace runtime-service <execution-workspace-id> start --payload-json '{...}'
+pnpm bullpen workspace runtime-command <execution-workspace-id> run --payload-json '{...}'
 ```
 
 ```sh
-pnpm paperclipai environment list --company-id <company-id>
-pnpm paperclipai environment capabilities --company-id <company-id>
-pnpm paperclipai environment create --company-id <company-id> --payload-json '{...}'
-pnpm paperclipai environment get <environment-id>
-pnpm paperclipai environment leases <environment-id>
-pnpm paperclipai environment lease <lease-id>
-pnpm paperclipai environment update <environment-id> --payload-json '{...}'
-pnpm paperclipai environment delete <environment-id>
-pnpm paperclipai environment probe <environment-id>
-pnpm paperclipai environment probe-config --company-id <company-id> --payload-json '{...}'
+pnpm bullpen environment list --company-id <company-id>
+pnpm bullpen environment capabilities --company-id <company-id>
+pnpm bullpen environment create --company-id <company-id> --payload-json '{...}'
+pnpm bullpen environment get <environment-id>
+pnpm bullpen environment leases <environment-id>
+pnpm bullpen environment lease <lease-id>
+pnpm bullpen environment update <environment-id> --payload-json '{...}'
+pnpm bullpen environment delete <environment-id>
+pnpm bullpen environment probe <environment-id>
+pnpm bullpen environment probe-config --company-id <company-id> --payload-json '{...}'
 ```
 
 ```sh
-pnpm paperclipai project-workspace list <project-id>
-pnpm paperclipai project-workspace create <project-id> --payload-json '{...}'
-pnpm paperclipai project-workspace update <project-id> <workspace-id> --payload-json '{...}'
-pnpm paperclipai project-workspace delete <project-id> <workspace-id>
-pnpm paperclipai project-workspace runtime-service <project-id> <workspace-id> restart --payload-json '{...}'
-pnpm paperclipai project-workspace runtime-command <project-id> <workspace-id> run --payload-json '{...}'
+pnpm bullpen project-workspace list <project-id>
+pnpm bullpen project-workspace create <project-id> --payload-json '{...}'
+pnpm bullpen project-workspace update <project-id> <workspace-id> --payload-json '{...}'
+pnpm bullpen project-workspace delete <project-id> <workspace-id>
+pnpm bullpen project-workspace runtime-service <project-id> <workspace-id> restart --payload-json '{...}'
+pnpm bullpen project-workspace runtime-command <project-id> <workspace-id> run --payload-json '{...}'
 ```
 
 ## Plugin Commands
@@ -878,36 +878,36 @@ pnpm paperclipai project-workspace runtime-command <project-id> <workspace-id> r
 Existing plugin lifecycle commands remain available: `plugin init`, `list`, `install`, `uninstall`, `enable`, `disable`, `inspect`, and `examples`.
 
 ```sh
-pnpm paperclipai plugin ui-contributions
-pnpm paperclipai plugin tools
-pnpm paperclipai plugin tool:execute --payload-json '{...}'
-pnpm paperclipai plugin health <plugin-id>
-pnpm paperclipai plugin logs <plugin-id>
-pnpm paperclipai plugin upgrade <plugin-id>
-pnpm paperclipai plugin config <plugin-id> --company-id <company-id>
-pnpm paperclipai plugin config:set <plugin-id> --company-id <company-id> --payload-json '{"configJson":{...}}'
-pnpm paperclipai plugin config:test <plugin-id> --company-id <company-id> --payload-json '{"configJson":{...}}'
-pnpm paperclipai plugin jobs <plugin-id>
-pnpm paperclipai plugin job:runs <plugin-id> <job-id>
-pnpm paperclipai plugin job:trigger <plugin-id> <job-id> [--payload-json '{...}']
-pnpm paperclipai plugin webhook <plugin-id> <endpoint-key> [--payload-json '{...}']
-pnpm paperclipai plugin dashboard <plugin-id>
-pnpm paperclipai plugin bridge:data <plugin-id> --payload-json '{...}'
-pnpm paperclipai plugin bridge:action <plugin-id> --payload-json '{...}'
-pnpm paperclipai plugin bridge:stream <plugin-id> <channel> [--duration-ms 10000]
-pnpm paperclipai plugin data <plugin-id> <key> --payload-json '{...}'
-pnpm paperclipai plugin action <plugin-id> <key> --payload-json '{...}'
-pnpm paperclipai plugin local-folders <plugin-id> --company-id <company-id>
-pnpm paperclipai plugin local-folder:status <plugin-id> <folder-key> --company-id <company-id>
-pnpm paperclipai plugin local-folder:validate <plugin-id> <folder-key> --company-id <company-id> [--payload-json '{...}']
-pnpm paperclipai plugin local-folder:set <plugin-id> <folder-key> --company-id <company-id> --payload-json '{...}'
+pnpm bullpen plugin ui-contributions
+pnpm bullpen plugin tools
+pnpm bullpen plugin tool:execute --payload-json '{...}'
+pnpm bullpen plugin health <plugin-id>
+pnpm bullpen plugin logs <plugin-id>
+pnpm bullpen plugin upgrade <plugin-id>
+pnpm bullpen plugin config <plugin-id> --company-id <company-id>
+pnpm bullpen plugin config:set <plugin-id> --company-id <company-id> --payload-json '{"configJson":{...}}'
+pnpm bullpen plugin config:test <plugin-id> --company-id <company-id> --payload-json '{"configJson":{...}}'
+pnpm bullpen plugin jobs <plugin-id>
+pnpm bullpen plugin job:runs <plugin-id> <job-id>
+pnpm bullpen plugin job:trigger <plugin-id> <job-id> [--payload-json '{...}']
+pnpm bullpen plugin webhook <plugin-id> <endpoint-key> [--payload-json '{...}']
+pnpm bullpen plugin dashboard <plugin-id>
+pnpm bullpen plugin bridge:data <plugin-id> --payload-json '{...}'
+pnpm bullpen plugin bridge:action <plugin-id> --payload-json '{...}'
+pnpm bullpen plugin bridge:stream <plugin-id> <channel> [--duration-ms 10000]
+pnpm bullpen plugin data <plugin-id> <key> --payload-json '{...}'
+pnpm bullpen plugin action <plugin-id> <key> --payload-json '{...}'
+pnpm bullpen plugin local-folders <plugin-id> --company-id <company-id>
+pnpm bullpen plugin local-folder:status <plugin-id> <folder-key> --company-id <company-id>
+pnpm bullpen plugin local-folder:validate <plugin-id> <folder-key> --company-id <company-id> [--payload-json '{...}']
+pnpm bullpen plugin local-folder:set <plugin-id> <folder-key> --company-id <company-id> --payload-json '{...}'
 ```
 
 Feedback traces can be fetched directly by ID when automating export workflows:
 
 ```sh
-pnpm paperclipai feedback trace <trace-id>
-pnpm paperclipai feedback bundle <trace-id>
+pnpm bullpen feedback trace <trace-id>
+pnpm bullpen feedback bundle <trace-id>
 ```
 
 ## Heartbeat Command
@@ -915,17 +915,17 @@ pnpm paperclipai feedback bundle <trace-id>
 `heartbeat run` now also supports context/api-key options and uses the shared client stack:
 
 ```sh
-pnpm paperclipai heartbeat run --agent-id <agent-id> [--api-base http://localhost:3100] [--api-key <token>]
+pnpm bullpen heartbeat run --agent-id <agent-id> [--api-base http://localhost:3100] [--api-key <token>]
 ```
 
 ## Local Storage Defaults
 
-Local Paperclip data lives under the selected instance root. `PAPERCLIP_HOME` chooses the home directory and `PAPERCLIP_INSTANCE_ID` chooses the instance.
+Local Bullpen data lives under the selected instance root. `BULLPEN_HOME` chooses the home directory and `BULLPEN_INSTANCE_ID` chooses the instance.
 
 ```text
-~/.paperclip/                                     # PAPERCLIP_HOME
+~/.bullpen/                                     # BULLPEN_HOME
 └── instances/
-    └── default/                                  # instance root (PAPERCLIP_INSTANCE_ID)
+    └── default/                                  # instance root (BULLPEN_INSTANCE_ID)
         ├── config.json                           # runtime config
         ├── .env                                  # instance env file
         ├── db/                                   # embedded PostgreSQL data
@@ -943,16 +943,16 @@ Local Paperclip data lives under the selected instance root. `PAPERCLIP_HOME` ch
 
 Default paths for the canonical install:
 
-- config: `~/.paperclip/instances/default/config.json`
-- embedded db: `~/.paperclip/instances/default/db`
-- logs: `~/.paperclip/instances/default/logs`
-- storage: `~/.paperclip/instances/default/data/storage`
-- secrets key: `~/.paperclip/instances/default/secrets/master.key`
+- config: `~/.bullpen/instances/default/config.json`
+- embedded db: `~/.bullpen/instances/default/db`
+- logs: `~/.bullpen/instances/default/logs`
+- storage: `~/.bullpen/instances/default/data/storage`
+- secrets key: `~/.bullpen/instances/default/secrets/master.key`
 
 Override base home or instance with env vars:
 
 ```sh
-PAPERCLIP_HOME=/custom/home PAPERCLIP_INSTANCE_ID=dev pnpm paperclipai run
+BULLPEN_HOME=/custom/home BULLPEN_INSTANCE_ID=dev pnpm bullpen run
 ```
 
 ## Storage Configuration
@@ -960,7 +960,7 @@ PAPERCLIP_HOME=/custom/home PAPERCLIP_INSTANCE_ID=dev pnpm paperclipai run
 Configure storage provider and settings:
 
 ```sh
-pnpm paperclipai configure --section storage
+pnpm bullpen configure --section storage
 ```
 
 Supported providers:

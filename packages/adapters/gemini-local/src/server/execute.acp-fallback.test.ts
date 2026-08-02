@@ -4,7 +4,7 @@ const {
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
   executeGeminiAcp,
-  readPaperclipRuntimeSkillEntries,
+  readBullpenRuntimeSkillEntries,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
 } = vi.hoisted(() => ({
@@ -13,7 +13,7 @@ const {
   executeGeminiAcp: vi.fn(async () => {
     throw new Error('Transform failed with 1 error: execute.ts:818:0: ERROR: Unexpected "<<"');
   }),
-  readPaperclipRuntimeSkillEntries: vi.fn(async () => []),
+  readBullpenRuntimeSkillEntries: vi.fn(async () => []),
   resolveAdapterExecutionTargetCommandForLogs: vi.fn(async () => "gemini"),
   runAdapterExecutionTargetProcess: vi.fn(async () => ({
     exitCode: 0,
@@ -37,16 +37,16 @@ const {
 vi.mock("./acp.js", () => ({
   createGeminiAcpExecutor: () => executeGeminiAcp,
   formatGeminiAcpFallbackMessage: (reason: string) =>
-    `[paperclip] Gemini ACP default unavailable; falling back to Gemini CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`,
+    `[bullpen] Gemini ACP default unavailable; falling back to Gemini CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`,
   resolveGeminiExecutionEngineForRun: async (ctx: { config: Record<string, unknown> }) =>
     ctx.config.engine === "acp"
       ? { engine: "acp", explicit: true }
       : { engine: "acp", explicit: false },
 }));
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@bullpen/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@bullpen/adapter-utils/execution-target")>(
+    "@bullpen/adapter-utils/execution-target",
   );
   return {
     ...actual,
@@ -57,13 +57,13 @@ vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@bullpen/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@bullpen/adapter-utils/server-utils")>(
+    "@bullpen/adapter-utils/server-utils",
   );
   return {
     ...actual,
-    readPaperclipRuntimeSkillEntries,
+    readBullpenRuntimeSkillEntries,
   };
 });
 

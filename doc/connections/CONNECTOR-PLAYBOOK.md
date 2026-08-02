@@ -2,7 +2,7 @@
 
 This playbook is the repeatable template for adding a vendor to the Apps catalog as data, not as a plugin. It follows the accepted connections framework in [PAP-13211](/PAP/issues/PAP-13211), the first-30 rollout matrix in [PAP-2432](/PAP/issues/PAP-2432), and the production validation scope in [PAP-12373](/PAP/issues/PAP-12373).
 
-Use it when Paperclip acts on an external system through a governed connection: a stored credential, a capability catalog, access profiles and policy rules, and audit. Inbound integrations, such as an external client acting on Paperclip, use gateway or webhook guidance instead.
+Use it when Bullpen acts on an external system through a governed connection: a stored credential, a capability catalog, access profiles and policy rules, and audit. Inbound integrations, such as an external client acting on Bullpen, use gateway or webhook guidance instead.
 
 Every connector built with this playbook is a **plane P2** connection — a resource token in the instance vault, acquired via the connect broker, never a sign-in authenticator. Before writing a connector, read [Identity vs. connections](./README.md#identity-vs-connections) for the P1/P2/P3 boundary and the D7 standing rule (sign-in tokens are never reused as resource tokens; id.paperclip.ing never stores resource tokens; no connections hub on the ID service).
 
@@ -40,8 +40,8 @@ Classify the vendor before writing metadata. Use the [PAP-2432](/PAP/issues/PAP-
 
 | Reuse path | Use when | Typical transport | Examples from the matrix |
 | --- | --- | --- | --- |
-| MCP-direct | The vendor exposes an official or stable MCP server whose tools map cleanly to Paperclip grants. | `mcp_remote`; `local_stdio` only for approved trusted templates. | Linear, Notion, Sentry, Vercel, Exa, Apify, Context7. |
-| OpenAPI-shim | The vendor has a documented REST/OpenAPI surface but no stable MCP server, and a generated/thin shim can expose safe actions. | Shim service or approved template that presents an MCP-compatible catalog to Paperclip. | Datadog, Apollo, QuickBooks, Ramp/Brex, Zendesk. |
+| MCP-direct | The vendor exposes an official or stable MCP server whose tools map cleanly to Bullpen grants. | `mcp_remote`; `local_stdio` only for approved trusted templates. | Linear, Notion, Sentry, Vercel, Exa, Apify, Context7. |
+| OpenAPI-shim | The vendor has a documented REST/OpenAPI surface but no stable MCP server, and a generated/thin shim can expose safe actions. | Shim service or approved template that presents an MCP-compatible catalog to Bullpen. | Datadog, Apollo, QuickBooks, Ramp/Brex, Zendesk. |
 | Vendor-deep-wrapper | The vendor boundary depends on app-installation tokens, event validation, rich domain semantics, resource grants, or high-risk writes. | Vendor-specific wrapper behind the same connection model. | GitHub, Slack, Google Workspace writes, Atlassian, Microsoft 365, Cloudflare, Figma, Stripe, Salesforce, HubSpot, Intercom, PagerDuty. |
 
 Record the classification in the proposal along with the transport and the reason a lighter path is or is not enough.
@@ -50,7 +50,7 @@ Record the classification in the proposal along with the transport and the reaso
 
 Choose one auth mode:
 
-- OAuth: user or workspace authorization through Paperclip-owned OAuth app registration. Use for vendors with delegated scopes and revocation APIs.
+- OAuth: user or workspace authorization through Bullpen-owned OAuth app registration. Use for vendors with delegated scopes and revocation APIs.
 - API key: operator-supplied token or key. Use only when scopes can be constrained and the key is stored as a `company_secrets` ref.
 - App-installation: bot/app token, GitHub App installation, Slack bot token, or similar installation credential.
 - None: public/read-only systems or first-party fixtures that do not require vendor credentials.
@@ -78,7 +78,7 @@ Credentials always live in `company_secrets` with redacted metadata and versione
 }
 ```
 
-Do not add durable vendor credentials to agent env, project env, runtime env, adapter config, issue comments, screenshots, logs, fixture JSON, or plugin config. Agents receive a run-scoped gateway token; Paperclip resolves the vendor credential server-side and audits the call.
+Do not add durable vendor credentials to agent env, project env, runtime env, adapter config, issue comments, screenshots, logs, fixture JSON, or plugin config. Agents receive a run-scoped gateway token; Bullpen resolves the vendor credential server-side and audits the call.
 
 ## Step 4: Author The AppDefinition
 
@@ -114,7 +114,7 @@ The connection health and catalog discovery steps should fail or warn when requi
 
 ## Step 6: Define The Action Catalog
 
-List each initial action before implementation. Do not rely on vendor tool names alone; Paperclip needs normalized metadata for review, policy, and audit.
+List each initial action before implementation. Do not rely on vendor tool names alone; Bullpen needs normalized metadata for review, policy, and audit.
 
 For each action, capture:
 
@@ -167,7 +167,7 @@ Recommended defaults for a new catalog entry:
 - Set `recommendedDefaults.askFirstRiskLevels` to `["write", "destructive"]` unless the connector is read-only.
 - Add an explicit block or quarantine for destructive actions until SecurityEngineer review.
 - Add rate-limit policy for search/fetch APIs, vendor quota-sensitive APIs, and paid APIs.
-- Require approval for any external send, deploy, refund, delete, tenant-wide mutation, or action that can expose private customer data outside Paperclip.
+- Require approval for any external send, deploy, refund, delete, tenant-wide mutation, or action that can expose private customer data outside Bullpen.
 
 ## Step 9: Align With Production Validation
 
@@ -334,9 +334,9 @@ No destructive Linear action should ship in the first pass. If a future delete/a
 
 1. Operator opens Apps and selects Linear.
 2. Operator clicks Connect and completes Linear OAuth.
-3. Paperclip stores OAuth material in `company_secrets` and shows redacted workspace/account metadata.
+3. Bullpen stores OAuth material in `company_secrets` and shows redacted workspace/account metadata.
 4. Operator selects workspace/team/project filters and confirms default ask-first writes.
-5. Paperclip runs health check and catalog refresh.
+5. Bullpen runs health check and catalog refresh.
 6. Operator binds the Linear read profile to a company, project, agent, routine, or issue scope.
 7. Write actions stay ask-first until the operator approves calls or creates narrow trust rules.
 
@@ -352,7 +352,7 @@ No destructive Linear action should ship in the first pass. If a future delete/a
 
 Linear's real-vendor evidence belongs in [PAP-12373](/PAP/issues/PAP-12373). The smoke pass should prove:
 
-- OAuth connect succeeds with Paperclip-owned Linear app registration once [PAP-12372](/PAP/issues/PAP-12372) provides credentials.
+- OAuth connect succeeds with Bullpen-owned Linear app registration once [PAP-12372](/PAP/issues/PAP-12372) provides credentials.
 - Catalog discovery returns the expected Linear issue actions.
 - A read call against an allowed team succeeds.
 - `linear.create_issue` opens ask-first review and only executes after approval.

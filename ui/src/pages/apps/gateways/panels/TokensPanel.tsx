@@ -5,7 +5,7 @@ import type {
   ToolMcpGatewayTokenAction,
   ToolMcpGatewayTokenCreated,
   ToolMcpGatewayWithTokens,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { toolsApi } from "@/api/tools";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

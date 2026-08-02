@@ -25,7 +25,7 @@ const companyState = vi.hoisted(() => ({
   companies: [
     {
       id: "company-1",
-      name: "Paperclip",
+      name: "Bullpen",
       status: "active",
       brandColor: "#123456",
       issuePrefix: "PAP",
@@ -34,7 +34,7 @@ const companyState = vi.hoisted(() => ({
   selectedCompanyId: "company-1",
   selectedCompany: {
     id: "company-1",
-    name: "Paperclip",
+    name: "Bullpen",
     status: "active",
     brandColor: "#123456",
     issuePrefix: "PAP",
@@ -1115,7 +1115,7 @@ describe("NewIssueDialog", () => {
     await flush();
 
     const menu = document.createElement("div");
-    menu.setAttribute("data-paperclip-floating-ui", "");
+    menu.setAttribute("data-bullpen-floating-ui", "");
     const option = document.createElement("button");
     menu.appendChild(option);
     document.body.appendChild(menu);
@@ -1234,7 +1234,7 @@ describe("NewIssueDialog", () => {
       enableTaskWatchdogs: true,
     });
     localStorage.setItem(
-      "paperclip:issue-draft",
+      "bullpen:issue-draft",
       JSON.stringify({
         title: "Watched task",
         description: "",

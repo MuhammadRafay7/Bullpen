@@ -1,4 +1,4 @@
-import type { AttentionItem, DecisionTrainingSnapshotV1 } from "@paperclipai/shared";
+import type { AttentionItem, DecisionTrainingSnapshotV1 } from "@bullpen/shared";
 import type { DecisionTrainingTarget } from "../api/decisionTraining";
 
 export function decisionTrainingHref(exampleId?: string): string {

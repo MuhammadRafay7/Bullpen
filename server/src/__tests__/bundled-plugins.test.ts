@@ -40,12 +40,12 @@ describe("resolveBundledPluginInstalls", () => {
     expect(resolved).toEqual([
       {
         key: "kubernetes",
-        pluginKey: "paperclip.kubernetes-sandbox-provider",
+        pluginKey: "bullpen.kubernetes-sandbox-provider",
         localPath: path.join(CATALOG_ROOT, "sandbox-providers/kubernetes"),
       },
       {
         key: "daytona",
-        pluginKey: "paperclip.daytona-sandbox-provider",
+        pluginKey: "bullpen.daytona-sandbox-provider",
         localPath: path.join(CATALOG_ROOT, "sandbox-providers/daytona"),
       },
     ]);
@@ -85,7 +85,7 @@ describe("resolveBundledPluginInstalls", () => {
     expect(() =>
       resolveBundledPluginInstalls(["kubernetes"], {
         catalogRoot: CATALOG_ROOT,
-        env: { PAPERCLIP_KUBERNETES_PLUGIN_PATH: "/srv/evil/plugin" },
+        env: { BULLPEN_KUBERNETES_PLUGIN_PATH: "/srv/evil/plugin" },
         enforceCatalogRoot: true,
       }),
     ).toThrow(/outside the bundled catalog root.*refusing to start/);
@@ -96,7 +96,7 @@ describe("resolveBundledPluginInstalls", () => {
       resolveBundledPluginInstalls(["kubernetes"], {
         catalogRoot: CATALOG_ROOT,
         env: {
-          PAPERCLIP_KUBERNETES_PLUGIN_PATH: path.join(
+          BULLPEN_KUBERNETES_PLUGIN_PATH: path.join(
             CATALOG_ROOT,
             "sandbox-providers/../../../../etc/kubernetes",
           ),
@@ -123,13 +123,13 @@ describe("resolveBundledPluginInstalls", () => {
   it("honors the legacy kubernetes path override without enforcement (self-hosted)", () => {
     const resolved = resolveBundledPluginInstalls(["kubernetes"], {
       catalogRoot: CATALOG_ROOT,
-      env: { PAPERCLIP_KUBERNETES_PLUGIN_PATH: "/somewhere/else/kubernetes" },
+      env: { BULLPEN_KUBERNETES_PLUGIN_PATH: "/somewhere/else/kubernetes" },
       enforceCatalogRoot: false,
     });
     expect(resolved).toEqual([
       {
         key: "kubernetes",
-        pluginKey: "paperclip.kubernetes-sandbox-provider",
+        pluginKey: "bullpen.kubernetes-sandbox-provider",
         localPath: "/somewhere/else/kubernetes",
       },
     ]);
@@ -139,7 +139,7 @@ describe("resolveBundledPluginInstalls", () => {
     const inside = path.join(CATALOG_ROOT, "sandbox-providers", "kubernetes");
     const resolved = resolveBundledPluginInstalls(["kubernetes"], {
       catalogRoot: CATALOG_ROOT,
-      env: { PAPERCLIP_KUBERNETES_PLUGIN_PATH: inside },
+      env: { BULLPEN_KUBERNETES_PLUGIN_PATH: inside },
       enforceCatalogRoot: true,
     });
     expect(resolved[0]!.localPath).toBe(inside);
@@ -164,7 +164,7 @@ describe("resolveBundledPluginInstalls", () => {
     // Exactly the pre-refactor default path.
     expect(entry).toEqual({
       key: "kubernetes",
-      pluginKey: "paperclip.kubernetes-sandbox-provider",
+      pluginKey: "bullpen.kubernetes-sandbox-provider",
       localPath: "/app/packages/plugins/sandbox-providers/kubernetes",
     });
   });
@@ -185,8 +185,8 @@ describe("resolveBundledCatalogRoot", () => {
     expect(resolveBundledCatalogRoot({})).toBe(DEFAULT_BUNDLED_CATALOG_ROOT);
   });
 
-  it("honors PAPERCLIP_BUNDLED_PLUGIN_ROOT", () => {
-    expect(resolveBundledCatalogRoot({ PAPERCLIP_BUNDLED_PLUGIN_ROOT: "/custom/root" })).toBe(
+  it("honors BULLPEN_BUNDLED_PLUGIN_ROOT", () => {
+    expect(resolveBundledCatalogRoot({ BULLPEN_BUNDLED_PLUGIN_ROOT: "/custom/root" })).toBe(
       "/custom/root",
     );
   });
@@ -226,12 +226,12 @@ function makeDeps(overrides?: {
 
 const K8S: ResolvedBundledPlugin = {
   key: "kubernetes",
-  pluginKey: "paperclip.kubernetes-sandbox-provider",
+  pluginKey: "bullpen.kubernetes-sandbox-provider",
   localPath: path.join(CATALOG_ROOT, "sandbox-providers/kubernetes"),
 };
 const DAYTONA: ResolvedBundledPlugin = {
   key: "daytona",
-  pluginKey: "paperclip.daytona-sandbox-provider",
+  pluginKey: "bullpen.daytona-sandbox-provider",
   localPath: path.join(CATALOG_ROOT, "sandbox-providers/daytona"),
 };
 
@@ -241,7 +241,7 @@ describe("ensureBundledPlugins", () => {
     await ensureBundledPlugins([K8S], deps, { reinstallUninstalled: true });
     expect(installPlugin).toHaveBeenCalledWith({ localPath: K8S.localPath });
     expect(deps.lifecycle.load).toHaveBeenCalledWith(
-      "id-paperclip.kubernetes-sandbox-provider",
+      "id-bullpen.kubernetes-sandbox-provider",
     );
   });
 
@@ -297,7 +297,7 @@ describe("ensureBundledPlugins", () => {
     );
     // Daytona still installed after the kubernetes failure.
     expect(installPlugin).toHaveBeenCalledTimes(2);
-    expect(deps.lifecycle.load).toHaveBeenCalledWith("id-paperclip.daytona-sandbox-provider");
+    expect(deps.lifecycle.load).toHaveBeenCalledWith("id-bullpen.daytona-sandbox-provider");
   });
 
   it("never uninstalls anything: plugins absent from the list are untouched", async () => {

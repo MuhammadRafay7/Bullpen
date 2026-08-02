@@ -18,9 +18,9 @@ function workspace(
     repoUrl: null,
     repoRef: "main",
     strategy: "git_worktree",
-    cwd: "/repo/.paperclip/worktrees/PAP-16051",
+    cwd: "/repo/.bullpen/worktrees/PAP-16051",
     branchName: "PAP-16051-workspace-ready-notice",
-    worktreePath: "/repo/.paperclip/worktrees/PAP-16051",
+    worktreePath: "/repo/.bullpen/worktrees/PAP-16051",
     warnings: [],
     created: true,
     ...overrides,
@@ -44,7 +44,7 @@ function runtimeService(
     scopeId: "run-id",
     reuseKey: null,
     command: "pnpm dev",
-    cwd: "/repo/.paperclip/worktrees/PAP-16051",
+    cwd: "/repo/.bullpen/worktrees/PAP-16051",
     port: 3100,
     url: "http://localhost:3100",
     provider: "local_process",
@@ -131,7 +131,7 @@ describe("workspace-ready comment builders", () => {
           rows: [
             { type: "key_value", label: "Strategy", value: "git_worktree" },
             { type: "key_value", label: "Branch", value: "PAP-16051-workspace-ready-notice" },
-            { type: "key_value", label: "CWD", value: "/repo/.paperclip/worktrees/PAP-16051" },
+            { type: "key_value", label: "CWD", value: "/repo/.bullpen/worktrees/PAP-16051" },
           ],
         },
         {
@@ -163,7 +163,7 @@ describe("workspace-ready comment builders", () => {
     const input = {
       workspace: workspace({
         cwd: "/repo/runtime",
-        worktreePath: "/repo/.paperclip/worktrees/PAP-16051",
+        worktreePath: "/repo/.bullpen/worktrees/PAP-16051",
         warnings: ["Warning text"],
       }),
       runtimeServices: [runtimeService({ reused: true })],
@@ -175,7 +175,7 @@ describe("workspace-ready comment builders", () => {
         { type: "key_value", label: "Strategy", value: "git_worktree" },
         { type: "key_value", label: "Branch", value: "PAP-16051-workspace-ready-notice" },
         { type: "key_value", label: "CWD", value: "/repo/runtime" },
-        { type: "key_value", label: "Worktree", value: "/repo/.paperclip/worktrees/PAP-16051" },
+        { type: "key_value", label: "Worktree", value: "/repo/.bullpen/worktrees/PAP-16051" },
       ],
     });
     expect(buildWorkspaceReadyComment(input)).toBe([
@@ -184,7 +184,7 @@ describe("workspace-ready comment builders", () => {
       "- Strategy: `git_worktree`",
       "- Branch: `PAP-16051-workspace-ready-notice`",
       "- CWD: `/repo/runtime`",
-      "- Worktree: `/repo/.paperclip/worktrees/PAP-16051`",
+      "- Worktree: `/repo/.bullpen/worktrees/PAP-16051`",
       "- Warning: Warning text",
       "- Service: web: http://localhost:3100 (reused)",
     ].join("\n"));

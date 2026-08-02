@@ -10,7 +10,7 @@ RUN apt-get update \
 # Modify the existing node user/group to have the specified UID/GID to match host user
 RUN usermod -u $USER_UID --non-unique node \
   && groupmod -g $USER_GID --non-unique node \
-  && usermod -g $USER_GID -d /paperclip node
+  && usermod -g $USER_GID -d /bullpen node
 
 FROM base AS deps
 WORKDIR /app
@@ -39,7 +39,7 @@ COPY packages/adapters/opencode-local/package.json packages/adapters/opencode-lo
 COPY packages/adapters/pi-local/package.json packages/adapters/pi-local/
 COPY packages/plugins/sdk/package.json packages/plugins/sdk/
 COPY --parents packages/plugins/sandbox-providers/./*/package.json packages/plugins/sandbox-providers/
-COPY packages/plugins/paperclip-plugin-fake-sandbox/package.json packages/plugins/paperclip-plugin-fake-sandbox/
+COPY packages/plugins/bullpen-plugin-fake-sandbox/package.json packages/plugins/bullpen-plugin-fake-sandbox/
 COPY packages/plugins/plugin-llm-wiki/package.json packages/plugins/plugin-llm-wiki/
 COPY packages/plugins/plugin-workspace-diff/package.json packages/plugins/plugin-workspace-diff/
 COPY patches/ patches/
@@ -51,9 +51,9 @@ FROM base AS build
 WORKDIR /app
 COPY --from=deps /app /app
 COPY . .
-RUN pnpm --filter @paperclipai/ui build
-RUN pnpm --filter @paperclipai/plugin-sdk build
-RUN pnpm --filter @paperclipai/server build
+RUN pnpm --filter @bullpen/ui build
+RUN pnpm --filter @bullpen/plugin-sdk build
+RUN pnpm --filter @bullpen/server build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
 
 FROM base AS production
@@ -62,11 +62,11 @@ ARG USER_GID=1000
 # Real version for this build, computed from `git describe` on the CI runner
 # (the image has no .git, so the server cannot derive it at runtime). Empty for
 # local `docker build`, which just leaves the server on its normal fallbacks.
-ARG PAPERCLIP_BUILD_VERSION=""
+ARG BULLPEN_BUILD_VERSION=""
 # The exact commit this image was built from, for the same reason: server-info
-# falls back to PAPERCLIP_BUILD_COMMIT when git is unavailable, which feeds the
+# falls back to BULLPEN_BUILD_COMMIT when git is unavailable, which feeds the
 # /api/health `commit` field that deploy tooling verifies. Empty locally.
-ARG PAPERCLIP_BUILD_COMMIT=""
+ARG BULLPEN_BUILD_COMMIT=""
 # Refreshes the tool layer below when it changes (CI stamps an ISO week, so
 # the @latest CLI tools advance weekly). Without it the cached layer would
 # freeze the tools until an unrelated cache bust.
@@ -81,8 +81,8 @@ RUN echo "cli-tools-epoch: ${CLI_TOOLS_CACHE_EPOCH}" \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /paperclip \
-  && chown node:node /paperclip
+  && mkdir -p /bullpen \
+  && chown node:node /bullpen
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
@@ -90,19 +90,19 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 COPY --chown=node:node --from=build /app /app
 
 ENV NODE_ENV=production \
-  HOME=/paperclip \
+  HOME=/bullpen \
   HOST=0.0.0.0 \
   PORT=3100 \
   SERVE_UI=true \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_INSTANCE_ID=default \
-  PAPERCLIP_BUILD_VERSION=${PAPERCLIP_BUILD_VERSION} \
-  PAPERCLIP_BUILD_COMMIT=${PAPERCLIP_BUILD_COMMIT} \
+  BULLPEN_HOME=/bullpen \
+  BULLPEN_INSTANCE_ID=default \
+  BULLPEN_BUILD_VERSION=${BULLPEN_BUILD_VERSION} \
+  BULLPEN_BUILD_COMMIT=${BULLPEN_BUILD_COMMIT} \
   USER_UID=${USER_UID} \
   USER_GID=${USER_GID} \
-  PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
-  PAPERCLIP_DEPLOYMENT_MODE=authenticated \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=private \
+  BULLPEN_CONFIG=/bullpen/instances/default/config.json \
+  BULLPEN_DEPLOYMENT_MODE=authenticated \
+  BULLPEN_DEPLOYMENT_EXPOSURE=private \
   OPENCODE_ALLOW_ALL_MODELS=true \
   GEMINI_SANDBOX=false
 
@@ -113,7 +113,7 @@ CMD ["node", "--import", "./server/node_modules/tsx/dist/loader.mjs", "server/di
 
 # Cloud image variant (build with `--target cloud`): the production image
 # plus built bundled sandbox-provider plugins. Managed instances receive a
-# `plugins.autoInstall` key list through PAPERCLIP_MANAGED_CONFIG and
+# `plugins.autoInstall` key list through BULLPEN_MANAGED_CONFIG and
 # install those plugins from the bundled catalog at boot
 # (server/src/services/bundled-plugins.ts), which requires each plugin's
 # dist/ to exist in the image — the default image ships only their source,

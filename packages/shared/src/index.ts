@@ -1330,7 +1330,7 @@ export type {
   PluginApiRouteDeclaration,
   PluginObjectReferenceRefreshPolicy,
   PluginObjectReferenceProviderDeclaration,
-  PaperclipPluginManifestV1,
+  BullpenPluginManifestV1,
   PluginRecord,
   PluginDatabaseNamespaceRecord,
   PluginMigrationRecord,
@@ -1447,7 +1447,7 @@ export {
   DEFAULT_ISSUE_GRAPH_LIVENESS_AUTO_RECOVERY_LOOKBACK_HOURS,
   MIN_ISSUE_GRAPH_LIVENESS_AUTO_RECOVERY_LOOKBACK_HOURS,
   MAX_ISSUE_GRAPH_LIVENESS_AUTO_RECOVERY_LOOKBACK_HOURS,
-  PAPERCLIP_CLOUD_MANAGED_BY,
+  BULLPEN_CLOUD_MANAGED_BY,
 } from "./types/instance.js";
 
 export type {
@@ -2190,7 +2190,7 @@ export {
 } from "./routine-variables.js";
 
 export {
-  paperclipConfigSchema,
+  bullpenConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,
@@ -2205,7 +2205,7 @@ export {
   secretsLocalEncryptedConfigSchema,
   telemetryConfigSchema,
   type TelemetryConfig,
-  type PaperclipConfig,
+  type BullpenConfig,
   type LlmConfig,
   type DatabaseBackupConfig,
   type DatabaseConfig,

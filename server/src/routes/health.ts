@@ -1,9 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { Router } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import { and, count, eq, gt, inArray, isNull, sql } from "drizzle-orm";
-import { heartbeatRuns, instanceUserRoles, invites } from "@paperclipai/db";
-import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import { heartbeatRuns, instanceUserRoles, invites } from "@bullpen/db";
+import type { DeploymentExposure, DeploymentMode } from "@bullpen/shared";
 import { readPersistedDevServerStatus, toDevServerHealthStatus, writeDevServerRestartRequest } from "../dev-server-status.js";
 import { isCloudManagedInstance } from "../middleware/auth.js";
 import { logger } from "../middleware/logger.js";
@@ -26,7 +26,7 @@ function shouldExposeFullHealthDetails(
 }
 
 function hasDevServerStatusToken(providedToken: string | undefined) {
-  const expectedToken = process.env.PAPERCLIP_DEV_SERVER_STATUS_TOKEN?.trim();
+  const expectedToken = process.env.BULLPEN_DEV_SERVER_STATUS_TOKEN?.trim();
   const token = providedToken?.trim();
   if (!expectedToken || !token) return false;
 
@@ -127,7 +127,7 @@ export function healthRoutes(
     // can read which commit this server is running without authenticating.
     const commit = serverInfo.git.available ? serverInfo.git.fullSha : null;
     const exposeDevServerDetails =
-      exposeFullDetails || hasDevServerStatusToken(req.get("x-paperclip-dev-server-status-token"));
+      exposeFullDetails || hasDevServerStatusToken(req.get("x-bullpen-dev-server-status-token"));
 
     if (!db) {
       res.json(

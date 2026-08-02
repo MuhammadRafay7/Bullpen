@@ -2,8 +2,8 @@ import express, { Router, type Request as ExpressRequest } from "express";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { Db } from "@paperclipai/db";
-import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import type { Db } from "@bullpen/db";
+import type { DeploymentExposure, DeploymentMode } from "@bullpen/shared";
 import type { InspectDatabaseBackupHealthOptions } from "./services/database-backup-health.js";
 import type { StorageService } from "./storage/types.js";
 import { httpLogger, errorHandler } from "./middleware/index.js";
@@ -87,7 +87,7 @@ import { setPluginEventBus } from "./services/activity-log.js";
 import { createPluginDevWatcher } from "./services/plugin-dev-watcher.js";
 import { createPluginHostServiceCleanup } from "./services/plugin-host-service-cleanup.js";
 import { pluginRegistryService } from "./services/plugin-registry.js";
-import { createHostClientHandlers } from "@paperclipai/plugin-sdk";
+import { createHostClientHandlers } from "@bullpen/plugin-sdk";
 import type { BetterAuthSessionResult } from "./auth/better-auth.js";
 import { createCachedViteHtmlRenderer } from "./vite-html-renderer.js";
 import { DEFAULT_JSON_BODY_LIMIT, PORTABLE_JSON_BODY_LIMIT } from "./http/body-limits.js";
@@ -263,7 +263,7 @@ export async function createApp(
     betterAuthHandler?: express.RequestHandler;
     resolveSession?: (req: ExpressRequest) => Promise<BetterAuthSessionResult | null>;
     /**
-     * `plugins.autoInstall` from the managed config (PAPERCLIP_MANAGED_CONFIG).
+     * `plugins.autoInstall` from the managed config (BULLPEN_MANAGED_CONFIG).
      * `null`/absent ⇒ self-hosted: only the built-in kubernetes bundle is
      * ensured, exactly as before. A managed list is resolved against the
      * bundled catalog fail-to-start (see services/bundled-plugins.ts).
@@ -274,7 +274,7 @@ export async function createApp(
   },
 ) {
   const app = express();
-  app.locals.paperclipDb = db;
+  app.locals.bullpenDb = db;
   const captureRawBody = (req: express.Request, _res: express.Response, buf: Buffer) => {
     (req as unknown as { rawBody: Buffer }).rawBody = buf;
   };
@@ -399,8 +399,8 @@ export async function createApp(
   api.use(approvalRoutes(db, { pluginWorkerManager: workerManager }));
   api.use(secretRoutes(db));
   const trustedLocalStdioRuntimeHost =
-    process.env.PAPERCLIP_TRUSTED_MCP_RUNTIME_HOST
-    ?? process.env.PAPERCLIP_TOOL_RUNTIME_TRUSTED_HOST
+    process.env.BULLPEN_TRUSTED_MCP_RUNTIME_HOST
+    ?? process.env.BULLPEN_TOOL_RUNTIME_TRUSTED_HOST
     ?? null;
   api.use(costRoutes(db, { pluginWorkerManager: workerManager }));
   api.use(activityRoutes(db));
@@ -586,7 +586,7 @@ export async function createApp(
           .end(readBrandedStaticIndexHtml(uiDist));
       });
     } else {
-      console.warn("[paperclip] UI dist not found; running in API-only mode");
+      console.warn("[bullpen] UI dist not found; running in API-only mode");
     }
   }
 
@@ -690,7 +690,7 @@ export async function createApp(
   // installed bundle only records the `ready` status and does not spawn a
   // worker (see activateReadyPlugin in services/plugin-lifecycle.ts).
   //
-  // Managed instances (`plugins.autoInstall` from PAPERCLIP_MANAGED_CONFIG)
+  // Managed instances (`plugins.autoInstall` from BULLPEN_MANAGED_CONFIG)
   // drive the key list from the control plane; self-hosted instances keep
   // the pre-existing behavior of ensuring only the kubernetes bundle.
   //
@@ -739,7 +739,7 @@ export async function createApp(
     hostServiceCleanup.disposeAll();
     hostServiceCleanup.teardown();
   };
-  app.locals.paperclipShutdown = shutdownAppServices;
+  app.locals.bullpenShutdown = shutdownAppServices;
 
   process.once("exit", shutdownAppServices);
   process.once("beforeExit", () => {

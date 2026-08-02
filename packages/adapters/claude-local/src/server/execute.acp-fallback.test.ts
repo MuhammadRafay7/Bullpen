@@ -40,16 +40,16 @@ const {
 vi.mock("./acp.js", () => ({
   createClaudeAcpExecutor: () => executeClaudeAcp,
   formatClaudeAcpFallbackMessage: (reason: string) =>
-    `[paperclip] Claude ACP default unavailable; falling back to Claude CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`,
+    `[bullpen] Claude ACP default unavailable; falling back to Claude CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`,
   resolveClaudeExecutionEngineForRun: async (ctx: { config: Record<string, unknown> }) =>
     ctx.config.engine === "acp"
       ? { engine: "acp", explicit: true }
       : { engine: "acp", explicit: false },
 }));
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@bullpen/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@bullpen/adapter-utils/execution-target")>(
+    "@bullpen/adapter-utils/execution-target",
   );
   return {
     ...actual,
@@ -111,9 +111,9 @@ describe("claude_local ACP startup fallback", () => {
     );
   });
 
-  it("trusts the Paperclip API URL when network access is allowlisted", async () => {
-    const paperclipApiUrl = "http://127.0.0.1:4310";
-    vi.stubEnv("PAPERCLIP_RUNTIME_API_URL", paperclipApiUrl);
+  it("trusts the Bullpen API URL when network access is allowlisted", async () => {
+    const bullpenApiUrl = "http://127.0.0.1:4310";
+    vi.stubEnv("BULLPEN_RUNTIME_API_URL", bullpenApiUrl);
     const ctx = buildContext({ networkScope: "allowlist" });
 
     await execute(ctx as never);
@@ -127,7 +127,7 @@ describe("claude_local ACP startup fallback", () => {
       expect.objectContaining({
         localProcessSandbox: expect.objectContaining({
           networkScope: "allowlist",
-          networkTrustedUrls: [paperclipApiUrl],
+          networkTrustedUrls: [bullpenApiUrl],
         }),
       }),
     );

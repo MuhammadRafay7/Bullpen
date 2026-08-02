@@ -8,29 +8,29 @@ import { compareVersions, detectInstallMode, resolveUpdateRequest, rollbackManag
 
 let root: string;
 let previousHome: string | undefined;
-let previousPaperclipHome: string | undefined;
+let previousBullpenHome: string | undefined;
 
 function record(payloadPath: string, version: string, channel: "latest" | "canary" | "pinned" = "latest"): InstallRecord {
   return { source: "npm", version, channel, payloadPath, installedAt: `2026-07-22T00:00:0${version}.000Z` };
 }
 function createPayload(payloadPath: string, version: string): string {
-  const entrypoint = path.join(payloadPath, "node_modules", "paperclipai", "dist", "index.js");
+  const entrypoint = path.join(payloadPath, "node_modules", "bullpen", "dist", "index.js");
   fs.mkdirSync(path.dirname(entrypoint), { recursive: true });
   fs.writeFileSync(entrypoint, version);
   return entrypoint;
 }
 beforeEach(() => {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-update-"));
+  root = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-update-"));
   previousHome = process.env.HOME;
-  previousPaperclipHome = process.env.PAPERCLIP_HOME;
+  previousBullpenHome = process.env.BULLPEN_HOME;
   process.env.HOME = path.join(root, "home");
-  process.env.PAPERCLIP_HOME = path.join(root, "paperclip");
+  process.env.BULLPEN_HOME = path.join(root, "bullpen");
 });
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   if (previousHome === undefined) delete process.env.HOME; else process.env.HOME = previousHome;
-  if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME; else process.env.PAPERCLIP_HOME = previousPaperclipHome;
+  if (previousBullpenHome === undefined) delete process.env.BULLPEN_HOME; else process.env.BULLPEN_HOME = previousBullpenHome;
   fs.rmSync(root, { recursive: true, force: true });
   process.exitCode = undefined;
 });
@@ -48,8 +48,8 @@ describe("update command", () => {
     flipCurrentAtomic(payload, paths);
     writeInstallManifestAtomic({ schemaVersion: 1, ...record(payload, "1.0.0"), previous: [] }, paths);
     expect(detectInstallMode(entrypoint, paths)).toBe("managed");
-    expect(detectInstallMode(path.join(root, "lib", "node_modules", "paperclipai", "dist", "index.js"), paths)).toBe("global-npm");
-    expect(detectInstallMode(path.join(root, ".npm", "_npx", "abc", "node_modules", "paperclipai", "dist", "index.js"), paths)).toBe("npx");
+    expect(detectInstallMode(path.join(root, "lib", "node_modules", "bullpen", "dist", "index.js"), paths)).toBe("global-npm");
+    expect(detectInstallMode(path.join(root, ".npm", "_npx", "abc", "node_modules", "bullpen", "dist", "index.js"), paths)).toBe("npx");
     const source = path.join(root, "source"); fs.mkdirSync(path.join(source, ".git"), { recursive: true });
     expect(detectInstallMode(path.join(source, "cli", "src", "index.ts"), paths)).toBe("source");
   });
@@ -66,12 +66,12 @@ describe("update command", () => {
     const oldSha = "1".repeat(40); const newSha = "2".repeat(40);
     const oldPayload = payloadPathFor(paths, "git", oldSha.slice(0, 12));
     const executable = createPayload(oldPayload, "0.3.1");
-    fs.writeFileSync(path.join(oldPayload, "node_modules", "paperclipai", "package.json"), JSON.stringify({ version: "0.3.1" }));
+    fs.writeFileSync(path.join(oldPayload, "node_modules", "bullpen", "package.json"), JSON.stringify({ version: "0.3.1" }));
     const newPayload = payloadPathFor(paths, "git", newSha.slice(0, 12));
     createPayload(newPayload, "0.3.1");
-    fs.writeFileSync(path.join(newPayload, "node_modules", "paperclipai", "package.json"), JSON.stringify({ version: "0.3.1" }));
+    fs.writeFileSync(path.join(newPayload, "node_modules", "bullpen", "package.json"), JSON.stringify({ version: "0.3.1" }));
     flipCurrentAtomic(oldPayload, paths);
-    writeInstallManifestAtomic({ schemaVersion: 1, source: "git", version: "0.3.1", channel: "pinned", repo: "paperclipai/paperclip", ref: "master", sha: oldSha, payloadPath: oldPayload, installedAt: "2026-07-22T00:00:00.000Z", previous: [] }, paths);
+    writeInstallManifestAtomic({ schemaVersion: 1, source: "git", version: "0.3.1", channel: "pinned", repo: "bullpen/bullpen", ref: "master", sha: oldSha, payloadPath: oldPayload, installedAt: "2026-07-22T00:00:00.000Z", previous: [] }, paths);
     const backup = vi.fn(async () => undefined);
     const confirm = vi.fn(async () => true);
     const restartActiveService = vi.fn(async () => true);
@@ -88,7 +88,7 @@ describe("update command", () => {
     const paths = resolveInstallStorePaths(); initializeInstallStore(paths);
     const sha = "3".repeat(40); const payload = payloadPathFor(paths, "git", sha.slice(0, 12)); const executable = createPayload(payload, "0.3.1");
     flipCurrentAtomic(payload, paths);
-    writeInstallManifestAtomic({ schemaVersion: 1, source: "git", version: "0.3.1", channel: "pinned", repo: "paperclipai/paperclip", ref: sha.slice(0, 12), sha, payloadPath: payload, installedAt: "2026-07-22T00:00:00.000Z", previous: [] }, paths);
+    writeInstallManifestAtomic({ schemaVersion: 1, source: "git", version: "0.3.1", channel: "pinned", repo: "bullpen/bullpen", ref: sha.slice(0, 12), sha, payloadPath: payload, installedAt: "2026-07-22T00:00:00.000Z", previous: [] }, paths);
     const runCommand = vi.fn(async () => ({ stdout: "", stderr: "" }));
     await updateCommand({}, { paths, executablePath: executable, runCommand });
     expect(runCommand).not.toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe("update command", () => {
 
   it("requires explicit confirmation before a global npm downgrade", async () => {
     const paths = resolveInstallStorePaths();
-    const executable = path.join(root, "lib", "node_modules", "paperclipai", "dist", "index.js");
+    const executable = path.join(root, "lib", "node_modules", "bullpen", "dist", "index.js");
     const runCommand = vi.fn(async () => ({ stdout: '"0.2.0"\n', stderr: "" }));
     await expect(updateCommand({ version: "0.2.0" }, { paths, executablePath: executable, runCommand, confirm: async () => false })).rejects.toThrow("Downgrade cancelled");
     expect(runCommand).toHaveBeenCalledTimes(1);
@@ -112,7 +112,7 @@ describe("update command", () => {
 
   it("isolates global npm updates from hostile registry configuration", async () => {
     const paths = resolveInstallStorePaths();
-    const executable = path.join(root, "lib", "node_modules", "paperclipai", "dist", "index.js");
+    const executable = path.join(root, "lib", "node_modules", "bullpen", "dist", "index.js");
     vi.stubEnv("NPM_CONFIG_REGISTRY", "http://attacker-registry.invalid");
     fs.mkdirSync(process.env.HOME!, { recursive: true });
     fs.writeFileSync(path.join(process.env.HOME!, ".npmrc"), "registry=http://attacker-registry.invalid\n");
@@ -160,7 +160,7 @@ describe("update command", () => {
     const runCommand = vi.fn(async () => ({ stdout: '"2.0.0"\n', stderr: "" }));
 
     await expect(updateCommand({}, { paths, executablePath: executable, runCommand, backup, hasInstanceData: () => true })).rejects.toThrow(
-      "Start the service with `paperclipai service start` and retry, or skip the backup with `paperclipai update --no-backup`.",
+      "Start the service with `bullpen service start` and retry, or skip the backup with `bullpen update --no-backup`.",
     );
     expect(backup).toHaveBeenCalledOnce();
     expect(readInstallManifest(paths)?.version).toBe("1.0.0");
@@ -189,10 +189,10 @@ describe("update command", () => {
     const paths = resolveInstallStorePaths(); initializeInstallStore(paths);
     const managedPayload = payloadPathFor(paths, "npm", "1.2.3"); createPayload(managedPayload, "1.2.3");
     writeInstallManifestAtomic({ schemaVersion: 1, ...record(managedPayload, "1.2.3"), channel: "pinned", previous: [] }, paths);
-    const executable = path.join(root, "lib", "node_modules", "paperclipai", "dist", "index.js");
+    const executable = path.join(root, "lib", "node_modules", "bullpen", "dist", "index.js");
     const runCommand = vi.fn(async (_file: string, args: string[]) => args[0] === "view" ? { stdout: '"2.0.0"\n', stderr: "" } : { stdout: "", stderr: "" });
     await updateCommand({ dryRun: true }, { paths, executablePath: executable, runCommand });
-    expect(runCommand).toHaveBeenCalledWith("npm", expect.arrayContaining(["view", "paperclipai@latest"]), expect.anything());
+    expect(runCommand).toHaveBeenCalledWith("npm", expect.arrayContaining(["view", "bullpen@latest"]), expect.anything());
   });
 
   it("rolls back the active payload when restart validation fails", async () => {

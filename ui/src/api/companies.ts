@@ -8,8 +8,8 @@ import type {
   CompanyPortabilityPreviewRequest,
   CompanyPortabilityPreviewResult,
   UpdateCompanyBranding,
-} from "@paperclipai/shared";
-import type { ExportFidelityReport } from "@paperclipai/shared/portability-fidelity";
+} from "@bullpen/shared";
+import type { ExportFidelityReport } from "@bullpen/shared/portability-fidelity";
 import { api } from "./client";
 
 export type CompanyStats = Record<string, { agentCount: number; issueCount: number }>;
@@ -116,7 +116,7 @@ export const companiesApi = {
   // Submit an import as a server-side job: 202 with a job id to poll, or 409
   // with the already-running job. Board sessions opt in with the proxy-safe
   // `?async=1` query parameter — the Cloud harness strips the inbound
-  // `x-paperclip-cloud-*` header a browser would otherwise use, so that header
+  // `x-bullpen-cloud-*` header a browser would otherwise use, so that header
   // never survives to engage the async path.
   importBundleAsync: (data: CompanyPortabilityImportRequest) =>
     api.post<CompanyImportJobAccepted>("/companies/import?async=1", data),

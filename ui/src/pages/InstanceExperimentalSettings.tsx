@@ -7,7 +7,7 @@ import type {
   IssueGraphLivenessAutoRecoveryPreview,
   ManagedSettingMetadata,
   PatchInstanceExperimentalSettings,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { instanceSettingsApi } from "@/api/instanceSettings";
 import { getWorktreeInstanceId, isWorktreeRuntime } from "../lib/worktree-branding";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
@@ -80,7 +80,7 @@ function ManagedByCloudBadge() {
   return (
     <Badge variant="outline" className="text-muted-foreground">
       <Lock aria-hidden="true" />
-      Managed by Paperclip Cloud
+      Managed by Bullpen Cloud
     </Badge>
   );
 }
@@ -348,7 +348,7 @@ export function InstanceExperimentalSettings() {
 
   const inWorktree = isWorktreeRuntime();
   // Present only on cloud-managed instances: keys the managed overlay controls
-  // render locked with the "Managed by Paperclip Cloud" badge. Self-hosted
+  // render locked with the "Managed by Bullpen Cloud" badge. Self-hosted
   // responses carry no `managedKeys`, so every card stays editable.
   const managedKeys = experimentalQuery.data?.managedKeys ?? {};
   const enableWorktreeRunExecution = experimentalQuery.data?.enableWorktreeRunExecution === true;
@@ -552,7 +552,7 @@ export function InstanceExperimentalSettings() {
 
       <ExperimentalToggleCard
         title="Built-in Agents"
-        description="Show Paperclip-managed built-in agent surfaces, including built-in roster badges, the Built-in agents tab, and built-in agent setup controls."
+        description="Show Bullpen-managed built-in agent surfaces, including built-in roster badges, the Built-in agents tab, and built-in agent setup controls."
         checked={enableBuiltInAgents}
         onCheckedChange={(checked) => toggleMutation.mutate({ enableBuiltInAgents: checked })}
         disabled={toggleMutation.isPending}
@@ -562,7 +562,7 @@ export function InstanceExperimentalSettings() {
 
       <ExperimentalToggleCard
         title="Beta skills"
-        description="Allow agents to pin beta releases of the Paperclip core skill. Disabling this returns every agent to the default live skill without removing saved pins."
+        description="Allow agents to pin beta releases of the Bullpen core skill. Disabling this returns every agent to the default live skill without removing saved pins."
         checked={enableBetaSkills}
         onCheckedChange={(checked) => toggleMutation.mutate({ enableBetaSkills: checked })}
         disabled={toggleMutation.isPending}

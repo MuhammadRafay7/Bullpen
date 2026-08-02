@@ -39,7 +39,7 @@ describe("git workspace sync", () => {
     await mkdir(repo, { recursive: true });
     await git(repo, ["init"]);
     await git(repo, ["checkout", "-b", "main"]);
-    await git(repo, ["config", "user.name", "Paperclip Test"]);
+    await git(repo, ["config", "user.name", "Bullpen Test"]);
     await git(repo, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(repo, "tracked.txt"), "base\n", "utf8");
     await git(repo, ["add", "tracked.txt"]);
@@ -48,7 +48,7 @@ describe("git workspace sync", () => {
   }
 
   it("creates a shallow standalone clone from the local HEAD snapshot", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-git-sync-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-git-sync-"));
     cleanupDirs.push(rootDir);
     const repo = await createRepo(rootDir);
     const baseHead = await git(repo, ["rev-parse", "HEAD"]);
@@ -74,7 +74,7 @@ describe("git workspace sync", () => {
   });
 
   it("builds thin git delta bundles relative to the imported base", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-git-delta-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-git-delta-"));
     cleanupDirs.push(rootDir);
     const repo = await createRepo(rootDir);
     const baseHead = await git(repo, ["rev-parse", "HEAD"]);
@@ -94,7 +94,7 @@ describe("git workspace sync", () => {
       })]);
       expect((await stat(emptyBundle)).size).toBe(0);
 
-      await git(remoteDir, ["config", "user.name", "Paperclip Remote"]);
+      await git(remoteDir, ["config", "user.name", "Bullpen Remote"]);
       await git(remoteDir, ["config", "user.email", "remote@paperclip.dev"]);
       await writeFile(path.join(remoteDir, "tracked.txt"), "remote\n", "utf8");
       await git(remoteDir, ["commit", "-am", "remote update"]);
@@ -128,7 +128,7 @@ describe("git workspace sync", () => {
   });
 
   it("imports a diverged sandbox HEAD even when the host no longer holds baseSha", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-git-diverge-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-git-diverge-"));
     cleanupDirs.push(rootDir);
     // Host holds only the shared ancestor B (the eventual merge-base), not the
     // recorded base H — the state a shared workspace lands in when it is reset
@@ -140,7 +140,7 @@ describe("git workspace sync", () => {
     // local-only commit S that forked from B and diverges from H.
     const sandbox = path.join(rootDir, "sandbox");
     await git(rootDir, ["clone", host, sandbox]);
-    await git(sandbox, ["config", "user.name", "Paperclip Remote"]);
+    await git(sandbox, ["config", "user.name", "Bullpen Remote"]);
     await git(sandbox, ["config", "user.email", "remote@paperclip.dev"]);
     await writeFile(path.join(sandbox, "advance.txt"), "advance\n", "utf8");
     await git(sandbox, ["add", "-A"]);
@@ -184,7 +184,7 @@ describe("git workspace sync", () => {
   });
 
   it("re-exports a full bundle that imports when the host holds neither baseSha nor the merge-base", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-git-ancestor-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-git-ancestor-"));
     cleanupDirs.push(rootDir);
     // Host was reset to a strict ancestor of the eventual merge-base: it holds
     // only the very first commit, not baseSha and not the fork point.
@@ -193,7 +193,7 @@ describe("git workspace sync", () => {
 
     const sandbox = path.join(rootDir, "sandbox");
     await git(rootDir, ["clone", host, sandbox]);
-    await git(sandbox, ["config", "user.name", "Paperclip Remote"]);
+    await git(sandbox, ["config", "user.name", "Bullpen Remote"]);
     await git(sandbox, ["config", "user.email", "remote@paperclip.dev"]);
     // Advance the merge-base past the host, then baseSha past that, then a
     // divergent local commit — so merge-base(baseSha, HEAD) is itself a commit
@@ -261,7 +261,7 @@ describe("git workspace sync", () => {
   });
 
   it("falls back to a full self-contained bundle when the sandbox lacks baseSha", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-git-full-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-git-full-"));
     cleanupDirs.push(rootDir);
     const sandbox = await createRepo(rootDir);
     await writeFile(path.join(sandbox, "more.txt"), "more\n", "utf8");

@@ -1,11 +1,11 @@
 # Telemetry Data Contract
 
-This document explains how contributors should use Paperclip's public telemetry
+This document explains how contributors should use Bullpen's public telemetry
 contract. It intentionally does not list individual events or dimensions.
 
 The canonical source for first-party event names, dimensions, optionality,
 allowed primitive value types, and enum descriptions is
-`packages/shared/src/telemetry/generated/paperclip-telemetry.ts`.
+`packages/shared/src/telemetry/generated/bullpen-telemetry.ts`.
 
 Shared enum constants live in `packages/shared/src/constants.ts`. Use those
 constants when code needs a reusable domain, but treat the generated telemetry
@@ -17,10 +17,10 @@ Use these files when reviewing or changing telemetry code:
 
 | Contract item | Public source |
 | --- | --- |
-| First-party event names | `PaperclipEventName` in `generated/paperclip-telemetry.ts` |
-| Per-event dimensions and optionality | `EventDimensionsMap` in `generated/paperclip-telemetry.ts` |
-| Enum descriptions for telemetry dimensions | `PAPERCLIP_ENUM_DESCRIPTIONS` in `generated/paperclip-telemetry.ts` |
-| Schema version and event envelope helpers | `SCHEMA_VERSION`, `makeEvent()`, and `makeBatch()` in `generated/paperclip-telemetry.ts` |
+| First-party event names | `BullpenEventName` in `generated/bullpen-telemetry.ts` |
+| Per-event dimensions and optionality | `EventDimensionsMap` in `generated/bullpen-telemetry.ts` |
+| Enum descriptions for telemetry dimensions | `BULLPEN_ENUM_DESCRIPTIONS` in `generated/bullpen-telemetry.ts` |
+| Schema version and event envelope helpers | `SCHEMA_VERSION`, `makeEvent()`, and `makeBatch()` in `generated/bullpen-telemetry.ts` |
 | Runtime-safe event names and dimensions | `TelemetryEventName` and `TelemetryEventDimensions` in `types.ts` |
 | Allowed primitive dimension values | `TelemetryDimensionValue` in `types.ts` |
 | Shared reusable enum domains | Named exports in `constants.ts` |
@@ -33,7 +33,7 @@ will drift as the generated contract changes.
 
 ## Emission Boundary
 
-Paperclip telemetry uses named events with explicit dimension fields. Treat
+Bullpen telemetry uses named events with explicit dimension fields. Treat
 open-ended string dimensions as public contract values, not as a place for user
 content or private operational data. Do not send PII, secrets, credentials,
 private paths, prompts, model output, or other sensitive values through
@@ -57,20 +57,20 @@ contract. Do not emit private source material in telemetry dimensions.
 
 ## Sandbox Startup Trace Spans
 
-Paperclip opens OpenTelemetry spans on the sandbox start path. These spans are a
+Bullpen opens OpenTelemetry spans on the sandbox start path. These spans are a
 separate telemetry surface from the first-party events above. The generated
 telemetry contract does not cover them, so this section is their canonical
 contract.
 
-The spans are opt-in. Paperclip exports them only when an OTLP endpoint is
-configured. With no endpoint the whole span path is a no-op. Paperclip opens the
+The spans are opt-in. Bullpen exports them only when an OTLP endpoint is
+configured. With no endpoint the whole span path is a no-op. Bullpen opens the
 spans only for a run that targets a remote sandbox. A local run and an SSH run
 stay out of these spans.
 
 Span attributes use a closed allowlist. A command, an argument, an environment
 value, a file path, an identifier, or program output never rides a span. It rides
 neither as an attribute nor as an event. Each numeric attribute is finite.
-Paperclip omits an attribute when its value is absent.
+Bullpen omits an attribute when its value is absent.
 
 ### Spans
 
@@ -81,7 +81,7 @@ Paperclip omits an attribute when its value is absent.
 | `codex-home.seed` | Managed-home seed step. | `sandbox.startup` |
 | `skills.reconcile` | Skills reconcile step. | `sandbox.startup` |
 | `stage.sync` | Workspace stage-sync step. | `sandbox.startup` |
-| `bridge.paperclip` | Paperclip bridge start step. | `sandbox.startup` |
+| `bridge.bullpen` | Bullpen bridge start step. | `sandbox.startup` |
 | `bridge.process-session` | Process-session bridge start step. | `sandbox.startup` |
 | `acp.handshake` | ACP session handshake step. | `sandbox.startup` |
 | `provider.execute` | One host-to-sandbox provider exec call. | none |
@@ -103,7 +103,7 @@ The bring-up step spans use this closed attribute allowlist.
 
 ### Provider exec span attributes
 
-The `provider.execute` span uses this closed attribute allowlist. Paperclip omits
+The `provider.execute` span uses this closed attribute allowlist. Bullpen omits
 a duration attribute when the provider does not report the value.
 
 | Attribute | Type | Optional | Meaning |
@@ -160,7 +160,7 @@ generated schema registers the event name.
 
 For stable event work:
 
-1. Start from `generated/paperclip-telemetry.ts`. The generated types are what
+1. Start from `generated/bullpen-telemetry.ts`. The generated types are what
    reviewers use to verify event names, dimensions, optionality, value types,
    enum descriptions, and schema version.
 2. Choose stable event and dimension names. Do not include user content, local

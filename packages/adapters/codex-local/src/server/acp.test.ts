@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import type { AdapterExecutionContext, AdapterInvocationMeta } from "@paperclipai/adapter-utils";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
+import type { AdapterExecutionContext, AdapterInvocationMeta } from "@bullpen/adapter-utils";
+import { runChildProcess } from "@bullpen/adapter-utils/server-utils";
 import {
   buildCodexAcpConfig,
   createCodexAcpExecutor,
@@ -65,8 +65,8 @@ type FakeRuntimeTurn = {
 
 const tempRoots: string[] = [];
 const originalNodeVersion = process.version;
-const originalPaperclipHome = process.env.PAPERCLIP_HOME;
-const originalPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+const originalBullpenHome = process.env.BULLPEN_HOME;
+const originalBullpenInstanceId = process.env.BULLPEN_INSTANCE_ID;
 const originalCodexHome = process.env.CODEX_HOME;
 
 // Older/newer ISO timestamps for the copy-back monotonic (strictly-newer)
@@ -93,11 +93,11 @@ function subscriptionAuthJson(accountId: string, lastRefresh: string, marker: st
 }
 
 // Enumerate the host staged-home temp dirs `stageCodexHomeForSync` created for a
-// given runId (`paperclip-codex-home-sync-<runId>-<random>` under os.tmpdir()).
+// given runId (`bullpen-codex-home-sync-<runId>-<random>` under os.tmpdir()).
 // A unique per-test runId scopes the match to this run's staging dirs only, so
 // the assertion is not disturbed by other tests/processes sharing the tmp dir.
 async function listCodexHomeSyncDirs(runId: string): Promise<string[]> {
-  const prefix = `paperclip-codex-home-sync-${runId}-`;
+  const prefix = `bullpen-codex-home-sync-${runId}-`;
   const entries = await fs.readdir(os.tmpdir());
   return entries.filter((name) => name.startsWith(prefix)).map((name) => path.join(os.tmpdir(), name));
 }
@@ -112,10 +112,10 @@ function setNodeVersion(version: string): void {
 
 afterEach(async () => {
   setNodeVersion(originalNodeVersion);
-  if (originalPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-  else process.env.PAPERCLIP_HOME = originalPaperclipHome;
-  if (originalPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-  else process.env.PAPERCLIP_INSTANCE_ID = originalPaperclipInstanceId;
+  if (originalBullpenHome === undefined) delete process.env.BULLPEN_HOME;
+  else process.env.BULLPEN_HOME = originalBullpenHome;
+  if (originalBullpenInstanceId === undefined) delete process.env.BULLPEN_INSTANCE_ID;
+  else process.env.BULLPEN_INSTANCE_ID = originalBullpenInstanceId;
   if (originalCodexHome === undefined) delete process.env.CODEX_HOME;
   else process.env.CODEX_HOME = originalCodexHome;
   await Promise.all(tempRoots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
@@ -212,8 +212,8 @@ class FakeRuntime {
 async function makeTempRoot(prefix: string) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
   tempRoots.push(root);
-  process.env.PAPERCLIP_HOME = path.join(root, "paperclip-home");
-  process.env.PAPERCLIP_INSTANCE_ID = "test";
+  process.env.BULLPEN_HOME = path.join(root, "bullpen-home");
+  process.env.BULLPEN_INSTANCE_ID = "test";
   return root;
 }
 
@@ -255,8 +255,8 @@ function buildContext(root: string, overrides: Partial<AdapterExecutionContext> 
     },
     context: {
       issueId: "issue-1",
-      paperclipTaskMarkdown: "Task context",
-      paperclipWorkspace: {
+      bullpenTaskMarkdown: "Task context",
+      bullpenWorkspace: {
         cwd: root,
         source: "project_workspace",
         workspaceId: "workspace-1",
@@ -269,7 +269,7 @@ function buildContext(root: string, overrides: Partial<AdapterExecutionContext> 
 
 describe("codex_local ACP lane", () => {
   it("defaults to ACP when prerequisites pass and falls back to CLI only for auto resolution", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-default-");
+    const root = await makeTempRoot("bullpen-codex-acp-default-");
     const commandPath = path.join(root, "bin", "codex-acp");
     await fs.mkdir(path.dirname(commandPath), { recursive: true });
     await fs.writeFile(commandPath, "#!/usr/bin/env sh\n", "utf8");
@@ -483,7 +483,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("reports ACP prerequisites for the ACP lane", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-env-");
+    const root = await makeTempRoot("bullpen-codex-acp-env-");
     const commandPath = path.join(root, "bin", "codex-acp");
     await fs.mkdir(path.dirname(commandPath), { recursive: true });
     await fs.writeFile(commandPath, "#!/usr/bin/env sh\n", "utf8");
@@ -522,7 +522,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("executes through ACPX with Codex session config and ephemeral skills", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-exec-");
+    const root = await makeTempRoot("bullpen-codex-acp-exec-");
     const skill = await createRuntimeSkill(root);
     const runtimes: FakeRuntime[] = [];
     const meta: AdapterInvocationMeta[] = [];
@@ -546,8 +546,8 @@ describe("codex_local ACP lane", () => {
         modelReasoningEffort: "high",
         fastMode: true,
         promptTemplate: "Do the assigned work.",
-        paperclipRuntimeSkills: [skill],
-        paperclipSkillSync: { desiredSkills: [skill.key] },
+        bullpenRuntimeSkills: [skill],
+        bullpenSkillSync: { desiredSkills: [skill.key] },
       },
       onMeta: async (payload: AdapterInvocationMeta) => {
         meta.push(payload);
@@ -585,7 +585,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("creates the ACP session on the in-sandbox workspace cwd for runner-backed remote runs", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-remote-cwd-");
+    const root = await makeTempRoot("bullpen-codex-acp-remote-cwd-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     await fs.mkdir(localCwd, { recursive: true });
@@ -615,8 +615,8 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipTaskMarkdown: "Task context",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenTaskMarkdown: "Task context",
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -638,7 +638,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("seeds the managed Codex home into the sandbox and repoints CODEX_HOME to the in-sandbox path", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-home-seed-");
+    const root = await makeTempRoot("bullpen-codex-acp-home-seed-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -673,7 +673,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -695,7 +695,7 @@ describe("codex_local ACP lane", () => {
     // the host managed home; it is NOT the host CODEX_HOME.
     expect(remappedCodexHome).not.toBe(sourceHome);
     expect(remappedCodexHome).not.toBe(sharedHostHome);
-    expect(remappedCodexHome).toContain(".paperclip-runtime");
+    expect(remappedCodexHome).toContain(".bullpen-runtime");
     // Seeded: the credential materialized into the in-sandbox home (the local
     // runner uses the host FS, so the in-sandbox path is a real host path).
     await expect(fs.readFile(path.join(remappedCodexHome, "auth.json"), "utf8")).resolves.toContain(
@@ -706,7 +706,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("copies a strictly-newer sandbox Codex auth back to the shared host on teardown", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-copyback-newer-");
+    const root = await makeTempRoot("bullpen-codex-acp-copyback-newer-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -745,7 +745,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -770,7 +770,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("keeps the shared host Codex auth when the sandbox copy is not strictly newer", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-copyback-older-");
+    const root = await makeTempRoot("bullpen-codex-acp-copyback-older-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -809,7 +809,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -835,7 +835,7 @@ describe("codex_local ACP lane", () => {
     // turn the engine caches the staged runtime warm and its host staged home is
     // still on disk for the next compatible resume to reuse.
     const runId = "run-keep-staged-home";
-    const root = await makeTempRoot("paperclip-codex-acp-keep-staged-");
+    const root = await makeTempRoot("bullpen-codex-acp-keep-staged-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -877,7 +877,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -913,7 +913,7 @@ describe("codex_local ACP lane", () => {
     // staged-home temp dir — while the per-run copy-back (`teardown`) STILL fires
     // on the unclean exit path, so a rotated sandbox credential is never lost.
     const runId = "run-drop-staged-home";
-    const root = await makeTempRoot("paperclip-codex-acp-drop-staged-");
+    const root = await makeTempRoot("bullpen-codex-acp-drop-staged-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sourceHome = path.join(root, "codex-home");
@@ -955,7 +955,7 @@ describe("codex_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -1003,7 +1003,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("classifies ACP refresh-token auth failures", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-refresh-token-");
+    const root = await makeTempRoot("bullpen-codex-acp-refresh-token-");
     const execute = createCodexAcpExecutor({
       createRuntime: (options: FakeRuntimeOptions) => new FakeRuntime(
         options,
@@ -1025,7 +1025,7 @@ describe("codex_local ACP lane", () => {
   });
 
   it("resumes compatible ACP sessions on later Codex ACP runs", async () => {
-    const root = await makeTempRoot("paperclip-codex-acp-resume-");
+    const root = await makeTempRoot("bullpen-codex-acp-resume-");
     const runtimes: FakeRuntime[] = [];
     const execute = createCodexAcpExecutor({
       createRuntime: (options: FakeRuntimeOptions) => {

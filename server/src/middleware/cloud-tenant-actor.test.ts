@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Request } from "express";
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { authUsers, companies, companyMemberships, instanceSettings, instanceUserRoles } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
+import { authUsers, companies, companyMemberships, instanceSettings, instanceUserRoles } from "@bullpen/db";
 import { resolveCloudTenantActor } from "./auth.js";
 
 // Minimal fake Drizzle Db: records every table passed to .insert() / .delete() and
@@ -94,11 +94,11 @@ function fakeReq(headers: Record<string, string>): Request {
 }
 
 const VALID_HEADERS = {
-  "x-paperclip-cloud-tenant-token": "test-server-token",
-  "x-paperclip-cloud-user-id": "user-123",
-  "x-paperclip-cloud-user-email": "Owner@Example.com",
-  "x-paperclip-cloud-stack-id": "stack-abc",
-  "x-paperclip-cloud-stack-role": "owner",
+  "x-bullpen-cloud-tenant-token": "test-server-token",
+  "x-bullpen-cloud-user-id": "user-123",
+  "x-bullpen-cloud-user-email": "Owner@Example.com",
+  "x-bullpen-cloud-stack-id": "stack-abc",
+  "x-bullpen-cloud-stack-role": "owner",
 };
 
 const MANAGED_CONFIG_FLAG_ON = JSON.stringify({
@@ -119,11 +119,11 @@ const MANAGED_CONFIG_FLAG_OFF = JSON.stringify({
 
 describe("resolveCloudTenantActor (shared-pool hardening)", () => {
   beforeEach(() => {
-    process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+    process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
   });
   afterEach(() => {
-    delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
-    delete process.env.PAPERCLIP_MANAGED_CONFIG;
+    delete process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN;
+    delete process.env.BULLPEN_MANAGED_CONFIG;
   });
 
   it("does not grant instance admin by default (flag off)", async () => {
@@ -160,7 +160,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
   });
 
   it("returns null when the server token is unset", async () => {
-    delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+    delete process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN;
     const { db } = createFakeDb();
     const actor = await resolveCloudTenantActor(db, fakeReq(VALID_HEADERS));
     expect(actor).toBeNull();
@@ -172,7 +172,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     });
     const actor = await resolveCloudTenantActor(
       db,
-      fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": "member" }),
+      fakeReq({ ...VALID_HEADERS, "x-bullpen-cloud-stack-role": "member" }),
     );
     expect(actor!.isInstanceAdmin).toBe(false);
     expect(actor?.memberships?.[0]?.membershipRole).toBe("member");
@@ -262,7 +262,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
         });
         const actor = await resolveCloudTenantActor(
           db,
-          fakeReq({ ...VALID_HEADERS, "x-paperclip-cloud-stack-role": stackRole }),
+          fakeReq({ ...VALID_HEADERS, "x-bullpen-cloud-stack-role": stackRole }),
         );
         expect(actor).not.toBeNull();
         expect(actor!.isInstanceAdmin).toBe(false);
@@ -270,7 +270,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     );
 
     it("resolves the flag through the managed overlay: overlay on elevates over a DB value of off", async () => {
-      process.env.PAPERCLIP_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_ON;
+      process.env.BULLPEN_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_ON;
       const { db } = createFakeDb({
         settingsRow: settingsRowWith({ enableOwnerInstanceAdmin: false }),
       });
@@ -279,7 +279,7 @@ describe("resolveCloudTenantActor (shared-pool hardening)", () => {
     });
 
     it("resolves the flag through the managed overlay: overlay off wins over a DB value of on", async () => {
-      process.env.PAPERCLIP_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_OFF;
+      process.env.BULLPEN_MANAGED_CONFIG = MANAGED_CONFIG_FLAG_OFF;
       const { db } = createFakeDb({
         settingsRow: settingsRowWith({ enableOwnerInstanceAdmin: true }),
       });

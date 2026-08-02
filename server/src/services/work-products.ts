@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { issueWorkProducts } from "@paperclipai/db";
-import type { IssueWorkProduct } from "@paperclipai/shared";
+import type { Db } from "@bullpen/db";
+import { issueWorkProducts } from "@bullpen/db";
+import type { IssueWorkProduct } from "@bullpen/shared";
 import { insertRowsInChunks } from "./batch-insert.js";
 import type { ImportIssueWorkProductRow } from "./import-write-types.js";
 

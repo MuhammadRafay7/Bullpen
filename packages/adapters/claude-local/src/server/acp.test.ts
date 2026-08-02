@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import type { AdapterExecutionContext, AdapterInvocationMeta } from "@paperclipai/adapter-utils";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
+import type { AdapterExecutionContext, AdapterInvocationMeta } from "@bullpen/adapter-utils";
+import { runChildProcess } from "@bullpen/adapter-utils/server-utils";
 import {
   buildClaudeAcpConfig,
   createClaudeAcpExecutor,
@@ -66,8 +66,8 @@ type FakeRuntimeTurn = {
 const tempRoots: string[] = [];
 const originalNodeVersion = process.version;
 const originalEnv: Record<string, string | undefined> = {
-  PAPERCLIP_HOME: process.env.PAPERCLIP_HOME,
-  PAPERCLIP_INSTANCE_ID: process.env.PAPERCLIP_INSTANCE_ID,
+  BULLPEN_HOME: process.env.BULLPEN_HOME,
+  BULLPEN_INSTANCE_ID: process.env.BULLPEN_INSTANCE_ID,
   CLAUDE_CONFIG_DIR: process.env.CLAUDE_CONFIG_DIR,
 };
 
@@ -217,8 +217,8 @@ function buildContext(root: string, overrides: Partial<AdapterExecutionContext> 
     },
     context: {
       issueId: "issue-1",
-      paperclipTaskMarkdown: "Task context",
-      paperclipWorkspace: {
+      bullpenTaskMarkdown: "Task context",
+      bullpenWorkspace: {
         cwd: root,
         source: "project_workspace",
         workspaceId: "workspace-1",
@@ -259,7 +259,7 @@ describe("claude_local ACP lane", () => {
   });
 
   it("defaults to ACP when prerequisites pass and falls back to CLI only for auto resolution", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-default-");
+    const root = await makeTempRoot("bullpen-claude-acp-default-");
     const commandPath = path.join(root, "bin", "claude-agent-acp");
     await fs.mkdir(path.dirname(commandPath), { recursive: true });
     await fs.writeFile(commandPath, "#!/usr/bin/env sh\n", "utf8");
@@ -407,7 +407,7 @@ describe("claude_local ACP lane", () => {
   });
 
   it("reports ACP prerequisites for the ACP lane", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-env-");
+    const root = await makeTempRoot("bullpen-claude-acp-env-");
     const commandPath = path.join(root, "bin", "claude-agent-acp");
     await fs.mkdir(path.dirname(commandPath), { recursive: true });
     await fs.writeFile(commandPath, "#!/usr/bin/env sh\n", "utf8");
@@ -445,7 +445,7 @@ describe("claude_local ACP lane", () => {
   });
 
   it("executes through ACPX with Claude model env, settings.local.json, and ephemeral skills", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-exec-");
+    const root = await makeTempRoot("bullpen-claude-acp-exec-");
     const skill = await createRuntimeSkill(root);
     const runtimes: FakeRuntime[] = [];
     const meta: AdapterInvocationMeta[] = [];
@@ -465,8 +465,8 @@ describe("claude_local ACP lane", () => {
         model: "claude-opus-4-7",
         effort: "high",
         promptTemplate: "Do the assigned work.",
-        paperclipRuntimeSkills: [skill],
-        paperclipSkillSync: { desiredSkills: [skill.key] },
+        bullpenRuntimeSkills: [skill],
+        bullpenSkillSync: { desiredSkills: [skill.key] },
       },
       onMeta: async (payload: AdapterInvocationMeta) => {
         meta.push(payload);
@@ -496,7 +496,7 @@ describe("claude_local ACP lane", () => {
   });
 
   it("creates the ACP session on the in-sandbox workspace cwd for runner-backed remote runs", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-remote-cwd-");
+    const root = await makeTempRoot("bullpen-claude-acp-remote-cwd-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     await fs.mkdir(localCwd, { recursive: true });
@@ -525,8 +525,8 @@ describe("claude_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipTaskMarkdown: "Task context",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenTaskMarkdown: "Task context",
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -546,7 +546,7 @@ describe("claude_local ACP lane", () => {
   });
 
   it("seeds the managed Claude config into the sandbox and repoints CLAUDE_CONFIG_DIR to the in-sandbox path", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-home-seed-");
+    const root = await makeTempRoot("bullpen-claude-acp-home-seed-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sharedClaudeConfig = path.join(root, "shared-claude-config");
@@ -560,8 +560,8 @@ describe("claude_local ACP lane", () => {
       "utf8",
     );
     await fs.writeFile(path.join(sharedClaudeConfig, "CLAUDE.md"), "# shared guidance\n", "utf8");
-    process.env.PAPERCLIP_HOME = path.join(root, "paperclip-home");
-    process.env.PAPERCLIP_INSTANCE_ID = "test";
+    process.env.BULLPEN_HOME = path.join(root, "bullpen-home");
+    process.env.BULLPEN_INSTANCE_ID = "test";
     process.env.CLAUDE_CONFIG_DIR = sharedClaudeConfig;
 
     const meta: AdapterInvocationMeta[] = [];
@@ -579,7 +579,7 @@ describe("claude_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -600,7 +600,7 @@ describe("claude_local ACP lane", () => {
     // C2 — CLAUDE_CONFIG_DIR repointed onto an in-sandbox path, distinct from the
     // host shared config dir.
     expect(remappedConfigDir).not.toBe(sharedClaudeConfig);
-    expect(remappedConfigDir).toContain(".paperclip-runtime");
+    expect(remappedConfigDir).toContain(".bullpen-runtime");
     expect(remappedConfigDir.endsWith("/config")).toBe(true);
     // Seeded: settings.json was materialized into the in-sandbox config dir (the
     // local runner uses the host FS, so this is a real host path).
@@ -612,7 +612,7 @@ describe("claude_local ACP lane", () => {
   });
 
   it("remaps a workspace-relative explicit CLAUDE_CONFIG_DIR onto the in-sandbox workspace path", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-explicit-inworkspace-");
+    const root = await makeTempRoot("bullpen-claude-acp-explicit-inworkspace-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     await fs.mkdir(localCwd, { recursive: true });
@@ -627,8 +627,8 @@ describe("claude_local ACP lane", () => {
       JSON.stringify({ permissions: { defaultMode: "acceptEdits" } }),
       "utf8",
     );
-    process.env.PAPERCLIP_HOME = path.join(root, "paperclip-home");
-    process.env.PAPERCLIP_INSTANCE_ID = "test";
+    process.env.BULLPEN_HOME = path.join(root, "bullpen-home");
+    process.env.BULLPEN_INSTANCE_ID = "test";
 
     const meta: AdapterInvocationMeta[] = [];
     const logs: string[] = [];
@@ -647,7 +647,7 @@ describe("claude_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -671,14 +671,14 @@ describe("claude_local ACP lane", () => {
     expect(meta[0]?.env?.CLAUDE_CONFIG_DIR).toBe(path.posix.join(remoteCwd, ".claude-config"));
     expect(meta[0]?.env?.CLAUDE_CONFIG_DIR).not.toBe(operatorConfigDir);
     // No managed config seed is materialized — the operator dir is authoritative.
-    expect(String(meta[0]?.env?.CLAUDE_CONFIG_DIR ?? "")).not.toContain(".paperclip-runtime");
+    expect(String(meta[0]?.env?.CLAUDE_CONFIG_DIR ?? "")).not.toContain(".bullpen-runtime");
     expect(logs.join("")).toContain(
       `Remapped operator CLAUDE_CONFIG_DIR from host path ${operatorConfigDir}`,
     );
   });
 
   it("ignores a host-only explicit CLAUDE_CONFIG_DIR that cannot reach the sandbox and seeds the managed config instead", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-explicit-hostonly-");
+    const root = await makeTempRoot("bullpen-claude-acp-explicit-hostonly-");
     const localCwd = path.join(root, "worktree");
     const remoteCwd = path.join(root, "remote-workspace");
     const sharedClaudeConfig = path.join(root, "shared-claude-config");
@@ -695,8 +695,8 @@ describe("claude_local ACP lane", () => {
       "utf8",
     );
     await fs.writeFile(path.join(sharedClaudeConfig, "CLAUDE.md"), "# shared guidance\n", "utf8");
-    process.env.PAPERCLIP_HOME = path.join(root, "paperclip-home");
-    process.env.PAPERCLIP_INSTANCE_ID = "test";
+    process.env.BULLPEN_HOME = path.join(root, "bullpen-home");
+    process.env.BULLPEN_INSTANCE_ID = "test";
     process.env.CLAUDE_CONFIG_DIR = sharedClaudeConfig;
 
     const meta: AdapterInvocationMeta[] = [];
@@ -718,7 +718,7 @@ describe("claude_local ACP lane", () => {
         },
         context: {
           issueId: "issue-1",
-          paperclipWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
+          bullpenWorkspace: { cwd: localCwd, source: "project_workspace", workspaceId: "workspace-1" },
         },
         executionTarget: {
           kind: "remote",
@@ -741,7 +741,7 @@ describe("claude_local ACP lane", () => {
     const remappedConfigDir = String(meta[0]?.env?.CLAUDE_CONFIG_DIR ?? "");
     // The un-portable host path is dropped; managed config is seeded in-sandbox.
     expect(remappedConfigDir).not.toBe(operatorConfigDir);
-    expect(remappedConfigDir).toContain(".paperclip-runtime");
+    expect(remappedConfigDir).toContain(".bullpen-runtime");
     expect(remappedConfigDir.endsWith("/config")).toBe(true);
     await expect(fs.readFile(path.join(remappedConfigDir, "settings.json"), "utf8")).resolves.toContain(
       "permissions",
@@ -772,7 +772,7 @@ describe("claude_local ACP lane", () => {
   });
 
   it("delivers the issue description exactly once per prompt and compacts non-assignment resume deltas", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-brief-");
+    const root = await makeTempRoot("bullpen-claude-acp-brief-");
     const runtimes: FakeRuntime[] = [];
     const execute = createClaudeAcpExecutor({
       createRuntime: (options: FakeRuntimeOptions) => {
@@ -784,7 +784,7 @@ describe("claude_local ACP lane", () => {
 
     const description = "Update launch-card.svg and change the CTA to Try Team free.";
     const fullTaskMarkdown = [
-      "Paperclip task context:",
+      "Bullpen task context:",
       "- Issue: \"PAP-15271\"",
       "- Title: \"Preserve the task brief\"",
       "",
@@ -794,15 +794,15 @@ describe("claude_local ACP lane", () => {
       "```",
     ].join("\n");
     const compactTaskMarkdown = [
-      "Paperclip task context:",
+      "Bullpen task context:",
       "- Issue: \"PAP-15271\"",
       "- Title: \"Preserve the task brief\"",
     ].join("\n");
     const wakeContext = (reason: string) => ({
       issueId: "issue-1",
-      paperclipTaskMarkdown: fullTaskMarkdown,
-      paperclipTaskMarkdownCompact: compactTaskMarkdown,
-      paperclipWake: {
+      bullpenTaskMarkdown: fullTaskMarkdown,
+      bullpenTaskMarkdownCompact: compactTaskMarkdown,
+      bullpenWake: {
         reason,
         issue: {
           id: "issue-1",
@@ -816,7 +816,7 @@ describe("claude_local ACP lane", () => {
         comments: [],
         fallbackFetchNeeded: false,
       },
-      paperclipWorkspace: {
+      bullpenWorkspace: {
         cwd: root,
         source: "project_workspace",
         workspaceId: "workspace-1",
@@ -826,7 +826,7 @@ describe("claude_local ACP lane", () => {
     const first = await execute(buildContext(root, { context: wakeContext("issue_assigned") }));
     const freshPrompt = runtimes[0]?.startInputs[0]?.text ?? "";
     expect(freshPrompt.split(description)).toHaveLength(2);
-    expect(freshPrompt).toContain("Paperclip task context:");
+    expect(freshPrompt).toContain("Bullpen task context:");
 
     const second = await execute(buildContext(root, {
       runtime: {
@@ -840,14 +840,14 @@ describe("claude_local ACP lane", () => {
     expect(second.exitCode).toBe(0);
     const resumePrompt = runtimes[1]?.startInputs[0]?.text ?? "";
     expect(resumePrompt).not.toContain(description);
-    expect(resumePrompt).toContain("Paperclip task context:");
+    expect(resumePrompt).toContain("Bullpen task context:");
     expect(resumePrompt).toContain(
       "- issue description: omitted from this resume delta; fetch the issue if you need the latest brief",
     );
   });
 
   it("resumes compatible ACP sessions on later Claude ACP runs", async () => {
-    const root = await makeTempRoot("paperclip-claude-acp-resume-");
+    const root = await makeTempRoot("bullpen-claude-acp-resume-");
     const runtimes: FakeRuntime[] = [];
     const execute = createClaudeAcpExecutor({
       createRuntime: (options: FakeRuntimeOptions) => {

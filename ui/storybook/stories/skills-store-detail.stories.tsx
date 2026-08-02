@@ -4,7 +4,7 @@ import type {
   CompanySkillDetail,
   CompanySkillFileDetail,
   CompanySkillVersion,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { SkillDetailPage } from "@/pages/CompanySkills";
 
 type DetailTab = "overview" | "files" | "versions" | "agents";
@@ -14,7 +14,7 @@ const NOW = new Date("2026-06-01T12:00:00Z");
 const MOCK_DETAIL: CompanySkillDetail = {
   id: "skill-1",
   companyId: "company-1",
-  key: "paperclipai/paperclip/deep-research",
+  key: "bullpen/bullpen/deep-research",
   slug: "deep-research",
   name: "deep-research",
   description:

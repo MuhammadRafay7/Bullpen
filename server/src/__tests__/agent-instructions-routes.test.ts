@@ -182,7 +182,7 @@ function makeReflectionCoachAgent(overrides: Record<string, unknown> = {}) {
     id: "22222222-2222-4222-8222-222222222222",
     name: "Reflection Coach",
     metadata: {
-      paperclipBuiltInAgent: {
+      bullpenBuiltInAgent: {
         key: "reflection-coach",
         featureKeys: ["reflection-coach"],
       },
@@ -458,9 +458,9 @@ describe("agent instructions bundle routes", () => {
     );
   });
 
-  it("preserves paperclip skill-sync selections when switching adapters", async () => {
+  it("preserves bullpen skill-sync selections when switching adapters", async () => {
     // Desired skills live inside the per-adapter config under
-    // `paperclipSkillSync`, yet they are adapter-agnostic company-level
+    // `bullpenSkillSync`, yet they are adapter-agnostic company-level
     // selections. Switching adapter type must not silently wipe them — the
     // server carries them over from the existing config the same way it
     // preserves env/cwd and the instructions bundle.
@@ -469,7 +469,7 @@ describe("agent instructions bundle routes", () => {
       adapterType: "claude_local",
       adapterConfig: {
         model: "claude-sonnet-4",
-        paperclipSkillSync: { desiredSkills: ["research", "code-review"] },
+        bullpenSkillSync: { desiredSkills: ["research", "code-review"] },
       },
     });
 
@@ -490,7 +490,7 @@ describe("agent instructions bundle routes", () => {
         adapterType: "codex_local",
         adapterConfig: expect.objectContaining({
           model: "gpt-5.4",
-          paperclipSkillSync: { desiredSkills: ["research", "code-review"] },
+          bullpenSkillSync: { desiredSkills: ["research", "code-review"] },
         }),
       }),
       expect.any(Object),

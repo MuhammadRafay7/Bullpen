@@ -6,7 +6,7 @@ import type {
   IssueRecoveryActionKind,
   IssueRecoveryActionOutcome,
   IssueRecoveryActionStatus,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
   Eye,
   GitBranch,
@@ -127,15 +127,15 @@ const KIND_HEADLINE: Record<IssueRecoveryActionKind, string> = {
   missing_disposition:
     "This task's run finished, but no next step was chosen. Choose what happens next — try the task again, mark it done, or send it for review.",
   stranded_assigned_issue:
-    "Paperclip retried this task's last run, but there is still no queued run, reviewer, blocker, or other next owner. To get it moving, choose what happens next — try the task again, mark it done, or send it for review.",
+    "Bullpen retried this task's last run, but there is still no queued run, reviewer, blocker, or other next owner. To get it moving, choose what happens next — try the task again, mark it done, or send it for review.",
   workspace_validation:
-    "Paperclip stopped this run because the task's git workspace could not be validated.",
+    "Bullpen stopped this run because the task's git workspace could not be validated.",
   configuration_validation:
-    "Paperclip stopped before dispatching this run because required secret/env bindings are missing.",
+    "Bullpen stopped before dispatching this run because required secret/env bindings are missing.",
   active_run_watchdog:
     "The active run has been silent. Recovery is observing without interrupting it.",
   issue_graph_liveness:
-    "Paperclip could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
+    "Bullpen could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
 };
 
 const STATE_TONE: Record<RecoveryCardCardState, {
@@ -314,7 +314,7 @@ function sanitizeBranchComponent(value: string): string {
 }
 
 function buildRescueBranchPreview(sourceIdentifier: string | null): string {
-  return `paperclip/rescue/${sanitizeBranchComponent(sourceIdentifier ?? "issue")}/`;
+  return `bullpen/rescue/${sanitizeBranchComponent(sourceIdentifier ?? "issue")}/`;
 }
 
 function asStringArray(value: unknown): string[] {
@@ -539,7 +539,7 @@ function BreakGlassOverride({
             Break-glass reconciliation
           </div>
           <p className="text-xs leading-5 text-muted-foreground">
-            This overrides Paperclip&apos;s safety check and points the recorded workspace at the live
+            This overrides Bullpen&apos;s safety check and points the recorded workspace at the live
             branch{" "}
             <span className="font-medium text-foreground/80">without an ancestry proof</span>. Confirm
             the divergence below and record why before continuing.
