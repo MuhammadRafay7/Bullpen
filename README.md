@@ -1,3 +1,13 @@
+# Bullpen
+
+> Self-hosted instance of [Paperclip](https://github.com/paperclipai/paperclip), an open-source
+> control plane for orchestrating teams of AI agents. Based on the upstream project by Paperclip AI
+> and used here under the [MIT License](LICENSE). Not affiliated with or endorsed by Paperclip AI.
+>
+> Upstream documentation below.
+
+---
+
 <p align="center">
   <img src="doc/assets/banner.jpg" alt="Paperclip is the app people use to manage AI agents for work." width="720" />
 </p>
