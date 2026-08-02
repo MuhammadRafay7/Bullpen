@@ -17,7 +17,7 @@ type SupertestTestInstance = {
 type SupertestTestConstructor = {
   prototype: {
     serverAddress(this: SupertestTestInstance, app: SupertestServer, path: string): string;
-    __paperclipLoopbackPatched?: boolean;
+    __bullpenLoopbackPatched?: boolean;
   };
 };
 
@@ -25,12 +25,12 @@ const require = createRequire(import.meta.url);
 const SupertestTest = require("supertest/lib/test.js") as SupertestTestConstructor;
 
 if (!process.env.CODEX_HOME) {
-  const codexHome = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-vitest-codex-home-"));
+  const codexHome = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-vitest-codex-home-"));
   fs.writeFileSync(path.join(codexHome, "auth.json"), '{"OPENAI_API_KEY":"sk-vitest"}\n', { mode: 0o600 });
   process.env.CODEX_HOME = codexHome;
 }
 
-if (!SupertestTest.prototype.__paperclipLoopbackPatched) {
+if (!SupertestTest.prototype.__bullpenLoopbackPatched) {
   SupertestTest.prototype.serverAddress = function serverAddress(app, path) {
     const addr = app.address();
 
@@ -52,5 +52,5 @@ if (!SupertestTest.prototype.__paperclipLoopbackPatched) {
     return `${protocol}://${host}:${listeningAddress.port}${path}`;
   };
 
-  SupertestTest.prototype.__paperclipLoopbackPatched = true;
+  SupertestTest.prototype.__bullpenLoopbackPatched = true;
 }

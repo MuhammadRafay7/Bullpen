@@ -3,8 +3,8 @@
  *
  * Two related protections for `POST /api/plugins/install`:
  *
- * 1. **Cloud install floor.** Instances managed by the Paperclip Cloud
- *    harness receive a `PAPERCLIP_MANAGED_CONFIG` environment document that
+ * 1. **Cloud install floor.** Instances managed by the Bullpen Cloud
+ *    harness receive a `BULLPEN_MANAGED_CONFIG` environment document that
  *    only the harness can inject. On such instances, plugin installation is
  *    a remote-code-execution surface on shared infrastructure, so the route
  *    enforces a positive allowlist: only install sources that canonicalize
@@ -35,10 +35,10 @@ import { BUNDLED_LOCAL_PLUGIN_ROOT } from "./plugin-loader.js";
  * auto-install list) is parsed fail-closed elsewhere at startup; this module
  * only cares about the variable's presence.
  */
-export const MANAGED_CONFIG_ENV_KEY = "PAPERCLIP_MANAGED_CONFIG";
+export const MANAGED_CONFIG_ENV_KEY = "BULLPEN_MANAGED_CONFIG";
 
 /**
- * Whether this instance is managed by the Paperclip Cloud harness.
+ * Whether this instance is managed by the Bullpen Cloud harness.
  *
  * Deliberately presence-based rather than content-based: the strict startup
  * parser refuses to boot a managed instance with a malformed document, and

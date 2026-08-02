@@ -12,7 +12,7 @@ import {
   issueRelations,
   issueWorkProducts,
   issues,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import { and, eq, sql } from "drizzle-orm";
 import {
   getEmbeddedPostgresTestSupport,
@@ -22,7 +22,7 @@ import { companyPortabilityService } from "../services/company-portability.js";
 import { issueService } from "../services/issues.js";
 import { workProductService } from "../services/work-products.js";
 import type { ImportIssueWorkProductRow } from "../services/import-write-types.js";
-import type { CompanyPortabilityFileEntry } from "@paperclipai/shared";
+import type { CompanyPortabilityFileEntry } from "@bullpen/shared";
 import { randomUUID } from "node:crypto";
 
 // This suite proves the company-import writers batch their inserts: it runs a
@@ -93,7 +93,7 @@ function instrumentInserts(db: Record<string, unknown>): InsertCounts {
   return counts;
 }
 
-// The `.paperclip.yaml` extension is consumed by the importer's own hand-rolled
+// The `.bullpen.yaml` extension is consumed by the importer's own hand-rolled
 // block-YAML parser (not a general YAML/JSON reader), so render it with the same
 // block algorithm the exporter uses to guarantee a round-trip-compatible bundle.
 function renderYamlScalar(value: unknown): string {
@@ -145,7 +145,7 @@ function renderYamlBlock(value: unknown, indentLevel: number): string[] {
   return [`${indent}${renderYamlScalar(value)}`];
 }
 
-function renderPaperclipYaml(value: Record<string, unknown>): string {
+function renderBullpenYaml(value: Record<string, unknown>): string {
   return `${renderYamlBlock(value, 0).join("\n")}\n`;
 }
 
@@ -191,7 +191,7 @@ function buildSyntheticBundle(options: SyntheticBundleOptions): {
     };
   }
 
-  files[".paperclip.yaml"] = renderPaperclipYaml({ schemaVersion: 6, tasks });
+  files[".bullpen.yaml"] = renderBullpenYaml({ schemaVersion: 6, tasks });
 
   return { rootPath: "batching-bench", files };
 }
@@ -221,7 +221,7 @@ function buildTouchedIssuesBundle(issueCount: number): {
     };
   }
 
-  files[".paperclip.yaml"] = renderPaperclipYaml({ schemaVersion: 6, tasks });
+  files[".bullpen.yaml"] = renderBullpenYaml({ schemaVersion: 6, tasks });
   return { rootPath: "inbox-flood", files };
 }
 
@@ -231,7 +231,7 @@ describeEmbeddedPostgres("company import batches inserts", () => {
   let counts!: InsertCounts;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-import-batching-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-import-batching-");
     db = createDb(tempDb.connectionString);
     counts = instrumentInserts(db as unknown as Record<string, unknown>);
   }, 30_000);

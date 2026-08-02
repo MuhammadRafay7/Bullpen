@@ -1,4 +1,4 @@
-import type { AppDefinition } from "@paperclipai/shared";
+import type { AppDefinition } from "@bullpen/shared";
 
 export type AppGalleryDisplayEntry = AppDefinition & {
   key?: string;

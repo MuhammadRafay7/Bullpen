@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ToolCatalogEntry, ToolConnection, ToolPolicy } from "@paperclipai/shared";
+import type { ToolCatalogEntry, ToolConnection, ToolPolicy } from "@bullpen/shared";
 import { queryKeys } from "@/lib/queryKeys";
 import { PoliciesTab } from "@/pages/tools/PoliciesTab";
 

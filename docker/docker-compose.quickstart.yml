@@ -1,4 +1,4 @@
-# Quickstart: single-container Paperclip with embedded database.
+# Quickstart: single-container Bullpen with embedded database.
 # Copy this file and set the required env vars before running.
 #
 #   cd docker
@@ -7,15 +7,15 @@
 #   docker compose -f docker-compose.quickstart.yml up --build
 #
 services:
-  paperclip:
+  bullpen:
     build:
       context: ..
       dockerfile: Dockerfile
     ports:
-      - "${PAPERCLIP_PORT:-3100}:3100"
+      - "${BULLPEN_PORT:-3100}:3100"
     environment:
       HOST: "0.0.0.0"
-      PAPERCLIP_HOME: "/paperclip"
+      BULLPEN_HOME: "/bullpen"
 
       # ── LLM provider keys (at least one is needed for agents to work) ──
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
@@ -23,14 +23,14 @@ services:
 
       # ── Deployment settings ──
       # "authenticated" requires login, "local_trusted" skips auth
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
+      BULLPEN_DEPLOYMENT_MODE: "authenticated"
       # "private" = LAN only, "public" = internet-facing (use with TLS)
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
+      BULLPEN_DEPLOYMENT_EXPOSURE: "private"
       # Base URL users will access the UI at
-      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3100}"
+      BULLPEN_PUBLIC_URL: "${BULLPEN_PUBLIC_URL:-http://localhost:3100}"
 
       # ── Required secret for session signing (generate with: openssl rand -hex 32) ──
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
     volumes:
       # Persistent data directory (database, agent workspaces, uploads)
-      - "${PAPERCLIP_DATA_DIR:-../data/docker-paperclip}:/paperclip"
+      - "${BULLPEN_DATA_DIR:-../data/docker-bullpen}:/bullpen"

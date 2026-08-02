@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, notInArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   agents,
   approvals,
@@ -26,8 +26,8 @@ import {
   documents,
   projects,
   projectWorkspaces,
-} from "@paperclipai/db";
-import { deriveProjectUrlKey } from "@paperclipai/shared";
+} from "@bullpen/db";
+import { deriveProjectUrlKey } from "@bullpen/shared";
 import type {
   AttentionDecisionVerb,
   AttentionFeed,
@@ -43,7 +43,7 @@ import type {
   AttentionSubject,
   AttentionTriageAttribution,
   AttentionWorkspaceRef,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { badRequest } from "../errors.js";
 import { PRODUCTIVITY_REVIEW_ORIGIN_KIND } from "./productivity-review.js";
 import { budgetService } from "./budgets.js";

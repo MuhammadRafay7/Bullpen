@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
-import type { PaperclipConfig } from "../config/schema.js";
-import { resolvePaperclipInstanceId } from "../config/home.js";
+import type { BullpenConfig } from "../config/schema.js";
+import { resolveBullpenInstanceId } from "../config/home.js";
 import { readInstallManifest } from "../install-store.js";
 import {
   detectServiceManager,
@@ -12,10 +12,10 @@ import type { CheckResult } from "./index.js";
 type HealthResult = { ok: boolean; version: string | null; error?: string };
 type ServiceCheckDependencies = {
   detect: (instanceId: string) => Promise<ServiceManagerDetection>;
-  probe: (config: PaperclipConfig) => Promise<HealthResult>;
+  probe: (config: BullpenConfig) => Promise<HealthResult>;
 };
 
-async function probeHealth(config: PaperclipConfig): Promise<HealthResult> {
+async function probeHealth(config: BullpenConfig): Promise<HealthResult> {
   try {
     const response = await fetch(buildLocalHealthUrl(config.server.host, config.server.port), {
       signal: AbortSignal.timeout(2_000),
@@ -37,17 +37,17 @@ async function probeHealth(config: PaperclipConfig): Promise<HealthResult> {
 }
 
 export async function serviceHealthChecks(
-  config: PaperclipConfig,
+  config: BullpenConfig,
   dependencies: Partial<ServiceCheckDependencies> = {},
 ): Promise<CheckResult[]> {
-  if (process.env.PAPERCLIP_SERVICE_MANAGED === "1") return [];
+  if (process.env.BULLPEN_SERVICE_MANAGED === "1") return [];
 
   const deps: ServiceCheckDependencies = {
     detect: (instanceId) => detectServiceManager({ instanceId }),
     probe: probeHealth,
     ...dependencies,
   };
-  const instanceId = resolvePaperclipInstanceId();
+  const instanceId = resolveBullpenInstanceId();
   const detection = await deps.detect(instanceId);
   if (!detection.supported) {
     return [{ name: "Background service", status: "pass", message: detection.reason }];
@@ -79,7 +79,7 @@ export async function serviceHealthChecks(
           name: "Service definition",
           status: "fail",
           message: `Missing or drifted definition at ${manager.definitionPath}`,
-          repairHint: "Run `paperclipai service install` to regenerate the service definition",
+          repairHint: "Run `bullpen service install` to regenerate the service definition",
         },
   );
 
@@ -91,9 +91,9 @@ export async function serviceHealthChecks(
           name: "Service runtime",
           status: "fail",
           message: health.ok
-            ? `${status.serviceName} is inactive but the configured port is serving another Paperclip process`
+            ? `${status.serviceName} is inactive but the configured port is serving another Bullpen process`
             : `${status.serviceName} is ${status.detail ?? "inactive"}`,
-          repairHint: "Run `paperclipai service start`, or stop the conflicting foreground process first",
+          repairHint: "Run `bullpen service start`, or stop the conflicting foreground process first",
         },
   );
 
@@ -107,14 +107,14 @@ export async function serviceHealthChecks(
           name: "Service health",
           status: "fail",
           message: health.error ?? "Health endpoint did not report ok",
-          repairHint: "Inspect `paperclipai service status` and `paperclipai service logs`",
+          repairHint: "Inspect `bullpen service status` and `bullpen service logs`",
         }
       : expectedVersion && health.version !== expectedVersion
         ? {
             name: "Service version",
             status: "fail",
             message: `Running ${health.version ?? "unknown"}; managed install is ${expectedVersion}`,
-            repairHint: "Run `paperclipai service restart --expected-version " + expectedVersion + "`",
+            repairHint: "Run `bullpen service restart --expected-version " + expectedVersion + "`",
           }
         : {
             name: "Service health",
@@ -128,7 +128,7 @@ export async function serviceHealthChecks(
       name: "Service linger",
       status: "warn",
       message: "Start-on-login is enabled but systemd user lingering is off",
-      repairHint: "Re-run `paperclipai service install --enable-linger` if the service must survive logout",
+      repairHint: "Re-run `bullpen service install --enable-linger` if the service must survive logout",
     });
   }
 

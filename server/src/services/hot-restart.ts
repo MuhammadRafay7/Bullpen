@@ -2,9 +2,9 @@ import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
-  resolvePaperclipInstanceRoot,
+  resolveBullpenHomeDir,
+  resolveBullpenInstanceId,
+  resolveBullpenInstanceRoot,
 } from "../home-paths.js";
 
 export const HOT_RESTART_INTENT_FILENAME = "hot-restart-intent.json";
@@ -70,11 +70,11 @@ export type HotRestartReport = {
 };
 
 function resolveHotRestartPath(filename: string, homeDir?: string) {
-  return path.join(resolvePaperclipInstanceRoot({ homeDir }), filename);
+  return path.join(resolveBullpenInstanceRoot({ homeDir }), filename);
 }
 
 function resolveLegacyHotRestartPath(filename: string, homeDir?: string) {
-  return path.join(resolvePaperclipHomeDir(homeDir), filename);
+  return path.join(resolveBullpenHomeDir(homeDir), filename);
 }
 
 export function resolveHotRestartIntentPath(homeDir?: string) {
@@ -454,7 +454,7 @@ export async function readHotRestartIntent(homeDir?: string) {
   if (!instanceIntent) {
     // The home-root marker predates instances. Only the default instance may
     // consume it without an instance-root request to correlate against.
-    return resolvePaperclipInstanceId() === "default" ? legacyIntent : null;
+    return resolveBullpenInstanceId() === "default" ? legacyIntent : null;
   }
   if (!legacyIntent || !isSameHotRestartRequest(instanceIntent, legacyIntent)) {
     return instanceIntent;
@@ -507,7 +507,7 @@ export async function writeHotRestartIntent(input: {
   };
   const instancePath = resolveHotRestartIntentPath(input.homeDir);
   const legacyPath = resolveLegacyHotRestartIntentPath(input.homeDir);
-  // The legacy location is shared by every instance under PAPERCLIP_HOME.
+  // The legacy location is shared by every instance under BULLPEN_HOME.
   // Claim it without replacement so concurrent staged restarts fail closed
   // instead of making the first old server consume another instance's PID.
   await withHotRestartPathLock(legacyPath, () => claimLegacyHotRestartIntent(legacyPath, intent));

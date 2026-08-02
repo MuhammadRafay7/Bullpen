@@ -24,9 +24,9 @@
       ],
       "whenToUse": "Use credentials from your provider account.",
       "defaults": {
-        "templateKey": "paperclip.google-sheets"
+        "templateKey": "bullpen.google-sheets"
       },
-      "guidanceMd": "Share each spreadsheet with the Paperclip robot email, then paste the sheet links.",
+      "guidanceMd": "Share each spreadsheet with the Bullpen robot email, then paste the sheet links.",
       "riskTier": "S3",
       "requiredResourceFilters": [
         "spreadsheet"

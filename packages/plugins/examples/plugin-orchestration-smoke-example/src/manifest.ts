@@ -1,12 +1,12 @@
-import type { PaperclipPluginManifestV1 } from "@paperclipai/plugin-sdk";
+import type { BullpenPluginManifestV1 } from "@bullpen/plugin-sdk";
 
-const manifest: PaperclipPluginManifestV1 = {
-  id: "paperclipai.plugin-orchestration-smoke-example",
+const manifest: BullpenPluginManifestV1 = {
+  id: "bullpen.plugin-orchestration-smoke-example",
   apiVersion: 1,
   version: "0.1.0",
   displayName: "Plugin Orchestration Smoke Example",
-  description: "First-party smoke plugin that exercises Paperclip orchestration-grade plugin APIs.",
-  author: "Paperclip",
+  description: "First-party smoke plugin that exercises Bullpen orchestration-grade plugin APIs.",
+  author: "Bullpen",
   categories: ["automation", "ui"],
   capabilities: [
     "api.routes.register",

@@ -11,7 +11,7 @@ import {
   ShieldAlert,
   XCircle,
 } from "lucide-react";
-import type { DecisionEffect, DecisionOption } from "@paperclipai/shared";
+import type { DecisionEffect, DecisionOption } from "@bullpen/shared";
 import type {
   Decision,
   DecisionEffectExecution,

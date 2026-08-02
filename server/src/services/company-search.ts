@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, inArray, isNotNull, isNull, notInArray, or, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   agents,
   assets,
@@ -11,7 +11,7 @@ import {
   issueWorkProducts,
   issues,
   projects,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   COMPANY_SEARCH_MAX_LIMIT,
   COMPANY_SEARCH_MAX_OFFSET,
@@ -35,7 +35,7 @@ import {
   type CompanySearchSnippet,
   type CompanySearchSort,
   type CompanySearchUpdatedWithinOption,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { companyArtifactsService } from "./company-artifacts.js";
 import { companySearchExtractService } from "./company-search-extract.js";
 import { visibleIssueCondition } from "./issue-visibility.js";
@@ -591,8 +591,8 @@ export function companySearchService(db: Db) {
       const fuzzyTokens = fuzzyEligibleTokens(tokens);
       const fuzzyTokenArray = sqlTextArray(fuzzyTokens);
       const escapedQuery = escapeLikePattern(normalizedQuery);
-      const containsPattern = hasSearchText ? `%${escapedQuery}%` : "__paperclip_no_match__";
-      const startsWithPattern = hasSearchText ? `${escapedQuery}%` : "__paperclip_no_match__";
+      const containsPattern = hasSearchText ? `%${escapedQuery}%` : "__bullpen_no_match__";
+      const startsWithPattern = hasSearchText ? `${escapedQuery}%` : "__bullpen_no_match__";
       const fuzzyEnabled = hasSearchText && normalizedQuery.length >= MIN_FUZZY_QUERY_LENGTH && !/[\\%_]/.test(normalizedQuery);
       const fuzzyTokensEnabled = fuzzyEnabled && fuzzyTokens.length > 0;
       const tokenCount = tokens.length;
@@ -1139,7 +1139,7 @@ export function companySearchService(db: Db) {
         const workProductConditions = [
           eq(issueWorkProducts.companyId, companyId),
           eq(issueWorkProducts.type, "artifact"),
-          eq(issueWorkProducts.provider, "paperclip"),
+          eq(issueWorkProducts.provider, "bullpen"),
           sql<boolean>`(
             ${issueWorkProducts.title} ILIKE ${containsPattern} ESCAPE '\\'
             OR coalesce(${issueWorkProducts.summary}, '') ILIKE ${containsPattern} ESCAPE '\\'

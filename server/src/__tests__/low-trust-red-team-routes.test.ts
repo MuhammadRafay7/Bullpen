@@ -34,8 +34,8 @@ import {
   issueWorkProducts,
   principalPermissionGrants,
   projects,
-} from "@paperclipai/db";
-import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY, LOW_TRUST_REVIEW_PRESET } from "@paperclipai/shared";
+} from "@bullpen/db";
+import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY, LOW_TRUST_REVIEW_PRESET } from "@bullpen/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -698,7 +698,7 @@ describeEmbeddedPostgres("low-trust red-team HTTP route regression suite", () =>
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-low-trust-red-team-routes-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-low-trust-red-team-routes-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -1350,9 +1350,9 @@ describeEmbeddedPostgres("low-trust red-team HTTP route regression suite", () =>
     const heartbeat = heartbeatService(db, {
       runtimeEnv: {
         ...process.env,
-        PAPERCLIP_IN_WORKTREE: "false",
-        PAPERCLIP_DATABASE_RESTORE_IN_PROGRESS: "false",
-        PAPERCLIP_RESTORE_IN_PROGRESS: "false",
+        BULLPEN_IN_WORKTREE: "false",
+        BULLPEN_DATABASE_RESTORE_IN_PROGRESS: "false",
+        BULLPEN_RESTORE_IN_PROGRESS: "false",
       },
     });
 
@@ -1459,8 +1459,8 @@ describeEmbeddedPostgres("low-trust red-team HTTP route regression suite", () =>
       await waitFor(() => gateway.getAgentPayloads().length === 1, 30_000);
       const payload = gateway.getAgentPayloads()[0] ?? {};
       // The gateway rejects unknown root params, so the wake context rides in the
-      // generated message rather than a top-level `paperclip` field.
-      expect(payload.paperclip).toBeUndefined();
+      // generated message rather than a top-level `bullpen` field.
+      expect(payload.bullpen).toBeUndefined();
       const wake = parseWakePayloadFromMessage(payload.message);
       // Security-critical: low-trust quarantined output is redacted to the sanitized
       // stub before it reaches the higher-trust wake/continuation context. The raw
@@ -1494,7 +1494,7 @@ describeEmbeddedPostgres("low-trust red-team HTTP route regression suite", () =>
           instruction: "Continue from the sanitized quarantine stub only.",
         },
       });
-      expect(String(payload.message ?? "")).toContain("## Paperclip Wake Payload");
+      expect(String(payload.message ?? "")).toContain("## Bullpen Wake Payload");
       expectNoCanary(payload, fixture.canaries.raw);
       gateway.releaseFirstWait();
       await waitFor(async () => {

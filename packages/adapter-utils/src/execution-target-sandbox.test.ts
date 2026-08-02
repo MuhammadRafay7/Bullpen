@@ -11,7 +11,7 @@ import {
   DEFAULT_REMOTE_SANDBOX_ADAPTER_TIMEOUT_SEC,
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetToRemoteSpec,
-  adapterExecutionTargetUsesPaperclipBridge,
+  adapterExecutionTargetUsesBullpenBridge,
   ensureAdapterExecutionTargetCommandResolvable,
   formatAdapterExecutionTimeoutErrorMessage,
   formatAdapterExecutionTimeoutStartLogLine,
@@ -20,7 +20,7 @@ import {
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
   startAdapterExecutionTargetProcessSessionBridge,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetBullpenBridge,
   type AdapterSandboxExecutionTarget,
 } from "./execution-target.js";
 import { createSandboxRunLogTailFactory } from "./sandbox-run-log-stream.js";
@@ -87,11 +87,11 @@ describe("sandbox adapter execution targets", () => {
 
   function encodeTailTick(stdout: Buffer, stderr: Buffer): string {
     return [
-      "__PAPERCLIP_RUN_LOG_STDOUT__",
+      "__BULLPEN_RUN_LOG_STDOUT__",
       stdout.toString("base64"),
-      "__PAPERCLIP_RUN_LOG_STDERR__",
+      "__BULLPEN_RUN_LOG_STDERR__",
       stderr.toString("base64"),
-      "__PAPERCLIP_RUN_LOG_END__",
+      "__BULLPEN_RUN_LOG_END__",
       "",
     ].join("\n");
   }
@@ -195,7 +195,7 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("creates the process session directories only in the launch exec, not in upfront makeDir execs", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-process-session-makedir-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-process-session-makedir-"));
     cleanupDirs.push(rootDir);
     const childPath = path.join(rootDir, "noop-acp-child.mjs");
     await writeFile(childPath, "process.stdin.on('data', () => {});\n", "utf8");
@@ -220,7 +220,7 @@ describe("sandbox adapter execution targets", () => {
     const bridge = await startAdapterExecutionTargetProcessSessionBridge({
       runId: "run-process-session-makedir",
       target,
-      runtimeRootDir: path.posix.join(rootDir, ".paperclip-runtime", "acpx"),
+      runtimeRootDir: path.posix.join(rootDir, ".bullpen-runtime", "acpx"),
       adapterKey: "acpx",
       command: process.execPath,
       args: [childPath],
@@ -249,7 +249,7 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("bridges bidirectional sandbox process sessions through a local ACPX-spawnable proxy", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-process-session-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-process-session-"));
     cleanupDirs.push(rootDir);
     const childPath = path.join(rootDir, "fake-acp-child.mjs");
     await writeFile(
@@ -274,7 +274,7 @@ describe("sandbox adapter execution targets", () => {
     const bridge = await startAdapterExecutionTargetProcessSessionBridge({
       runId: "run-process-session",
       target,
-      runtimeRootDir: path.posix.join(rootDir, ".paperclip-runtime", "acpx"),
+      runtimeRootDir: path.posix.join(rootDir, ".bullpen-runtime", "acpx"),
       adapterKey: "acpx",
       command: process.execPath,
       args: [childPath],
@@ -296,7 +296,7 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("buffers sandbox process session output until the local proxy connects", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-process-session-buffer-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-process-session-buffer-"));
     cleanupDirs.push(rootDir);
     const childPath = path.join(rootDir, "fast-acp-child.mjs");
     await writeFile(
@@ -320,7 +320,7 @@ describe("sandbox adapter execution targets", () => {
     const bridge = await startAdapterExecutionTargetProcessSessionBridge({
       runId: "run-process-session-buffer",
       target,
-      runtimeRootDir: path.posix.join(rootDir, ".paperclip-runtime", "acpx"),
+      runtimeRootDir: path.posix.join(rootDir, ".bullpen-runtime", "acpx"),
       adapterKey: "acpx",
       command: process.execPath,
       args: [childPath],
@@ -343,7 +343,7 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("delivers full output when the sandbox child exits immediately after writing", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-process-session-fast-exit-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-process-session-fast-exit-"));
     cleanupDirs.push(rootDir);
     const childPath = path.join(rootDir, "instant-exit-acp-child.mjs");
     await writeFile(
@@ -366,7 +366,7 @@ describe("sandbox adapter execution targets", () => {
     const bridge = await startAdapterExecutionTargetProcessSessionBridge({
       runId: "run-process-session-fast-exit",
       target,
-      runtimeRootDir: path.posix.join(rootDir, ".paperclip-runtime", "acpx"),
+      runtimeRootDir: path.posix.join(rootDir, ".bullpen-runtime", "acpx"),
       adapterKey: "acpx",
       command: process.execPath,
       args: [childPath],
@@ -388,7 +388,7 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("ignores unauthenticated connections to the process session bridge", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-process-session-auth-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-process-session-auth-"));
     cleanupDirs.push(rootDir);
     const childPath = path.join(rootDir, "guarded-acp-child.mjs");
     await writeFile(childPath, "process.stdout.write('guarded-out\\n');", "utf8");
@@ -404,7 +404,7 @@ describe("sandbox adapter execution targets", () => {
     const bridge = await startAdapterExecutionTargetProcessSessionBridge({
       runId: "run-process-session-auth",
       target,
-      runtimeRootDir: path.posix.join(rootDir, ".paperclip-runtime", "acpx"),
+      runtimeRootDir: path.posix.join(rootDir, ".bullpen-runtime", "acpx"),
       adapterKey: "acpx",
       command: process.execPath,
       args: [childPath],
@@ -454,7 +454,7 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("streams sandbox process session output before the remote child exits", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-process-session-stream-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-process-session-stream-"));
     cleanupDirs.push(rootDir);
     const childPath = path.join(rootDir, "streaming-acp-child.mjs");
     await writeFile(
@@ -484,7 +484,7 @@ describe("sandbox adapter execution targets", () => {
     const bridge = await startAdapterExecutionTargetProcessSessionBridge({
       runId: "run-process-session-stream",
       target,
-      runtimeRootDir: path.posix.join(rootDir, ".paperclip-runtime", "acpx"),
+      runtimeRootDir: path.posix.join(rootDir, ".bullpen-runtime", "acpx"),
       adapterKey: "acpx",
       command: process.execPath,
       args: [childPath],
@@ -872,7 +872,7 @@ describe("sandbox adapter execution targets", () => {
       spec: {
         host: "ssh.example.test",
         port: 22,
-        username: "paperclip",
+        username: "bullpen",
         remoteWorkspacePath: "/workspace",
         remoteCwd: "/workspace",
         privateKey: null,
@@ -881,12 +881,12 @@ describe("sandbox adapter execution targets", () => {
       },
     };
 
-    expect(adapterExecutionTargetUsesPaperclipBridge(target)).toBe(true);
+    expect(adapterExecutionTargetUsesBullpenBridge(target)).toBe(true);
     expect(adapterExecutionTargetSessionIdentity(target)).toEqual({
       transport: "ssh",
       host: "ssh.example.test",
       port: 22,
-      username: "paperclip",
+      username: "bullpen",
       remoteCwd: "/workspace",
     });
   });
@@ -926,11 +926,11 @@ describe("sandbox adapter execution targets", () => {
     }));
   });
 
-  it("starts a localhost Paperclip bridge for sandbox targets in bridge mode", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-"));
+  it("starts a localhost Bullpen bridge for sandbox targets in bridge mode", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-execution-target-bridge-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
-    const runtimeRootDir = path.join(remoteCwd, ".paperclip-runtime", "codex");
+    const runtimeRootDir = path.join(remoteCwd, ".bullpen-runtime", "codex");
     await mkdir(runtimeRootDir, { recursive: true });
 
     const requests: Array<{ method: string; url: string; auth: string | null; runId: string | null }> = [];
@@ -939,7 +939,7 @@ describe("sandbox adapter execution targets", () => {
         method: req.method ?? "GET",
         url: req.url ?? "/",
         auth: req.headers.authorization ?? null,
-        runId: typeof req.headers["x-paperclip-run-id"] === "string" ? req.headers["x-paperclip-run-id"] : null,
+        runId: typeof req.headers["x-bullpen-run-id"] === "string" ? req.headers["x-bullpen-run-id"] : null,
       });
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ ok: true }));
@@ -964,7 +964,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetBullpenBridge({
       runId: "run-bridge",
       target,
       runtimeRootDir,
@@ -974,13 +974,13 @@ describe("sandbox adapter execution targets", () => {
     });
     try {
       expect(bridge).not.toBeNull();
-      expect(bridge?.env.PAPERCLIP_API_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-      expect(bridge?.env.PAPERCLIP_API_KEY).not.toBe("real-run-jwt");
-      expect(bridge?.env.PAPERCLIP_API_BRIDGE_MODE).toBe("queue_v1");
+      expect(bridge?.env.BULLPEN_API_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(bridge?.env.BULLPEN_API_KEY).not.toBe("real-run-jwt");
+      expect(bridge?.env.BULLPEN_API_BRIDGE_MODE).toBe("queue_v1");
 
-      const response = await fetch(`${bridge!.env.PAPERCLIP_API_URL}/api/agents/me`, {
+      const response = await fetch(`${bridge!.env.BULLPEN_API_URL}/api/agents/me`, {
         headers: {
-          authorization: `Bearer ${bridge!.env.PAPERCLIP_API_KEY}`,
+          authorization: `Bearer ${bridge!.env.BULLPEN_API_KEY}`,
           accept: "application/json",
         },
       });
@@ -1000,10 +1000,10 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("creates a sandbox run log tail factory when bridge streaming is enabled", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-stream-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-execution-target-bridge-stream-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
-    const runtimeRootDir = path.join(remoteCwd, ".paperclip-runtime", "codex");
+    const runtimeRootDir = path.join(remoteCwd, ".bullpen-runtime", "codex");
     await mkdir(runtimeRootDir, { recursive: true });
 
     const logs: Array<{ stream: "stdout" | "stderr"; chunk: string }> = [];
@@ -1019,7 +1019,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetBullpenBridge({
       runId: "run-bridge-stream",
       target,
       runtimeRootDir,
@@ -1044,10 +1044,10 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("defaults sandbox run log streaming on and honors the explicit opt-out", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-stream-default-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-execution-target-bridge-stream-default-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
-    const runtimeRootDir = path.join(remoteCwd, ".paperclip-runtime", "codex");
+    const runtimeRootDir = path.join(remoteCwd, ".bullpen-runtime", "codex");
     await mkdir(runtimeRootDir, { recursive: true });
 
     const baseTarget: AdapterSandboxExecutionTarget = {
@@ -1061,7 +1061,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-    const defaultBridge = await startAdapterExecutionTargetPaperclipBridge({
+    const defaultBridge = await startAdapterExecutionTargetBullpenBridge({
       runId: "run-bridge-stream-default",
       target: baseTarget,
       runtimeRootDir,
@@ -1075,7 +1075,7 @@ describe("sandbox adapter execution targets", () => {
       await defaultBridge?.stop();
     }
 
-    const optOutBridge = await startAdapterExecutionTargetPaperclipBridge({
+    const optOutBridge = await startAdapterExecutionTargetBullpenBridge({
       runId: "run-bridge-stream-opt-out",
       target: { ...baseTarget, streamRunLogs: false },
       runtimeRootDir,
@@ -1131,7 +1131,7 @@ describe("sandbox adapter execution targets", () => {
     const tail = createSandboxRunLogTailFactory({
       runner,
       remoteCwd: "/workspace",
-      logsDir: "/workspace/.paperclip-runtime/codex/paperclip-bridge/queue/logs",
+      logsDir: "/workspace/.bullpen-runtime/codex/bullpen-bridge/queue/logs",
       pollIntervalMs: 1,
       maxChunkBytesPerTick: 4,
       tickTimeoutMs: 50,
@@ -1155,7 +1155,7 @@ describe("sandbox adapter execution targets", () => {
     expect(runner.execute).toHaveBeenCalledWith(expect.objectContaining({
       command: "sh",
       cwd: "/workspace",
-      env: { PAPERCLIP_SANDBOX_EXEC_CHANNEL: "bridge" },
+      env: { BULLPEN_SANDBOX_EXEC_CHANNEL: "bridge" },
       timeoutMs: 50,
     }));
   });
@@ -1185,7 +1185,7 @@ describe("sandbox adapter execution targets", () => {
     const tail = createSandboxRunLogTailFactory({
       runner,
       remoteCwd: "/workspace",
-      logsDir: "/workspace/.paperclip-runtime/codex/paperclip-bridge/queue/logs",
+      logsDir: "/workspace/.bullpen-runtime/codex/bullpen-bridge/queue/logs",
       pollIntervalMs: 1,
       maxChunkBytesPerTick: 7,
       tickTimeoutMs: 50,
@@ -1219,7 +1219,7 @@ describe("sandbox adapter execution targets", () => {
     const tail = createSandboxRunLogTailFactory({
       runner,
       remoteCwd: "/workspace",
-      logsDir: "/workspace/.paperclip-runtime/codex/paperclip-bridge/queue/logs",
+      logsDir: "/workspace/.bullpen-runtime/codex/bullpen-bridge/queue/logs",
       pollIntervalMs: 1,
       tickTimeoutMs: 50,
       maxConsecutiveFailures: 1,
@@ -1234,15 +1234,15 @@ describe("sandbox adapter execution targets", () => {
 
     expect(combinedStream(events, "stdout")).toBe("final out\n");
     expect(combinedStream(events, "stderr")).toBe(
-      "final err\n[paperclip] Run log streaming degraded during the run; remaining output was delivered at completion.\n",
+      "final err\n[bullpen] Run log streaming degraded during the run; remaining output was delivered at completion.\n",
     );
   });
 
-  it("exposes the Paperclip bridge to the sandbox shell surface", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-shell-"));
+  it("exposes the Bullpen bridge to the sandbox shell surface", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-execution-target-bridge-shell-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
-    const runtimeRootDir = path.join(remoteCwd, ".paperclip-runtime", "claude");
+    const runtimeRootDir = path.join(remoteCwd, ".bullpen-runtime", "claude");
     await mkdir(runtimeRootDir, { recursive: true });
 
     const requests: Array<{ method: string; url: string; auth: string | null; runId: string | null }> = [];
@@ -1251,7 +1251,7 @@ describe("sandbox adapter execution targets", () => {
         method: req.method ?? "GET",
         url: req.url ?? "/",
         auth: req.headers.authorization ?? null,
-        runId: typeof req.headers["x-paperclip-run-id"] === "string" ? req.headers["x-paperclip-run-id"] : null,
+        runId: typeof req.headers["x-bullpen-run-id"] === "string" ? req.headers["x-bullpen-run-id"] : null,
       });
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ ok: true }));
@@ -1280,7 +1280,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetBullpenBridge({
       runId: "run-bridge-shell",
       target,
       runtimeRootDir,
@@ -1291,14 +1291,14 @@ describe("sandbox adapter execution targets", () => {
     try {
       expect(bridge).not.toBeNull();
       const shellProbe = [
-        "const url = `${process.env.PAPERCLIP_API_URL}/api/agents/me`;",
-        "fetch(url, { headers: { authorization: `Bearer ${process.env.PAPERCLIP_API_KEY}`, accept: 'application/json' } })",
+        "const url = `${process.env.BULLPEN_API_URL}/api/agents/me`;",
+        "fetch(url, { headers: { authorization: `Bearer ${process.env.BULLPEN_API_KEY}`, accept: 'application/json' } })",
         "  .then(async (response) => {",
         "    const body = await response.json();",
         "    process.stdout.write(JSON.stringify({",
         "      status: response.status,",
         "      body,",
-        "      bridgeMode: process.env.PAPERCLIP_API_BRIDGE_MODE,",
+        "      bridgeMode: process.env.BULLPEN_API_BRIDGE_MODE,",
         "    }));",
         "  })",
         "  .catch((error) => {",
@@ -1328,7 +1328,7 @@ describe("sandbox adapter execution targets", () => {
         bridgeMode: "queue_v1",
       });
       expect(`${result.stdout}\n${result.stderr}`).not.toContain("real-run-jwt");
-      expect(`${result.stdout}\n${result.stderr}`).not.toContain(bridge!.env.PAPERCLIP_API_KEY);
+      expect(`${result.stdout}\n${result.stderr}`).not.toContain(bridge!.env.BULLPEN_API_KEY);
       const runnerCommandText = JSON.stringify(
         runner.execute.mock.calls.map(([call]) => ({
           command: call.command,
@@ -1336,10 +1336,10 @@ describe("sandbox adapter execution targets", () => {
         })),
       );
       expect(runnerCommandText).not.toContain("real-run-jwt");
-      expect(runnerCommandText).not.toContain(bridge!.env.PAPERCLIP_API_KEY);
+      expect(runnerCommandText).not.toContain(bridge!.env.BULLPEN_API_KEY);
       const runtimeFiles = (await readRuntimeTextFiles(runtimeRootDir)).join("\n");
       expect(runtimeFiles).not.toContain("real-run-jwt");
-      expect(runtimeFiles).not.toContain(bridge!.env.PAPERCLIP_API_KEY);
+      expect(runtimeFiles).not.toContain(bridge!.env.BULLPEN_API_KEY);
       expect(requests).toEqual([{
         method: "GET",
         url: "/api/agents/me",
@@ -1353,10 +1353,10 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("uses the effective adapter timeout when starting the sandbox callback bridge", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-timeout-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-execution-target-bridge-timeout-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
-    const runtimeRootDir = path.join(remoteCwd, ".paperclip-runtime", "codex");
+    const runtimeRootDir = path.join(remoteCwd, ".bullpen-runtime", "codex");
     await mkdir(runtimeRootDir, { recursive: true });
 
     const delegateRunner = createLocalSandboxRunner();
@@ -1387,7 +1387,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetBullpenBridge({
       runId: "run-bridge-timeout",
       target,
       runtimeRootDir,
@@ -1409,10 +1409,10 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("fails oversized host responses with a 502 before returning them to the sandbox client", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-limit-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-execution-target-bridge-limit-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
-    const runtimeRootDir = path.join(remoteCwd, ".paperclip-runtime", "codex");
+    const runtimeRootDir = path.join(remoteCwd, ".bullpen-runtime", "codex");
     await mkdir(runtimeRootDir, { recursive: true });
 
     const requests: Array<{ method: string; url: string; auth: string | null; runId: string | null }> = [];
@@ -1422,7 +1422,7 @@ describe("sandbox adapter execution targets", () => {
         method: req.method ?? "GET",
         url: req.url ?? "/",
         auth: req.headers.authorization ?? null,
-        runId: typeof req.headers["x-paperclip-run-id"] === "string" ? req.headers["x-paperclip-run-id"] : null,
+        runId: typeof req.headers["x-bullpen-run-id"] === "string" ? req.headers["x-bullpen-run-id"] : null,
       });
       res.writeHead(200, {
         "content-type": "application/json",
@@ -1450,7 +1450,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetBullpenBridge({
       runId: "run-bridge-limit",
       target,
       runtimeRootDir,
@@ -1460,9 +1460,9 @@ describe("sandbox adapter execution targets", () => {
       maxBodyBytes: 32,
     });
     try {
-      const response = await fetch(`${bridge!.env.PAPERCLIP_API_URL}/api/agents/me`, {
+      const response = await fetch(`${bridge!.env.BULLPEN_API_URL}/api/agents/me`, {
         headers: {
-          authorization: `Bearer ${bridge!.env.PAPERCLIP_API_KEY}`,
+          authorization: `Bearer ${bridge!.env.BULLPEN_API_KEY}`,
           accept: "application/json",
         },
       });

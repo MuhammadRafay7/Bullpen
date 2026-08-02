@@ -9,14 +9,24 @@ import {
 } from "react";
 
 type Theme = "light" | "dark";
+/**
+ * What the user asked for, as opposed to what is currently rendered.
+ * `system` means "keep following `prefers-color-scheme`" and is the
+ * default until an explicit choice is made.
+ */
+export type ThemePreference = Theme | "system";
 
 interface ThemeContextValue {
+  /** The resolved mode actually applied to the document. */
   theme: Theme;
+  /** The user's choice, including the `system` pass-through. */
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
 }
 
-const THEME_STORAGE_KEY = "paperclip.theme";
+const THEME_STORAGE_KEY = "bullpen.theme";
 const DARK_THEME_COLOR = "#18181b";
 const LIGHT_THEME_COLOR = "#ffffff";
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
@@ -26,14 +36,27 @@ function resolveThemeFromDocument(): Theme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
-function hasStoredTheme(): boolean {
-  if (typeof window === "undefined") return false;
+/**
+ * `system` is represented by the *absence* of a stored value, which is
+ * exactly what the pre-hydration script in `index.html` already treats as
+ * "fall back to `prefers-color-scheme`". Choosing system therefore clears
+ * the key rather than writing a third sentinel value.
+ */
+function readStoredPreference(): ThemePreference {
+  if (typeof window === "undefined") return "system";
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === "light" || stored === "dark";
+    return stored === "light" || stored === "dark" ? stored : "system";
   } catch {
-    return false;
+    return "system";
   }
+}
+
+function resolveSystemTheme(): Theme {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return resolveThemeFromDocument();
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function applyTheme(theme: Theme) {
@@ -50,26 +73,44 @@ function applyTheme(theme: Theme) {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => resolveThemeFromDocument());
-  // Track whether the user has explicitly chosen a theme. If false, the
-  // theme is being derived from the OS `prefers-color-scheme` and should
-  // follow OS-level changes mid-session without being persisted.
-  const [hasExplicitChoice, setHasExplicitChoice] = useState<boolean>(() => hasStoredTheme());
+  const [preference, setPreferenceState] = useState<ThemePreference>(() => readStoredPreference());
+  // When the preference is `system` the theme is derived from the OS
+  // `prefers-color-scheme` and should follow OS-level changes mid-session
+  // without being persisted.
+  const hasExplicitChoice = preference !== "system";
 
-  const setTheme = useCallback((nextTheme: Theme) => {
-    setHasExplicitChoice(true);
-    setThemeState(nextTheme);
+  const setPreference = useCallback((nextPreference: ThemePreference) => {
+    setPreferenceState(nextPreference);
+    // Resolve immediately so switching back to `system` re-adopts the OS
+    // mode in the same tick rather than waiting for the next OS change.
+    setThemeState(nextPreference === "system" ? resolveSystemTheme() : nextPreference);
   }, []);
 
+  const setTheme = useCallback(
+    (nextTheme: Theme) => {
+      setPreference(nextTheme);
+    },
+    [setPreference],
+  );
+
   const toggleTheme = useCallback(() => {
-    setHasExplicitChoice(true);
-    setThemeState((current) => (current === "dark" ? "light" : "dark"));
+    setThemeState((current) => {
+      const next = current === "dark" ? "light" : "dark";
+      setPreferenceState(next);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
     applyTheme(theme);
-    if (!hasExplicitChoice) return;
     try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      if (hasExplicitChoice) {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } else {
+        // Clearing the key is what makes the choice survive a reload: the
+        // bootstrap script reads "no stored value" as "follow the OS".
+        localStorage.removeItem(THEME_STORAGE_KEY);
+      }
     } catch {
       // Ignore local storage write failures in restricted environments.
     }
@@ -91,10 +132,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       theme,
+      preference,
+      setPreference,
       setTheme,
       toggleTheme,
     }),
-    [theme, setTheme, toggleTheme],
+    [theme, preference, setPreference, setTheme, toggleTheme],
   );
 
   return (

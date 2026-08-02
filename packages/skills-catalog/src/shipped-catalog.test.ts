@@ -5,25 +5,25 @@ import { describe, expect, it } from "vitest";
 import { catalogManifest, catalogSkills, resolveCatalogSkillRef } from "./index.js";
 
 const EXPECTED_BUNDLED_KEYS = [
-  "paperclipai/bundled/docs/doc-maintenance",
-  "paperclipai/bundled/paperclip-operations/issue-triage",
-  "paperclipai/bundled/paperclip-operations/reflection-coach",
-  "paperclipai/bundled/paperclip-operations/status-card-query",
-  "paperclipai/bundled/paperclip-operations/summarize-status",
-  "paperclipai/bundled/paperclip-operations/task-planning",
-  "paperclipai/bundled/product/paperclip-capsules",
-  "paperclipai/bundled/product/wireframe",
-  "paperclipai/bundled/quality/qa-acceptance",
-  "paperclipai/bundled/software-development/github-pr-workflow",
+  "bullpen/bundled/docs/doc-maintenance",
+  "bullpen/bundled/bullpen-operations/issue-triage",
+  "bullpen/bundled/bullpen-operations/reflection-coach",
+  "bullpen/bundled/bullpen-operations/status-card-query",
+  "bullpen/bundled/bullpen-operations/summarize-status",
+  "bullpen/bundled/bullpen-operations/task-planning",
+  "bullpen/bundled/product/bullpen-capsules",
+  "bullpen/bundled/product/wireframe",
+  "bullpen/bundled/quality/qa-acceptance",
+  "bullpen/bundled/software-development/github-pr-workflow",
 ];
 
 const EXPECTED_OPTIONAL_KEYS = [
-  "paperclipai/optional/browser/agent-browser",
-  "paperclipai/optional/content/release-announcement",
-  "paperclipai/optional/content/simplified-english",
-  "paperclipai/optional/finance/ramp",
-  "paperclipai/optional/product/design-critique",
-  "paperclipai/optional/research/last30days",
+  "bullpen/optional/browser/agent-browser",
+  "bullpen/optional/content/release-announcement",
+  "bullpen/optional/content/simplified-english",
+  "bullpen/optional/finance/ramp",
+  "bullpen/optional/product/design-critique",
+  "bullpen/optional/research/last30days",
 ];
 
 const MAX_FRONTMATTER_DESCRIPTION_LENGTH = 300;
@@ -73,7 +73,7 @@ describe("shipped skills catalog", () => {
     const skill = readFileSync(
       path.join(
         REPO_ROOT,
-        "packages/skills-catalog/catalog/bundled/paperclip-operations/summarize-status/SKILL.md",
+        "packages/skills-catalog/catalog/bundled/bullpen-operations/summarize-status/SKILL.md",
       ),
       "utf8",
     );
@@ -127,7 +127,7 @@ describe("shipped skills catalog", () => {
     // carry the "assets" trust level and are installable.
     const scriptBearing = catalogSkills.filter((skill) => skill.trustLevel === "scripts_executables");
     expect(scriptBearing.map((skill) => skill.key)).toEqual([
-      "paperclipai/optional/research/last30days",
+      "bullpen/optional/research/last30days",
     ]);
   });
 
@@ -150,11 +150,11 @@ describe("shipped skills catalog", () => {
     expect(issues).toEqual([]);
   });
 
-  it("uses canonical paperclipai keys derived from kind/category/slug", () => {
+  it("uses canonical bullpen keys derived from kind/category/slug", () => {
     const violations: string[] = [];
     for (const skill of catalogSkills) {
-      const expectedKey = `paperclipai/${skill.kind}/${skill.category}/${skill.slug}`;
-      const expectedId = `paperclipai:${skill.kind}:${skill.category}:${skill.slug}`;
+      const expectedKey = `bullpen/${skill.kind}/${skill.category}/${skill.slug}`;
+      const expectedId = `bullpen:${skill.kind}:${skill.category}:${skill.slug}`;
       if (skill.key !== expectedKey) violations.push(`${skill.key} should be ${expectedKey}`);
       if (skill.id !== expectedId) violations.push(`${skill.id} should be ${expectedId}`);
     }
@@ -163,12 +163,12 @@ describe("shipped skills catalog", () => {
 
   it("exposes a stable manifest header for downstream consumers", () => {
     expect(catalogManifest.schemaVersion).toBe(1);
-    expect(catalogManifest.packageName).toBe("@paperclipai/skills-catalog");
+    expect(catalogManifest.packageName).toBe("@bullpen/skills-catalog");
     expect(catalogSkills.length).toBe(EXPECTED_BUNDLED_KEYS.length + EXPECTED_OPTIONAL_KEYS.length);
   });
 
   it("resolves shipped skills by id, key, and unique slug", () => {
-    const sample = catalogSkills.find((skill) => skill.key === "paperclipai/bundled/software-development/github-pr-workflow");
+    const sample = catalogSkills.find((skill) => skill.key === "bullpen/bundled/software-development/github-pr-workflow");
     expect(sample, "expected github-pr-workflow to ship in the bundled catalog").toBeDefined();
     if (!sample) return;
 
@@ -181,7 +181,7 @@ describe("shipped skills catalog", () => {
     const rampSkill = readFileSync(new URL("../catalog/optional/finance/ramp/SKILL.md", import.meta.url), "utf8");
 
     expect(rampSkill).toContain("mixes Official and Community playbooks");
-    expect(rampSkill).toContain("do not execute them inside Paperclip unless a Paperclip approval explicitly names the playbook");
+    expect(rampSkill).toContain("do not execute them inside Bullpen unless a Bullpen approval explicitly names the playbook");
     expect(rampSkill).toContain("third-party browser automation, MCP server, CLI, or connector");
   });
 

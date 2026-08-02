@@ -21,7 +21,7 @@ import {
   projectWorkspaces,
   projects,
   workspaceRuntimeServices,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import { eq } from "drizzle-orm";
 import {
   buildWorkspaceRuntimeDesiredStatePatch,
@@ -54,9 +54,9 @@ import {
   buildWorkspaceRealizationRequest,
   readWorkspaceRealizationRequest,
 } from "../services/workspace-realization.ts";
-import type { Environment, EnvironmentLease } from "@paperclipai/shared";
-import { resolvePaperclipConfigPath } from "../paths.ts";
-import type { WorkspaceOperation } from "@paperclipai/shared";
+import type { Environment, EnvironmentLease } from "@bullpen/shared";
+import { resolveBullpenConfigPath } from "../paths.ts";
+import type { WorkspaceOperation } from "@bullpen/shared";
 import type { WorkspaceOperationRecorder } from "../services/workspace-operations.ts";
 import { deriveWorktreeInstanceId } from "../services/workspace-instance-cleanup.ts";
 import {
@@ -128,10 +128,10 @@ async function runPnpm(cwd: string, args: string[]) {
 }
 
 async function createTempRepo(defaultBranch = "main") {
-  const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-repo-"));
+  const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-repo-"));
   await runGit(repoRoot, ["init"]);
-  await runGit(repoRoot, ["config", "user.email", "paperclip@example.com"]);
-  await runGit(repoRoot, ["config", "user.name", "Paperclip Test"]);
+  await runGit(repoRoot, ["config", "user.email", "bullpen@example.com"]);
+  await runGit(repoRoot, ["config", "user.name", "Bullpen Test"]);
   await fs.writeFile(path.join(repoRoot, "README.md"), "hello\n", "utf8");
   await runGit(repoRoot, ["add", "README.md"]);
   await runGit(repoRoot, ["commit", "-m", "Initial commit"]);
@@ -213,15 +213,15 @@ async function expectPersistedBranchMismatchRejected(input: {
 
 async function createClonedRepoWithRemote() {
   const sourceRepo = await createTempRepo("master");
-  const remoteDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-remote-"));
-  const remotePath = path.join(remoteDir, "paperclip.git");
+  const remoteDir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-remote-"));
+  const remotePath = path.join(remoteDir, "bullpen.git");
   await execFileAsync("git", ["clone", "--bare", sourceRepo, remotePath]);
 
-  const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-clone-"));
-  const repoRoot = path.join(cloneRoot, "paperclip");
+  const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-clone-"));
+  const repoRoot = path.join(cloneRoot, "bullpen");
   await execFileAsync("git", ["clone", remotePath, repoRoot]);
-  await runGit(repoRoot, ["config", "user.email", "paperclip@example.com"]);
-  await runGit(repoRoot, ["config", "user.name", "Paperclip Test"]);
+  await runGit(repoRoot, ["config", "user.email", "bullpen@example.com"]);
+  await runGit(repoRoot, ["config", "user.name", "Bullpen Test"]);
   return { sourceRepo, remotePath, repoRoot };
 }
 
@@ -349,28 +349,28 @@ afterEach(async () => {
       leasedRunIds.delete(runId);
     }),
   );
-  delete process.env.PAPERCLIP_CONFIG;
-  delete process.env.PAPERCLIP_HOME;
-  delete process.env.PAPERCLIP_INSTANCE_ID;
-  delete process.env.PAPERCLIP_WORKTREES_DIR;
+  delete process.env.BULLPEN_CONFIG;
+  delete process.env.BULLPEN_HOME;
+  delete process.env.BULLPEN_INSTANCE_ID;
+  delete process.env.BULLPEN_WORKTREES_DIR;
   delete process.env.DATABASE_URL;
   await resetRuntimeServicesForTests();
 });
 
 describe("sanitizeRuntimeServiceBaseEnv", () => {
-  it("removes inherited Paperclip and pnpm auth flags before spawning runtime services", () => {
+  it("removes inherited Bullpen and pnpm auth flags before spawning runtime services", () => {
     const sanitized = sanitizeRuntimeServiceBaseEnv({
       PATH: process.env.PATH,
-      DATABASE_URL: "postgres://example.test/paperclip",
-      PAPERCLIP_HOME: "/tmp/paperclip-home",
-      PAPERCLIP_INSTANCE_ID: "runtime-instance",
+      DATABASE_URL: "postgres://example.test/bullpen",
+      BULLPEN_HOME: "/tmp/bullpen-home",
+      BULLPEN_INSTANCE_ID: "runtime-instance",
       npm_config_tailscale_auth: "true",
       npm_config_authenticated_private: "true",
       HOST: "0.0.0.0",
     });
 
-    expect(sanitized.PAPERCLIP_HOME).toBeUndefined();
-    expect(sanitized.PAPERCLIP_INSTANCE_ID).toBeUndefined();
+    expect(sanitized.BULLPEN_HOME).toBeUndefined();
+    expect(sanitized.BULLPEN_INSTANCE_ID).toBeUndefined();
     expect(sanitized.DATABASE_URL).toBeUndefined();
     expect(sanitized.npm_config_tailscale_auth).toBeUndefined();
     expect(sanitized.npm_config_authenticated_private).toBeUndefined();
@@ -380,9 +380,9 @@ describe("sanitizeRuntimeServiceBaseEnv", () => {
 
 describe("ensureServerWorkspaceLinksCurrent", () => {
   it("relinks stale server workspace dependencies inside the current repo root", async () => {
-    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-"));
-    const staleRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-stale-"));
-    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@paperclipai");
+    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-links-"));
+    const staleRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-links-stale-"));
+    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@bullpen");
     const expectedPackageDir = path.join(repoRoot, "packages", "db");
     const stalePackageDir = path.join(staleRoot, "db");
 
@@ -390,26 +390,26 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
     await fs.mkdir(expectedPackageDir, { recursive: true });
     await fs.mkdir(stalePackageDir, { recursive: true });
     await fs.mkdir(serverNodeModulesScopeDir, { recursive: true });
-    await fs.writeFile(path.join(repoRoot, ".git"), "gitdir: /tmp/paperclip-main/.git/worktrees/runtime-links\n", "utf8");
+    await fs.writeFile(path.join(repoRoot, ".git"), "gitdir: /tmp/bullpen-main/.git/worktrees/runtime-links\n", "utf8");
     await fs.writeFile(path.join(repoRoot, "pnpm-workspace.yaml"), "packages:\n  - packages/*\n  - server\n", "utf8");
     await fs.writeFile(
       path.join(repoRoot, "server", "package.json"),
       JSON.stringify({
-        name: "@paperclipai/server",
+        name: "@bullpen/server",
         dependencies: {
-          "@paperclipai/db": "workspace:*",
+          "@bullpen/db": "workspace:*",
         },
       }),
       "utf8",
     );
     await fs.writeFile(
       path.join(expectedPackageDir, "package.json"),
-      JSON.stringify({ name: "@paperclipai/db" }),
+      JSON.stringify({ name: "@bullpen/db" }),
       "utf8",
     );
     await fs.writeFile(
       path.join(stalePackageDir, "package.json"),
-      JSON.stringify({ name: "@paperclipai/db" }),
+      JSON.stringify({ name: "@bullpen/db" }),
       "utf8",
     );
     await fs.symlink(stalePackageDir, path.join(serverNodeModulesScopeDir, "db"));
@@ -419,28 +419,28 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
   });
 
   it("skips relinking when server workspace dependencies already point at the repo", async () => {
-    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-current-"));
-    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@paperclipai");
+    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-links-current-"));
+    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@bullpen");
     const expectedPackageDir = path.join(repoRoot, "packages", "db");
 
     await fs.mkdir(path.join(repoRoot, "server"), { recursive: true });
     await fs.mkdir(expectedPackageDir, { recursive: true });
     await fs.mkdir(serverNodeModulesScopeDir, { recursive: true });
-    await fs.writeFile(path.join(repoRoot, ".git"), "gitdir: /tmp/paperclip-main/.git/worktrees/runtime-links-current\n", "utf8");
+    await fs.writeFile(path.join(repoRoot, ".git"), "gitdir: /tmp/bullpen-main/.git/worktrees/runtime-links-current\n", "utf8");
     await fs.writeFile(path.join(repoRoot, "pnpm-workspace.yaml"), "packages:\n  - packages/*\n  - server\n", "utf8");
     await fs.writeFile(
       path.join(repoRoot, "server", "package.json"),
       JSON.stringify({
-        name: "@paperclipai/server",
+        name: "@bullpen/server",
         dependencies: {
-          "@paperclipai/db": "workspace:*",
+          "@bullpen/db": "workspace:*",
         },
       }),
       "utf8",
     );
     await fs.writeFile(
       path.join(expectedPackageDir, "package.json"),
-      JSON.stringify({ name: "@paperclipai/db" }),
+      JSON.stringify({ name: "@bullpen/db" }),
       "utf8",
     );
     await fs.symlink(expectedPackageDir, path.join(serverNodeModulesScopeDir, "db"));
@@ -449,9 +449,9 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
   });
 
   it("skips relinking outside linked git worktrees", async () => {
-    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-non-worktree-"));
-    const staleRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-non-worktree-stale-"));
-    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@paperclipai");
+    const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-links-non-worktree-"));
+    const staleRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-links-non-worktree-stale-"));
+    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@bullpen");
     const expectedPackageDir = path.join(repoRoot, "packages", "db");
     const stalePackageDir = path.join(staleRoot, "db");
 
@@ -464,21 +464,21 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
     await fs.writeFile(
       path.join(repoRoot, "server", "package.json"),
       JSON.stringify({
-        name: "@paperclipai/server",
+        name: "@bullpen/server",
         dependencies: {
-          "@paperclipai/db": "workspace:*",
+          "@bullpen/db": "workspace:*",
         },
       }),
       "utf8",
     );
     await fs.writeFile(
       path.join(expectedPackageDir, "package.json"),
-      JSON.stringify({ name: "@paperclipai/db" }),
+      JSON.stringify({ name: "@bullpen/db" }),
       "utf8",
     );
     await fs.writeFile(
       path.join(stalePackageDir, "package.json"),
-      JSON.stringify({ name: "@paperclipai/db" }),
+      JSON.stringify({ name: "@bullpen/db" }),
       "utf8",
     );
     await fs.symlink(stalePackageDir, path.join(serverNodeModulesScopeDir, "db"));
@@ -491,15 +491,15 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
 describe("realizeExecutionWorkspace", () => {
   it("defaults new git worktrees to freshly fetched origin/master", async () => {
     const sourceRepo = await createTempRepo("master");
-    const remoteDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-remote-"));
-    const remotePath = path.join(remoteDir, "paperclip.git");
+    const remoteDir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-remote-"));
+    const remotePath = path.join(remoteDir, "bullpen.git");
     await execFileAsync("git", ["clone", "--bare", sourceRepo, remotePath]);
 
-    const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-clone-"));
-    const repoRoot = path.join(cloneRoot, "paperclip");
+    const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-clone-"));
+    const repoRoot = path.join(cloneRoot, "bullpen");
     await execFileAsync("git", ["clone", remotePath, repoRoot]);
-    await runGit(repoRoot, ["config", "user.email", "paperclip@example.com"]);
-    await runGit(repoRoot, ["config", "user.name", "Paperclip Test"]);
+    await runGit(repoRoot, ["config", "user.email", "bullpen@example.com"]);
+    await runGit(repoRoot, ["config", "user.name", "Bullpen Test"]);
 
     await fs.writeFile(path.join(sourceRepo, "auth-fix.txt"), "cookie fix\n", "utf8");
     await runGit(sourceRepo, ["add", "auth-fix.txt"]);
@@ -573,7 +573,7 @@ describe("realizeExecutionWorkspace", () => {
     expect(first.strategy).toBe("git_worktree");
     expect(first.created).toBe(true);
     expect(first.branchName).toBe("PAP-447-add-worktree-support");
-    expect(first.cwd).toContain(path.join(".paperclip", "worktrees"));
+    expect(first.cwd).toContain(path.join(".bullpen", "worktrees"));
     await expect(fs.stat(path.join(first.cwd, ".git"))).resolves.toBeTruthy();
 
     const second = await realizeExecutionWorkspace({
@@ -797,7 +797,7 @@ describe("realizeExecutionWorkspace", () => {
   it("rejects reusing an empty directory that only looks like a worktree because it sits inside the repo", async () => {
     const repoRoot = await createTempRepo();
     const branchName = "PAP-447-add-worktree-support";
-    const poisonedPath = path.join(repoRoot, ".paperclip", "worktrees", branchName);
+    const poisonedPath = path.join(repoRoot, ".bullpen", "worktrees", branchName);
     await fs.mkdir(poisonedPath, { recursive: true });
 
     await expect(
@@ -833,7 +833,7 @@ describe("realizeExecutionWorkspace", () => {
   it("reuses the current linked worktree instead of nesting another worktree inside it", async () => {
     const repoRoot = await createTempRepo();
     const branchName = "PAP-1355-worktree-reuse";
-    const currentWorktree = path.join(repoRoot, ".paperclip", "worktrees", branchName);
+    const currentWorktree = path.join(repoRoot, ".bullpen", "worktrees", branchName);
 
     await fs.mkdir(path.dirname(currentWorktree), { recursive: true });
     await execFileAsync("git", ["worktree", "add", "-b", branchName, currentWorktree, "HEAD"], { cwd: repoRoot });
@@ -955,7 +955,7 @@ describe("realizeExecutionWorkspace", () => {
   it("reuses an already checked out branch from git worktree metadata even when the target path differs", async () => {
     const repoRoot = await createTempRepo();
     const branchName = "PAP-1355-worktree-reuse";
-    const existingWorktree = path.join(repoRoot, ".paperclip", "worktrees", branchName);
+    const existingWorktree = path.join(repoRoot, ".bullpen", "worktrees", branchName);
     const { recorder, operations } = createWorkspaceOperationRecorderDouble();
 
     await fs.mkdir(path.dirname(existingWorktree), { recursive: true });
@@ -974,7 +974,7 @@ describe("realizeExecutionWorkspace", () => {
         workspaceStrategy: {
           type: "git_worktree",
           branchTemplate: "{{issue.identifier}}-{{slug}}",
-          worktreeParentDir: ".paperclip/other-worktrees",
+          worktreeParentDir: ".bullpen/other-worktrees",
         },
       },
       issue: {
@@ -1083,9 +1083,9 @@ describe("realizeExecutionWorkspace", () => {
       [
         "#!/usr/bin/env bash",
         "set -euo pipefail",
-        "printf '%s\\n' \"$PAPERCLIP_WORKSPACE_BRANCH\" > .paperclip-provision-branch",
-        "printf '%s\\n' \"$PAPERCLIP_WORKSPACE_BASE_CWD\" > .paperclip-provision-base",
-        "printf '%s\\n' \"$PAPERCLIP_WORKSPACE_CREATED\" > .paperclip-provision-created",
+        "printf '%s\\n' \"$BULLPEN_WORKSPACE_BRANCH\" > .bullpen-provision-branch",
+        "printf '%s\\n' \"$BULLPEN_WORKSPACE_BASE_CWD\" > .bullpen-provision-base",
+        "printf '%s\\n' \"$BULLPEN_WORKSPACE_CREATED\" > .bullpen-provision-created",
       ].join("\n"),
       "utf8",
     );
@@ -1120,13 +1120,13 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    await expect(fs.readFile(path.join(workspace.cwd, ".paperclip-provision-branch"), "utf8")).resolves.toBe(
+    await expect(fs.readFile(path.join(workspace.cwd, ".bullpen-provision-branch"), "utf8")).resolves.toBe(
       "PAP-448-run-provision-command\n",
     );
-    await expect(fs.readFile(path.join(workspace.cwd, ".paperclip-provision-base"), "utf8")).resolves.toBe(
+    await expect(fs.readFile(path.join(workspace.cwd, ".bullpen-provision-base"), "utf8")).resolves.toBe(
       `${repoRoot}\n`,
     );
-    await expect(fs.readFile(path.join(workspace.cwd, ".paperclip-provision-created"), "utf8")).resolves.toBe(
+    await expect(fs.readFile(path.join(workspace.cwd, ".bullpen-provision-created"), "utf8")).resolves.toBe(
       "true\n",
     );
 
@@ -1158,7 +1158,7 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    await expect(fs.readFile(path.join(reused.cwd, ".paperclip-provision-created"), "utf8")).resolves.toBe("false\n");
+    await expect(fs.readFile(path.join(reused.cwd, ".bullpen-provision-created"), "utf8")).resolves.toBe("false\n");
   });
 
   it("uses the latest repo-managed provision script when reusing an existing worktree", async () => {
@@ -1169,7 +1169,7 @@ describe("realizeExecutionWorkspace", () => {
       [
         "#!/usr/bin/env bash",
         "set -euo pipefail",
-        "printf 'v1\\n' > .paperclip-provision-version",
+        "printf 'v1\\n' > .bullpen-provision-version",
       ].join("\n"),
       "utf8",
     );
@@ -1204,14 +1204,14 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    await expect(fs.readFile(path.join(initial.cwd, ".paperclip-provision-version"), "utf8")).resolves.toBe("v1\n");
+    await expect(fs.readFile(path.join(initial.cwd, ".bullpen-provision-version"), "utf8")).resolves.toBe("v1\n");
 
     await fs.writeFile(
       path.join(repoRoot, "scripts", "provision.sh"),
       [
         "#!/usr/bin/env bash",
         "set -euo pipefail",
-        "printf 'v2\\n' > .paperclip-provision-version",
+        "printf 'v2\\n' > .bullpen-provision-version",
       ].join("\n"),
       "utf8",
     );
@@ -1248,24 +1248,24 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    await expect(fs.readFile(path.join(reused.cwd, ".paperclip-provision-version"), "utf8")).resolves.toBe("v2\n");
+    await expect(fs.readFile(path.join(reused.cwd, ".bullpen-provision-version"), "utf8")).resolves.toBe("v2\n");
   }, 30_000);
 
-  it("writes an isolated repo-local Paperclip config and worktree branding when provisioning", async () => {
+  it("writes an isolated repo-local Bullpen config and worktree branding when provisioning", async () => {
     const repoRoot = await createTempRepo();
     const previousCwd = process.cwd();
     const previousPath = process.env.PATH;
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-home-"));
-    const isolatedWorktreeHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktrees-"));
-    const isolatedBin = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-bin-"));
+    const bullpenHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-home-"));
+    const isolatedWorktreeHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktrees-"));
+    const isolatedBin = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-bin-"));
     const instanceId = "worktree-base";
-    const sharedConfigDir = path.join(paperclipHome, "instances", instanceId);
+    const sharedConfigDir = path.join(bullpenHome, "instances", instanceId);
     const sharedConfigPath = path.join(sharedConfigDir, "config.json");
     const sharedEnvPath = path.join(sharedConfigDir, ".env");
 
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = instanceId;
-    process.env.PAPERCLIP_WORKTREES_DIR = isolatedWorktreeHome;
+    process.env.BULLPEN_HOME = bullpenHome;
+    process.env.BULLPEN_INSTANCE_ID = instanceId;
+    process.env.BULLPEN_WORKTREES_DIR = isolatedWorktreeHome;
     // Keep this server-side fixture on provision-worktree.sh's config writer path;
     // CLI/database seeding is covered by the CLI worktree tests.
     await fs.symlink(process.execPath, path.join(isolatedBin, "node"));
@@ -1314,7 +1314,7 @@ describe("realizeExecutionWorkspace", () => {
               baseDir: path.join(sharedConfigDir, "storage"),
             },
             s3: {
-              bucket: "paperclip",
+              bucket: "bullpen",
               region: "us-east-1",
               prefix: "",
               forcePathStyle: false,
@@ -1333,7 +1333,7 @@ describe("realizeExecutionWorkspace", () => {
       ) + "\n",
       "utf8",
     );
-    await fs.writeFile(sharedEnvPath, 'DATABASE_URL="postgres://worktree:test@db.example.com:6543/paperclip"\n', "utf8");
+    await fs.writeFile(sharedEnvPath, 'DATABASE_URL="postgres://worktree:test@db.example.com:6543/bullpen"\n', "utf8");
 
     await fs.mkdir(path.join(repoRoot, "scripts"), { recursive: true });
     await fs.copyFile(
@@ -1373,8 +1373,8 @@ describe("realizeExecutionWorkspace", () => {
       } satisfies Parameters<typeof realizeExecutionWorkspace>[0];
       const workspace = await realizeExecutionWorkspace(workspaceInput);
 
-      const configPath = path.join(workspace.cwd, ".paperclip", "config.json");
-      const envPath = path.join(workspace.cwd, ".paperclip", ".env");
+      const configPath = path.join(workspace.cwd, ".bullpen", "config.json");
+      const envPath = path.join(workspace.cwd, ".bullpen", ".env");
       const envContents = await fs.readFile(envPath, "utf8");
       const configContents = JSON.parse(await fs.readFile(configPath, "utf8"));
       const configStats = await fs.lstat(configPath);
@@ -1394,14 +1394,14 @@ describe("realizeExecutionWorkspace", () => {
       );
       expect(envContents).not.toContain("DATABASE_URL=");
       const envVars = parseEnvContents(envContents);
-      expect(envVars.PAPERCLIP_HOME).toBe(isolatedWorktreeHome);
-      expect(envVars.PAPERCLIP_INSTANCE_ID).toBe(expectedInstanceId);
-      expect(await fs.realpath(envVars.PAPERCLIP_CONFIG!)).toBe(await fs.realpath(configPath));
-      expect(envVars.PAPERCLIP_IN_WORKTREE).toBe("true");
-      expect(envVars.PAPERCLIP_WORKTREE_NAME).toBe("PAP-885-show-worktree-banner");
+      expect(envVars.BULLPEN_HOME).toBe(isolatedWorktreeHome);
+      expect(envVars.BULLPEN_INSTANCE_ID).toBe(expectedInstanceId);
+      expect(await fs.realpath(envVars.BULLPEN_CONFIG!)).toBe(await fs.realpath(configPath));
+      expect(envVars.BULLPEN_IN_WORKTREE).toBe("true");
+      expect(envVars.BULLPEN_WORKTREE_NAME).toBe("PAP-885-show-worktree-banner");
 
       process.chdir(workspace.cwd);
-      expect(resolvePaperclipConfigPath()).toBe(configPath);
+      expect(resolveBullpenConfigPath()).toBe(configPath);
 
       const preservedPort = 39999;
       await fs.writeFile(
@@ -1419,7 +1419,7 @@ describe("realizeExecutionWorkspace", () => {
         ) + "\n",
         "utf8",
       );
-      await fs.writeFile(envPath, `${envContents}PAPERCLIP_WORKTREE_COLOR="#112233"\n`, "utf8");
+      await fs.writeFile(envPath, `${envContents}BULLPEN_WORKTREE_COLOR="#112233"\n`, "utf8");
 
       const reusedWorkspace = await realizeExecutionWorkspace(workspaceInput);
       const reusedConfigContents = JSON.parse(await fs.readFile(configPath, "utf8"));
@@ -1429,7 +1429,7 @@ describe("realizeExecutionWorkspace", () => {
       expect(reusedWorkspace.created).toBe(false);
       expect(reusedConfigContents.server.port).toBe(preservedPort);
       expect(reusedConfigContents.database.embeddedPostgresDataDir).toBe(path.join(expectedInstanceRoot, "db"));
-      expect(reusedEnvContents).toContain('PAPERCLIP_WORKTREE_COLOR="#112233"');
+      expect(reusedEnvContents).toContain('BULLPEN_WORKTREE_COLOR="#112233"');
     } finally {
       process.chdir(previousCwd);
       if (previousPath === undefined) {
@@ -1612,13 +1612,13 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    await expect(fs.readFile(path.join(workspace.cwd, ".paperclip", "config.json"), "utf8")).resolves.toContain(
+    await expect(fs.readFile(path.join(workspace.cwd, ".bullpen", "config.json"), "utf8")).resolves.toContain(
       "\"database\"",
     );
   }, 30_000);
 
   it("reinstalls worktree-local pnpm dependencies when package metadata changes", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-stale-deps-"));
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-stale-deps-"));
     const baseRoot = path.join(tempRoot, "base");
     const worktreeRoot = path.join(tempRoot, "worktree");
     const fakeBin = path.join(tempRoot, "bin");
@@ -1660,7 +1660,7 @@ describe("realizeExecutionWorkspace", () => {
         fakePnpmPath,
         [
           "#!/bin/sh",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"--help\" ]; then",
+          "if [ \"$1\" = \"bullpen\" ] && [ \"$2\" = \"--help\" ]; then",
           "  exit 1",
           "fi",
           "if [ \"$1\" = \"install\" ] && [ \"$2\" = \"--prod=false\" ] && [ \"$3\" = \"--frozen-lockfile\" ]; then",
@@ -1680,8 +1680,8 @@ describe("realizeExecutionWorkspace", () => {
         env: {
           ...process.env,
           PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
-          PAPERCLIP_WORKSPACE_BASE_CWD: baseRoot,
-          PAPERCLIP_WORKSPACE_CWD: worktreeRoot,
+          BULLPEN_WORKSPACE_BASE_CWD: baseRoot,
+          BULLPEN_WORKSPACE_CWD: worktreeRoot,
         },
       });
 
@@ -1711,7 +1711,7 @@ describe("realizeExecutionWorkspace", () => {
   }, 30_000);
 
   it("fails instead of writing an unseeded fallback config when worktree init errors after CLI detection succeeds", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-provision-fail-"));
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-provision-fail-"));
     const baseRoot = path.join(tempRoot, "base");
     const worktreeRoot = path.join(tempRoot, "worktree");
     const fakeBin = path.join(tempRoot, "bin");
@@ -1728,10 +1728,10 @@ describe("realizeExecutionWorkspace", () => {
         fakePnpmPath,
         [
           "#!/bin/sh",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"--help\" ]; then",
+          "if [ \"$1\" = \"bullpen\" ] && [ \"$2\" = \"--help\" ]; then",
           "  exit 0",
           "fi",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"worktree\" ] && [ \"$3\" = \"init\" ]; then",
+          "if [ \"$1\" = \"bullpen\" ] && [ \"$2\" = \"worktree\" ] && [ \"$3\" = \"init\" ]; then",
           "  echo \"simulated init failure\" >&2",
           "  exit 42",
           "fi",
@@ -1749,8 +1749,8 @@ describe("realizeExecutionWorkspace", () => {
           env: {
             ...process.env,
             PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
-            PAPERCLIP_WORKSPACE_BASE_CWD: baseRoot,
-            PAPERCLIP_WORKSPACE_CWD: worktreeRoot,
+            BULLPEN_WORKSPACE_BASE_CWD: baseRoot,
+            BULLPEN_WORKSPACE_CWD: worktreeRoot,
           },
         });
       } catch (error) {
@@ -1759,60 +1759,60 @@ describe("realizeExecutionWorkspace", () => {
 
       expect(caught).toBeTruthy();
       expect(String(caught)).toContain("simulated init failure");
-      await expect(fs.stat(path.join(worktreeRoot, ".paperclip", "config.json"))).rejects.toThrow();
-      await expect(fs.stat(path.join(worktreeRoot, ".paperclip", ".env"))).rejects.toThrow();
+      await expect(fs.stat(path.join(worktreeRoot, ".bullpen", "config.json"))).rejects.toThrow();
+      await expect(fs.stat(path.join(worktreeRoot, ".bullpen", ".env"))).rejects.toThrow();
     } finally {
       await fs.rm(tempRoot, { recursive: true, force: true });
     }
   });
 
   it("regenerates stale worktree config that points at another host", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-stale-config-"));
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-stale-config-"));
     const baseRoot = path.join(tempRoot, "base");
     const worktreeRoot = path.join(tempRoot, "worktree");
     const fakeBin = path.join(tempRoot, "bin");
     const fakePnpmPath = path.join(fakeBin, "pnpm");
     const scriptPath = path.join(worktreeRoot, "provision-worktree.sh");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
+    const bullpenDir = path.join(worktreeRoot, ".bullpen");
 
     try {
       await fs.mkdir(baseRoot, { recursive: true });
-      await fs.mkdir(paperclipDir, { recursive: true });
+      await fs.mkdir(bullpenDir, { recursive: true });
       await fs.mkdir(fakeBin, { recursive: true });
       await fs.copyFile(provisionWorktreeScriptPath, scriptPath);
       await fs.chmod(scriptPath, 0o755);
       await fs.writeFile(
-        path.join(paperclipDir, "config.json"),
+        path.join(bullpenDir, "config.json"),
         JSON.stringify({
           database: {
             mode: "embedded-postgres",
-            embeddedPostgresDataDir: "/Users/example/.paperclip-worktrees/instances/stale/db",
+            embeddedPostgresDataDir: "/Users/example/.bullpen-worktrees/instances/stale/db",
           },
           logging: {
             mode: "file",
-            logDir: "/Users/example/.paperclip-worktrees/instances/stale/logs",
+            logDir: "/Users/example/.bullpen-worktrees/instances/stale/logs",
           },
           storage: {
             provider: "local_disk",
             localDisk: {
-              baseDir: "/Users/example/.paperclip-worktrees/instances/stale/data/storage",
+              baseDir: "/Users/example/.bullpen-worktrees/instances/stale/data/storage",
             },
           },
           secrets: {
             provider: "local_encrypted",
             localEncrypted: {
-              keyFilePath: "/Users/example/.paperclip-worktrees/instances/stale/secrets/master.key",
+              keyFilePath: "/Users/example/.bullpen-worktrees/instances/stale/secrets/master.key",
             },
           },
         }),
         "utf8",
       );
       await fs.writeFile(
-        path.join(paperclipDir, ".env"),
+        path.join(bullpenDir, ".env"),
         [
-          "PAPERCLIP_HOME=/Users/example/.paperclip-worktrees",
-          "PAPERCLIP_INSTANCE_ID=stale",
-          `PAPERCLIP_CONFIG=/Users/example/paperclip/${path.basename(worktreeRoot)}/.paperclip/config.json`,
+          "BULLPEN_HOME=/Users/example/.bullpen-worktrees",
+          "BULLPEN_INSTANCE_ID=stale",
+          `BULLPEN_CONFIG=/Users/example/bullpen/${path.basename(worktreeRoot)}/.bullpen/config.json`,
           "",
         ].join("\n"),
         "utf8",
@@ -1821,13 +1821,13 @@ describe("realizeExecutionWorkspace", () => {
         fakePnpmPath,
         [
           "#!/bin/sh",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"--help\" ]; then",
+          "if [ \"$1\" = \"bullpen\" ] && [ \"$2\" = \"--help\" ]; then",
           "  exit 0",
           "fi",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"worktree\" ] && [ \"$3\" = \"init\" ]; then",
-          "  mkdir -p \"$PWD/.paperclip\"",
-          "  printf '%s\\n' '{\"database\":{\"embeddedPostgresDataDir\":\"'$PWD'/.paperclip/runtime/db\"}}' > \"$PWD/.paperclip/config.json\"",
-          "  printf '%s\\n' \"PAPERCLIP_HOME=$PWD/.paperclip/runtime\" \"PAPERCLIP_INSTANCE_ID=healthy\" \"PAPERCLIP_CONFIG=$PWD/.paperclip/config.json\" > \"$PWD/.paperclip/.env\"",
+          "if [ \"$1\" = \"bullpen\" ] && [ \"$2\" = \"worktree\" ] && [ \"$3\" = \"init\" ]; then",
+          "  mkdir -p \"$PWD/.bullpen\"",
+          "  printf '%s\\n' '{\"database\":{\"embeddedPostgresDataDir\":\"'$PWD'/.bullpen/runtime/db\"}}' > \"$PWD/.bullpen/config.json\"",
+          "  printf '%s\\n' \"BULLPEN_HOME=$PWD/.bullpen/runtime\" \"BULLPEN_INSTANCE_ID=healthy\" \"BULLPEN_CONFIG=$PWD/.bullpen/config.json\" > \"$PWD/.bullpen/.env\"",
           "  exit 0",
           "fi",
           "exit 0",
@@ -1842,23 +1842,23 @@ describe("realizeExecutionWorkspace", () => {
         env: {
           ...process.env,
           PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
-          PAPERCLIP_WORKSPACE_BASE_CWD: baseRoot,
-          PAPERCLIP_WORKSPACE_CWD: worktreeRoot,
+          BULLPEN_WORKSPACE_BASE_CWD: baseRoot,
+          BULLPEN_WORKSPACE_CWD: worktreeRoot,
         },
       });
 
-      expect(result.stderr).toContain("Existing isolated Paperclip worktree config is stale for this host; regenerating.");
-      await expect(fs.readFile(path.join(paperclipDir, ".env"), "utf8")).resolves.toContain(
-        `PAPERCLIP_CONFIG=${worktreeRoot}/.paperclip/config.json`,
+      expect(result.stderr).toContain("Existing isolated Bullpen worktree config is stale for this host; regenerating.");
+      await expect(fs.readFile(path.join(bullpenDir, ".env"), "utf8")).resolves.toContain(
+        `BULLPEN_CONFIG=${worktreeRoot}/.bullpen/config.json`,
       );
-      await expect(fs.readFile(path.join(paperclipDir, "config.json"), "utf8")).resolves.toContain(worktreeRoot);
+      await expect(fs.readFile(path.join(bullpenDir, "config.json"), "utf8")).resolves.toContain(worktreeRoot);
     } finally {
       await fs.rm(tempRoot, { recursive: true, force: true });
     }
   });
 
   it("retries worktree-local pnpm install without a frozen lockfile when the lockfile is outdated", async () => {
-    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-outdated-lockfile-"));
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-outdated-lockfile-"));
     const baseRoot = path.join(tempRoot, "base");
     const worktreeRoot = path.join(tempRoot, "worktree");
     const fakeBin = path.join(tempRoot, "bin");
@@ -1893,7 +1893,7 @@ describe("realizeExecutionWorkspace", () => {
         fakePnpmPath,
         [
           "#!/bin/sh",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"--help\" ]; then",
+          "if [ \"$1\" = \"bullpen\" ] && [ \"$2\" = \"--help\" ]; then",
           "  exit 1",
           "fi",
           "if [ \"$1\" = \"install\" ] && [ \"$2\" = \"--prod=false\" ] && [ \"$3\" = \"--frozen-lockfile\" ]; then",
@@ -1917,14 +1917,14 @@ describe("realizeExecutionWorkspace", () => {
         env: {
           ...process.env,
           PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
-          PAPERCLIP_WORKSPACE_BASE_CWD: baseRoot,
-          PAPERCLIP_WORKSPACE_CWD: worktreeRoot,
+          BULLPEN_WORKSPACE_BASE_CWD: baseRoot,
+          BULLPEN_WORKSPACE_CWD: worktreeRoot,
         },
       });
 
       expect(result.stderr).toContain("retrying install without --frozen-lockfile");
       await expect(fs.readFile(path.join(worktreeRoot, "node_modules", ".retry-success"), "utf8")).resolves.toBe("");
-      await expect(fs.readFile(path.join(worktreeRoot, ".paperclip", "config.json"), "utf8")).resolves.toContain(
+      await expect(fs.readFile(path.join(worktreeRoot, ".bullpen", "config.json"), "utf8")).resolves.toContain(
         "\"database\"",
       );
     } finally {
@@ -2198,7 +2198,7 @@ describe("realizeExecutionWorkspace", () => {
       [
         "#!/usr/bin/env bash",
         "set -euo pipefail",
-        "printf '%s\\n' \"$PAPERCLIP_WORKSPACE_BRANCH\" > .paperclip-restored-branch",
+        "printf '%s\\n' \"$BULLPEN_WORKSPACE_BRANCH\" > .bullpen-restored-branch",
       ].join("\n"),
       "utf8",
     );
@@ -2281,7 +2281,7 @@ describe("realizeExecutionWorkspace", () => {
     expect(restored).not.toBeNull();
     expect(restored?.cwd).toBe(initial.cwd);
     await expect(fs.readFile(path.join(initial.cwd, "feature.txt"), "utf8")).resolves.toBe("persisted\n");
-    await expect(fs.readFile(path.join(initial.cwd, ".paperclip-restored-branch"), "utf8")).resolves.toBe(`${branchName}\n`);
+    await expect(fs.readFile(path.join(initial.cwd, ".bullpen-restored-branch"), "utf8")).resolves.toBe(`${branchName}\n`);
     const actualHead = (await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: initial.cwd })).stdout.trim();
     expect(actualHead).toBe(expectedHead);
   }, 15_000);
@@ -2290,8 +2290,8 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-454-repair-clean-branch-mismatch";
     const actualBranch = "PAP-454-publish-head";
-    const realWorktreeRoot = path.join(repoRoot, ".paperclip", "real-worktrees");
-    const symlinkedWorktreeRoot = path.join(repoRoot, ".paperclip", "worktrees");
+    const realWorktreeRoot = path.join(repoRoot, ".bullpen", "real-worktrees");
+    const symlinkedWorktreeRoot = path.join(repoRoot, ".bullpen", "worktrees");
     const realWorktreePath = path.join(realWorktreeRoot, expectedBranch);
     const worktreePath = path.join(symlinkedWorktreeRoot, expectedBranch);
     await fs.mkdir(realWorktreeRoot, { recursive: true });
@@ -2357,7 +2357,7 @@ describe("realizeExecutionWorkspace", () => {
   it("reattaches a clean forward detached HEAD to the recorded persisted git worktree branch", async () => {
     const repoRoot = await createTempRepo();
     const branchName = "PAP-454-reattach-detached-head";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", branchName);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", branchName);
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", branchName]);
     await runGit(repoRoot, ["worktree", "add", worktreePath, branchName]);
@@ -2412,7 +2412,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-455-reject-dirty-branch-mismatch";
     const actualBranch = "PAP-455-publish-head";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", expectedBranch]);
     await runGit(repoRoot, ["worktree", "add", "-b", actualBranch, worktreePath, "HEAD"]);
@@ -2484,7 +2484,7 @@ describe("realizeExecutionWorkspace", () => {
   it("routes non-reusable persisted git worktrees through workspace validation recovery", async () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-455-not-registered-worktree";
-    const detachedWorktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const detachedWorktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
     await fs.mkdir(path.dirname(detachedWorktreePath), { recursive: true });
     await execFileAsync("git", ["clone", repoRoot, detachedWorktreePath]);
     await runGit(detachedWorktreePath, ["checkout", "-B", expectedBranch]);
@@ -2614,7 +2614,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-457-recorded-work";
     const actualBranch = "PAP-457-sibling-work";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
 
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", expectedBranch]);
@@ -2695,7 +2695,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-458-deleted-recorded-branch";
     const actualBranch = "PAP-458-actual-work";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
 
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", expectedBranch]);
@@ -2776,7 +2776,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-458-deleted-recorded-branch-flag-off";
     const actualBranch = "PAP-458-actual-work-flag-off";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
 
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", expectedBranch]);
@@ -2847,7 +2847,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-459-recorded-content";
     const actualBranch = "PAP-459-rewritten-content";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
 
     await runGit(repoRoot, ["checkout", "-b", expectedBranch]);
     await fs.writeFile(path.join(repoRoot, "same-content.txt"), "same content\n", "utf8");
@@ -2877,7 +2877,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-459-recorded-task";
     const actualBranch = "PAP-999-unrelated-task";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
 
     await runGit(repoRoot, ["checkout", "-b", expectedBranch]);
     await fs.writeFile(path.join(repoRoot, "recorded-task.txt"), "recorded task work\n", "utf8");
@@ -2907,7 +2907,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo();
     const expectedBranch = "PAP-459-recorded-ahead";
     const actualBranch = "PAP-459-live-behind";
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
 
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", expectedBranch]);
@@ -2931,7 +2931,7 @@ describe("realizeExecutionWorkspace", () => {
   }, 15_000);
 
   it("does not reuse a missing persisted local filesystem workspace", async () => {
-    const baseCwd = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-workspace-base-"));
+    const baseCwd = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-workspace-base-"));
     const missingCwd = path.join(baseCwd, "missing-workspace");
 
     const restored = await ensurePersistedExecutionWorkspaceAvailable({
@@ -2977,7 +2977,7 @@ describe("realizeExecutionWorkspace", () => {
       [
         "#!/usr/bin/env bash",
         "set -euo pipefail",
-        "printf 'reprovisioned\\n' > .paperclip-restored-state",
+        "printf 'reprovisioned\\n' > .bullpen-restored-state",
       ].join("\n"),
       "utf8",
     );
@@ -3013,7 +3013,7 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    await fs.rm(path.join(initial.cwd, ".paperclip-restored-state"), { force: true });
+    await fs.rm(path.join(initial.cwd, ".bullpen-restored-state"), { force: true });
 
     await ensurePersistedExecutionWorkspaceAvailable({
       base: {
@@ -3050,7 +3050,7 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    await expect(fs.readFile(path.join(initial.cwd, ".paperclip-restored-state"), "utf8")).resolves.toBe("reprovisioned\n");
+    await expect(fs.readFile(path.join(initial.cwd, ".bullpen-restored-state"), "utf8")).resolves.toBe("reprovisioned\n");
   }, 15_000);
 
   it("auto-detects the default branch when baseRef is not configured", async () => {
@@ -3061,7 +3061,7 @@ describe("realizeExecutionWorkspace", () => {
     // exists locally. Note: refs/remotes/origin/HEAD is NOT set by a manual
     // fetch — that requires git clone or git remote set-head. This test
     // exercises the heuristic fallback path in detectDefaultBranch.
-    const bareRemote = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-bare-"));
+    const bareRemote = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-bare-"));
     await runGit(bareRemote, ["init", "--bare"]);
     await runGit(repoRoot, ["remote", "add", "origin", bareRemote]);
     await runGit(repoRoot, ["push", "-u", "origin", "master"]);
@@ -3109,7 +3109,7 @@ describe("realizeExecutionWorkspace", () => {
     const repoRoot = await createTempRepo("main");
     await runGit(repoRoot, ["branch", "-f", "master", "main"]);
 
-    const bareRemote = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-bare-symref-"));
+    const bareRemote = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-worktree-bare-symref-"));
     await runGit(bareRemote, ["init", "--bare"]);
     await runGit(repoRoot, ["remote", "add", "origin", bareRemote]);
     await runGit(repoRoot, ["branch", "-f", "master"]);
@@ -3315,17 +3315,17 @@ describe("realizeExecutionWorkspace", () => {
       },
     });
 
-    const worktreesDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-cleanup-instances-"));
+    const worktreesDir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-cleanup-instances-"));
     const instanceId = deriveWorktreeInstanceId(workspace.cwd);
     const instanceRoot = path.join(worktreesDir, "instances", instanceId);
     await fs.mkdir(path.join(instanceRoot, "db"), { recursive: true });
-    await fs.mkdir(path.join(workspace.cwd, ".paperclip"), { recursive: true });
+    await fs.mkdir(path.join(workspace.cwd, ".bullpen"), { recursive: true });
     await fs.writeFile(
-      path.join(workspace.cwd, ".paperclip", ".env"),
-      `PAPERCLIP_HOME=${JSON.stringify(worktreesDir)}\nPAPERCLIP_INSTANCE_ID=${JSON.stringify(instanceId)}\n`,
+      path.join(workspace.cwd, ".bullpen", ".env"),
+      `BULLPEN_HOME=${JSON.stringify(worktreesDir)}\nBULLPEN_INSTANCE_ID=${JSON.stringify(instanceId)}\n`,
       "utf8",
     );
-    process.env.PAPERCLIP_WORKTREES_DIR = worktreesDir;
+    process.env.BULLPEN_WORKTREES_DIR = worktreesDir;
 
     await cleanupExecutionWorkspaceArtifacts({
       workspace: {
@@ -3374,7 +3374,7 @@ describe("realizeExecutionWorkspace", () => {
 
 describe("ensureRuntimeServicesForRun", () => {
   it("leaves manual runtime services untouched during agent runs", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-manual-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-manual-"));
     const workspace = buildWorkspace(workspaceRoot);
 
     const services = await ensureRuntimeServicesForRun({
@@ -3404,10 +3404,10 @@ describe("ensureRuntimeServicesForRun", () => {
     expect(services).toEqual([]);
   });
 
-  it("requires Paperclip dev runtime services to pass /api/health readiness", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-health-"));
+  it("requires Bullpen dev runtime services to pass /api/health readiness", async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-health-"));
     const workspace = buildWorkspace(workspaceRoot);
-    const runId = "run-paperclip-health";
+    const runId = "run-bullpen-health";
     const serviceCommand =
       "node -e \"const http=require('node:http'); http.createServer((req,res)=>{ if (req.url==='/api/health') { res.statusCode=503; res.end('database_unreachable'); return; } res.end('ok'); }).listen(Number(process.env.PORT), '127.0.0.1')\"";
 
@@ -3426,7 +3426,7 @@ describe("ensureRuntimeServicesForRun", () => {
             workspaceRuntime: {
               services: [
                 {
-                  name: "paperclip-dev",
+                  name: "bullpen-dev",
                   command: serviceCommand,
                   cwd: ".",
                   port: { type: "auto" },
@@ -3457,9 +3457,9 @@ describe("ensureRuntimeServicesForRun", () => {
   });
 
   it("uses explicit readiness URL when exposed URL is not the local probe address", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-explicit-readiness-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-explicit-readiness-"));
     const workspace = buildWorkspace(workspaceRoot);
-    const runId = "run-paperclip-explicit-readiness";
+    const runId = "run-bullpen-explicit-readiness";
     const serviceCommand =
       "node -e \"const http=require('node:http'); http.createServer((req,res)=>{ if (req.url==='/api/health') { res.end('ok'); return; } res.statusCode=404; res.end('not found'); }).listen(Number(process.env.PORT), '127.0.0.1')\"";
 
@@ -3477,7 +3477,7 @@ describe("ensureRuntimeServicesForRun", () => {
           workspaceRuntime: {
             services: [
               {
-                name: "paperclip-dev",
+                name: "bullpen-dev",
                 command: serviceCommand,
                 cwd: ".",
                 port: { type: "auto" },
@@ -3489,7 +3489,7 @@ describe("ensureRuntimeServicesForRun", () => {
                 },
                 expose: {
                   type: "url",
-                  urlTemplate: "http://not-a-real-paperclip-host.invalid:{{port}}",
+                  urlTemplate: "http://not-a-real-bullpen-host.invalid:{{port}}",
                 },
                 lifecycle: "shared",
                 stopPolicy: {
@@ -3503,14 +3503,14 @@ describe("ensureRuntimeServicesForRun", () => {
       });
 
       expect(services).toHaveLength(1);
-      expect(services[0]?.url).toMatch(/^http:\/\/not-a-real-paperclip-host\.invalid:\d+$/);
+      expect(services[0]?.url).toMatch(/^http:\/\/not-a-real-bullpen-host\.invalid:\d+$/);
     } finally {
       await releaseRuntimeServicesForRun(runId);
     }
   });
 
   it("reuses shared runtime services across runs and starts a new service after release", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-workspace-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-workspace-"));
     const workspace = buildWorkspace(workspaceRoot);
     const serviceCommand =
       "node -e \"require('node:http').createServer((req,res)=>res.end('ok')).listen(Number(process.env.PORT), '127.0.0.1')\"";
@@ -3609,8 +3609,8 @@ describe("ensureRuntimeServicesForRun", () => {
   }, 10_000);
 
   it("does not reuse project-scoped shared services across different workspace launch contexts", async () => {
-    const primaryWorkspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-primary-"));
-    const worktreeWorkspaceRoot = path.join(primaryWorkspaceRoot, ".paperclip", "worktrees", "PAP-874-chat-speed-issues");
+    const primaryWorkspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-primary-"));
+    const worktreeWorkspaceRoot = path.join(primaryWorkspaceRoot, ".bullpen", "worktrees", "PAP-874-chat-speed-issues");
     await fs.mkdir(worktreeWorkspaceRoot, { recursive: true });
 
     const primaryWorkspace = buildWorkspace(primaryWorkspaceRoot);
@@ -3623,16 +3623,16 @@ describe("ensureRuntimeServicesForRun", () => {
       worktreePath: worktreeWorkspaceRoot,
     };
     const serviceCommand =
-      "node -e \"require('node:http').createServer((req,res)=>res.end(process.env.PAPERCLIP_HOME)).listen(Number(process.env.PORT), '127.0.0.1')\"";
+      "node -e \"require('node:http').createServer((req,res)=>res.end(process.env.BULLPEN_HOME)).listen(Number(process.env.PORT), '127.0.0.1')\"";
     const config = {
       workspaceRuntime: {
         services: [
           {
-            name: "paperclip-dev",
+            name: "bullpen-dev",
             command: serviceCommand,
             cwd: ".",
             env: {
-              PAPERCLIP_HOME: "{{workspace.cwd}}/.paperclip/runtime-services",
+              BULLPEN_HOME: "{{workspace.cwd}}/.bullpen/runtime-services",
             },
             port: { type: "auto" },
             readiness: {
@@ -3697,14 +3697,14 @@ describe("ensureRuntimeServicesForRun", () => {
     expect(executionServices[0]?.url).not.toBe(primaryServices[0]?.url);
 
     const primaryResponse = await fetch(primaryServices[0]!.url!);
-    expect(await primaryResponse.text()).toBe(path.join(primaryWorkspaceRoot, ".paperclip", "runtime-services"));
+    expect(await primaryResponse.text()).toBe(path.join(primaryWorkspaceRoot, ".bullpen", "runtime-services"));
 
     const executionResponse = await fetch(executionServices[0]!.url!);
-    expect(await executionResponse.text()).toBe(path.join(worktreeWorkspaceRoot, ".paperclip", "runtime-services"));
+    expect(await executionResponse.text()).toBe(path.join(worktreeWorkspaceRoot, ".bullpen", "runtime-services"));
   });
 
-  it("does not leak parent Paperclip instance env into runtime service commands", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-env-"));
+  it("does not leak parent Bullpen instance env into runtime service commands", async () => {
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-env-"));
     const workspace = buildWorkspace(workspaceRoot);
     const envCapturePath = path.join(workspaceRoot, "captured-env.json");
     const serviceCommand = [
@@ -3713,9 +3713,9 @@ describe("ensureRuntimeServicesForRun", () => {
         [
           "const fs = require('node:fs');",
           `fs.writeFileSync(${JSON.stringify(envCapturePath)}, JSON.stringify({`,
-          "paperclipConfig: process.env.PAPERCLIP_CONFIG ?? null,",
-          "paperclipHome: process.env.PAPERCLIP_HOME ?? null,",
-          "paperclipInstanceId: process.env.PAPERCLIP_INSTANCE_ID ?? null,",
+          "bullpenConfig: process.env.BULLPEN_CONFIG ?? null,",
+          "bullpenHome: process.env.BULLPEN_HOME ?? null,",
+          "bullpenInstanceId: process.env.BULLPEN_INSTANCE_ID ?? null,",
           "databaseUrl: process.env.DATABASE_URL ?? null,",
           "customEnv: process.env.RUNTIME_CUSTOM_ENV ?? null,",
           "port: process.env.PORT ?? null,",
@@ -3725,10 +3725,10 @@ describe("ensureRuntimeServicesForRun", () => {
       ),
     ].join(" ");
 
-    process.env.PAPERCLIP_CONFIG = "/tmp/base-paperclip-config.json";
-    process.env.PAPERCLIP_HOME = "/tmp/base-paperclip-home";
-    process.env.PAPERCLIP_INSTANCE_ID = "base-instance";
-    process.env.DATABASE_URL = "postgres://shared-db.example.com/paperclip";
+    process.env.BULLPEN_CONFIG = "/tmp/base-bullpen-config.json";
+    process.env.BULLPEN_HOME = "/tmp/base-bullpen-home";
+    process.env.BULLPEN_INSTANCE_ID = "base-instance";
+    process.env.DATABASE_URL = "postgres://shared-db.example.com/bullpen";
 
     const runId = "run-env";
     leasedRunIds.add(runId);
@@ -3772,9 +3772,9 @@ describe("ensureRuntimeServicesForRun", () => {
 
     expect(services).toHaveLength(1);
     const captured = JSON.parse(await fs.readFile(envCapturePath, "utf8")) as Record<string, string | null>;
-    expect(captured.paperclipConfig).toBeNull();
-    expect(captured.paperclipHome).toBeNull();
-    expect(captured.paperclipInstanceId).toBeNull();
+    expect(captured.bullpenConfig).toBeNull();
+    expect(captured.bullpenHome).toBeNull();
+    expect(captured.bullpenInstanceId).toBeNull();
     expect(captured.databaseUrl).toBeNull();
     expect(captured.customEnv).toBe("from-adapter");
     expect(captured.port).toMatch(/^\d+$/);
@@ -3784,7 +3784,7 @@ describe("ensureRuntimeServicesForRun", () => {
   });
 
   it("stops execution workspace runtime services by executionWorkspaceId", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-stop-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-stop-"));
     const workspace = buildWorkspace(workspaceRoot);
     const runId = "run-stop";
     leasedRunIds.add(runId);
@@ -3838,7 +3838,7 @@ describe("ensureRuntimeServicesForRun", () => {
   });
 
   it("does not stop services in sibling directories when matching by workspace cwd", async () => {
-    const workspaceParent = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-sibling-"));
+    const workspaceParent = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-sibling-"));
     const targetWorkspaceRoot = path.join(workspaceParent, "project");
     const siblingWorkspaceRoot = path.join(workspaceParent, "project-extended", "service");
     await fs.mkdir(targetWorkspaceRoot, { recursive: true });
@@ -3897,7 +3897,7 @@ describe("ensureRuntimeServicesForRun", () => {
   });
 
   it("starts only the selected workspace-controlled runtime service", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-control-start-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-control-start-"));
     const workspace = buildWorkspace(workspaceRoot);
 
     const services = await startRuntimeServicesForWorkspaceControl({
@@ -3958,7 +3958,7 @@ describe("ensureRuntimeServicesForRun", () => {
   });
 
   it("stops only the selected execution workspace runtime service", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-control-stop-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-control-stop-"));
     const workspace = buildWorkspace(workspaceRoot);
 
     const services = await startRuntimeServicesForWorkspaceControl({
@@ -4259,7 +4259,7 @@ describe("readLocalServicePortOwner", () => {
   });
 
   it("accepts service cwd nested within the requested workspace", async () => {
-    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-workspace-"));
+    const workspace = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-workspace-"));
     const serviceCwd = path.join(workspace, "server");
     await fs.mkdir(serviceCwd);
 
@@ -4278,9 +4278,9 @@ describe("readLocalServicePortOwner", () => {
     const address = server.address();
     const port = typeof address === "object" && address ? address.port : null;
     const serviceKey = `unsupported-cwd-${randomUUID()}`;
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-home-"));
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = `unsupported-cwd-${randomUUID()}`;
+    const bullpenHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-home-"));
+    process.env.BULLPEN_HOME = bullpenHome;
+    process.env.BULLPEN_INSTANCE_ID = `unsupported-cwd-${randomUUID()}`;
     expect(port).toBeTypeOf("number");
 
     try {
@@ -4314,7 +4314,7 @@ describe("readLocalServicePortOwner", () => {
       await new Promise<void>((resolve, reject) => {
         server.close((error) => error ? reject(error) : resolve());
       });
-      await fs.rm(paperclipHome, { recursive: true, force: true });
+      await fs.rm(bullpenHome, { recursive: true, force: true });
     }
   });
 
@@ -4334,11 +4334,11 @@ describe("readLocalServicePortOwner", () => {
       return;
     }
 
-    const targetWorkspace = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-target-"));
-    const ownerWorkspace = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-owner-"));
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-home-"));
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = `cross-workspace-${randomUUID()}`;
+    const targetWorkspace = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-target-"));
+    const ownerWorkspace = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-owner-"));
+    const bullpenHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-home-"));
+    process.env.BULLPEN_HOME = bullpenHome;
+    process.env.BULLPEN_INSTANCE_ID = `cross-workspace-${randomUUID()}`;
     const serviceKey = `cross-workspace-${randomUUID()}`;
     const child = spawn(
       process.execPath,
@@ -4415,7 +4415,7 @@ describe("readLocalServicePortOwner", () => {
     } finally {
       child.kill("SIGTERM");
       await new Promise<void>((resolve) => child.once("exit", () => resolve()));
-      await fs.rm(paperclipHome, { recursive: true, force: true });
+      await fs.rm(bullpenHome, { recursive: true, force: true });
     }
   });
 });
@@ -4425,7 +4425,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-workspace-dirty-quarantine-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-workspace-dirty-quarantine-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -4451,7 +4451,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
     actualBranch: string;
   }) {
     const repoRoot = await createTempRepo();
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", input.expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", input.expectedBranch);
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", input.expectedBranch]);
     await runGit(repoRoot, ["worktree", "add", "-b", input.actualBranch, worktreePath, input.expectedBranch]);
@@ -4480,7 +4480,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `Q${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -4498,7 +4498,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
     await db.insert(projects).values({
       id: projectId,
       companyId,
-      name: "Paperclip App",
+      name: "Bullpen App",
       status: "in_progress",
     });
     await db.insert(projectWorkspaces).values({
@@ -4597,8 +4597,8 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
         strategyType: "git_worktree",
         name: input.actualBranch,
         status: "active",
-        cwd: path.join(input.repoRoot, ".paperclip", "claimants", claimantWorkspaceId),
-        providerRef: path.join(input.repoRoot, ".paperclip", "claimants", claimantWorkspaceId),
+        cwd: path.join(input.repoRoot, ".bullpen", "claimants", claimantWorkspaceId),
+        providerRef: path.join(input.repoRoot, ".bullpen", "claimants", claimantWorkspaceId),
         baseRef: "HEAD",
         branchName: input.actualBranch,
         providerType: "git_worktree",
@@ -4711,7 +4711,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
     const warning = restored?.warnings.find((entry) => entry.includes("dirty worktree state was quarantined"));
     expect(warning).toBeTruthy();
     const rescueBranch = warning?.match(/"([^"]+)"/)?.[1] ?? "";
-    expect(rescueBranch).toMatch(/^paperclip\/rescue\/PAP-455\/\d{8}T\d{6}Z$/);
+    expect(rescueBranch).toMatch(/^bullpen\/rescue\/PAP-455\/\d{8}T\d{6}Z$/);
     const rescueCommitSha = await readGit(repoRoot, ["rev-parse", rescueBranch]);
     await expect(readGit(worktreePath, ["branch", "--show-current"])).resolves.toBe(expectedBranch);
     await expect(readGit(worktreePath, ["status", "--porcelain", "--untracked-files=all"])).resolves.toBe("");
@@ -4770,7 +4770,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
   it("quarantines a worktree wedged mid-rebase and clears the interrupted rebase state", async () => {
     const expectedBranch = "PAP-456-recorded";
     const repoRoot = await createTempRepo("master");
-    const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", expectedBranch);
+    const worktreePath = path.join(repoRoot, ".bullpen", "worktrees", expectedBranch);
     await fs.mkdir(path.dirname(worktreePath), { recursive: true });
     await runGit(repoRoot, ["branch", expectedBranch]);
     await runGit(repoRoot, ["worktree", "add", worktreePath, expectedBranch]);
@@ -4807,7 +4807,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
     const warning = restored?.warnings.find((entry) => entry.includes("dirty worktree state was quarantined"));
     expect(warning).toContain("An interrupted git rebase was also cleared");
     const rescueBranch = warning?.match(/"([^"]+)"/)?.[1] ?? "";
-    expect(rescueBranch).toMatch(/^paperclip\/rescue\/PAP-456\/\d{8}T\d{6}Z$/);
+    expect(rescueBranch).toMatch(/^bullpen\/rescue\/PAP-456\/\d{8}T\d{6}Z$/);
 
     await expect(readGit(worktreePath, ["branch", "--show-current"])).resolves.toBe(expectedBranch);
     await expect(readGit(worktreePath, ["status", "--porcelain", "--untracked-files=all"])).resolves.toBe("");
@@ -4933,10 +4933,10 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
       issueId: ids.sourceIssueId,
       scopeType: "execution_workspace",
       scopeId: ids.sourceWorkspaceId,
-      serviceName: "paperclip-dev",
+      serviceName: "bullpen-dev",
       status: "running",
       lifecycle: "shared",
-      reuseKey: `execution_workspace:${ids.sourceWorkspaceId}:paperclip-dev`,
+      reuseKey: `execution_workspace:${ids.sourceWorkspaceId}:bullpen-dev`,
       command: "pnpm dev",
       cwd: worktreePath,
       port: 49195,
@@ -4977,7 +4977,7 @@ describeEmbeddedPostgres("workspace dirty quarantine branch repair", () => {
     await expect(readGit(repoRoot, [
       "for-each-ref",
       "--format=%(refname:short)",
-      "refs/heads/paperclip/rescue",
+      "refs/heads/bullpen/rescue",
     ])).resolves.toBe("");
   }, 20_000);
 
@@ -5067,7 +5067,7 @@ describeEmbeddedPostgres("workspace runtime service control persistence", () => 
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-workspace-runtime-control-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-workspace-runtime-control-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -5087,12 +5087,12 @@ describeEmbeddedPostgres("workspace runtime service control persistence", () => 
   });
 
   it("commits a starting service row before waiting for slow readiness", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-slow-control-"));
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-control-home-"));
-    const previousPaperclipHome = process.env.PAPERCLIP_HOME;
-    const previousPaperclipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = `runtime-control-${randomUUID()}`;
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-slow-control-"));
+    const bullpenHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-control-home-"));
+    const previousBullpenHome = process.env.BULLPEN_HOME;
+    const previousBullpenInstanceId = process.env.BULLPEN_INSTANCE_ID;
+    process.env.BULLPEN_HOME = bullpenHome;
+    process.env.BULLPEN_INSTANCE_ID = `runtime-control-${randomUUID()}`;
 
     const companyId = randomUUID();
     const projectId = randomUUID();
@@ -5113,7 +5113,7 @@ describeEmbeddedPostgres("workspace runtime service control persistence", () => 
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -5261,11 +5261,11 @@ describeEmbeddedPostgres("workspace runtime service control persistence", () => 
         executionWorkspaceId,
         workspaceCwd: workspaceRoot,
       });
-      await fs.rm(paperclipHome, { recursive: true, force: true });
-      if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-      else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-      else process.env.PAPERCLIP_INSTANCE_ID = previousPaperclipInstanceId;
+      await fs.rm(bullpenHome, { recursive: true, force: true });
+      if (previousBullpenHome === undefined) delete process.env.BULLPEN_HOME;
+      else process.env.BULLPEN_HOME = previousBullpenHome;
+      if (previousBullpenInstanceId === undefined) delete process.env.BULLPEN_INSTANCE_ID;
+      else process.env.BULLPEN_INSTANCE_ID = previousBullpenInstanceId;
     }
   }, 15_000);
 });
@@ -5275,7 +5275,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-workspace-runtime-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-workspace-runtime-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -5294,10 +5294,10 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
   });
 
   it("adopts a live auto-port shared service after runtime state is reset", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-reconcile-"));
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-home-"));
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = `runtime-reconcile-${randomUUID()}`;
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-reconcile-"));
+    const bullpenHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-home-"));
+    process.env.BULLPEN_HOME = bullpenHome;
+    process.env.BULLPEN_INSTANCE_ID = `runtime-reconcile-${randomUUID()}`;
 
     const companyId = randomUUID();
     const agentId = randomUUID();
@@ -5306,7 +5306,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -5379,7 +5379,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
     expect(service?.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
     await expect(fetch(service!.url!)).resolves.toMatchObject({ ok: true });
 
-    await fs.rm(paperclipHome, { recursive: true, force: true });
+    await fs.rm(bullpenHome, { recursive: true, force: true });
     await resetRuntimeServicesForTests();
 
     const result = await reconcilePersistedRuntimeServicesOnStartup(db);
@@ -5403,10 +5403,10 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
   });
 
   it("does not reuse a stopped auto-port service port while another process owns it", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-unhealthy-adopt-"));
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-home-"));
-    process.env.PAPERCLIP_HOME = paperclipHome;
-    process.env.PAPERCLIP_INSTANCE_ID = `runtime-unhealthy-adopt-${randomUUID()}`;
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-unhealthy-adopt-"));
+    const bullpenHome = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-home-"));
+    process.env.BULLPEN_HOME = bullpenHome;
+    process.env.BULLPEN_INSTANCE_ID = `runtime-unhealthy-adopt-${randomUUID()}`;
 
     const portProbe = net.createServer();
     await new Promise<void>((resolve) => portProbe.listen(0, "127.0.0.1", resolve));
@@ -5435,7 +5435,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
         stableStringifyForTest({
           scopeType,
           scopeId,
-          serviceName: "paperclip-dev",
+          serviceName: "bullpen-dev",
           command: serviceCommand,
           cwd: workspaceRoot,
           port: null,
@@ -5473,7 +5473,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "Bullpen",
         issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
         requireBoardApprovalForNewAgents: false,
       });
@@ -5525,7 +5525,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
         issueId: null,
         scopeType,
         scopeId,
-        serviceName: "paperclip-dev",
+        serviceName: "bullpen-dev",
         status: "stopped",
         lifecycle: "shared",
         reuseKey,
@@ -5564,7 +5564,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
           workspaceRuntime: {
             services: [
               {
-                name: "paperclip-dev",
+                name: "bullpen-dev",
                 command: serviceCommand,
                 cwd: ".",
                 port: { type: "auto" },
@@ -5630,7 +5630,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -5646,7 +5646,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
       projectId,
       name: "Primary",
       sourceType: "local_path",
-      cwd: "/tmp/paperclip-primary",
+      cwd: "/tmp/bullpen-primary",
       isPrimary: true,
     });
     await db.insert(workspaceRuntimeServices).values({
@@ -5658,12 +5658,12 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
       issueId: null,
       scopeType: "project_workspace",
       scopeId: projectWorkspaceId,
-      serviceName: "paperclip-dev",
+      serviceName: "bullpen-dev",
       status: "running",
       lifecycle: "shared",
-      reuseKey: `project_workspace:${projectWorkspaceId}:paperclip-dev`,
+      reuseKey: `project_workspace:${projectWorkspaceId}:bullpen-dev`,
       command: "pnpm dev",
-      cwd: "/tmp/paperclip-primary",
+      cwd: "/tmp/bullpen-primary",
       port: 49195,
       url: "http://127.0.0.1:49195",
       provider: "local_process",
@@ -5680,9 +5680,9 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
     });
     await writeLocalServiceRegistryRecord({
       version: 1,
-      serviceKey: "workspace-runtime-paperclip-dev-stale",
+      serviceKey: "workspace-runtime-bullpen-dev-stale",
       profileKind: "workspace-runtime",
-      serviceName: "paperclip-dev",
+      serviceName: "bullpen-dev",
       command: "pnpm dev",
       cwd: process.cwd(),
       envFingerprint: "fingerprint",
@@ -5692,7 +5692,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
       processGroupId: process.pid,
       provider: "local_process",
       runtimeServiceId,
-      reuseKey: `project_workspace:${projectWorkspaceId}:paperclip-dev`,
+      reuseKey: `project_workspace:${projectWorkspaceId}:bullpen-dev`,
       startedAt: startedAt.toISOString(),
       lastSeenAt: updatedAt.toISOString(),
       metadata: null,
@@ -5719,11 +5719,11 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
     const projectWorkspaceId = randomUUID();
     const executionWorkspaceId = randomUUID();
     const cwd = process.cwd();
-    const reuseKey = `project_workspace:${projectWorkspaceId}:paperclip-dev`;
+    const reuseKey = `project_workspace:${projectWorkspaceId}:bullpen-dev`;
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -5764,7 +5764,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
       issueId: null,
       scopeType: "project_workspace",
       scopeId: projectWorkspaceId,
-      serviceName: "paperclip-dev",
+      serviceName: "bullpen-dev",
       status: "stopped",
       lifecycle: "shared",
       reuseKey,
@@ -5786,9 +5786,9 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
     });
     await writeLocalServiceRegistryRecord({
       version: 1,
-      serviceKey: "workspace-runtime-paperclip-dev-live-stopped",
+      serviceKey: "workspace-runtime-bullpen-dev-live-stopped",
       profileKind: "workspace-runtime",
-      serviceName: "paperclip-dev",
+      serviceName: "bullpen-dev",
       command: "node",
       cwd,
       envFingerprint: reuseKey,
@@ -5819,7 +5819,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
   });
 
   it("persists controlled execution workspace stops as stopped", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-stop-persisted-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-stop-persisted-"));
     const companyId = randomUUID();
     const agentId = randomUUID();
     const projectId = randomUUID();
@@ -5828,7 +5828,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -5940,7 +5940,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
   });
 
   it("restarts a stopped auto-port service on the same port when rendered env changes", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-port-reuse-env-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-port-reuse-env-"));
     const companyId = randomUUID();
     const agentId = randomUUID();
     const projectId = randomUUID();
@@ -5948,7 +5948,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -6000,7 +6000,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
           {
             name: "web",
             command: serviceCommand,
-            env: { PAPERCLIP_TEST_RUNTIME_FLAG: flag },
+            env: { BULLPEN_TEST_RUNTIME_FLAG: flag },
             port: { type: "auto" },
             readiness: {
               type: "http",
@@ -6065,7 +6065,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
   });
 
   it("restarts a stopped auto-port service on the same port when it is available", async () => {
-    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-port-reuse-"));
+    const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-runtime-port-reuse-"));
     const companyId = randomUUID();
     const agentId = randomUUID();
     const projectId = randomUUID();
@@ -6073,7 +6073,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

@@ -24,7 +24,7 @@ function createTempDir(prefix: string): string {
 }
 
 async function createTempDatabase(): Promise<string> {
-  const db = await startEmbeddedPostgresTestDatabase("paperclip-db-backup-");
+  const db = await startEmbeddedPostgresTestDatabase("bullpen-db-backup-");
   cleanups.push(db.cleanup);
   return db.connectionString;
 }
@@ -53,7 +53,7 @@ if (!embeddedPostgresSupport.supported) {
 
 describe("createBufferedTextFileWriter", () => {
   it("preserves line boundaries across buffered flushes", async () => {
-    const tempDir = createTempDir("paperclip-buffered-writer-");
+    const tempDir = createTempDir("bullpen-buffered-writer-");
     const outputPath = path.join(tempDir, "backup.sql");
     const writer = createBufferedTextFileWriter(outputPath, 16);
     const lines = [
@@ -79,13 +79,13 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
     "keeps the newest backup for each retained calendar month",
     async () => {
       const sourceConnectionString = await createTempDatabase();
-      const backupDir = createTempDir("paperclip-db-backup-retention-");
+      const backupDir = createTempDir("bullpen-db-backup-retention-");
       const realDateNow = Date.now;
       Date.now = () => Date.UTC(2026, 2, 31, 12, 0, 0);
 
-      const janNewest = path.join(backupDir, "paperclip-test-2026-01-28T12-00-00.sql.gz");
-      const janOlder = path.join(backupDir, "paperclip-test-2026-01-10T12-00-00.sql.gz");
-      const decOld = path.join(backupDir, "paperclip-test-2025-12-15T12-00-00.sql.gz");
+      const janNewest = path.join(backupDir, "bullpen-test-2026-01-28T12-00-00.sql.gz");
+      const janOlder = path.join(backupDir, "bullpen-test-2026-01-10T12-00-00.sql.gz");
+      const decOld = path.join(backupDir, "bullpen-test-2025-12-15T12-00-00.sql.gz");
 
       try {
         fs.writeFileSync(janNewest, "jan-newest");
@@ -100,7 +100,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 2 },
-          filenamePrefix: "paperclip-test",
+          filenamePrefix: "bullpen-test",
         });
 
         expect(result.prunedCount).toBe(2);
@@ -120,9 +120,9 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
       const sourceConnectionString = await createTempDatabase();
       const restoreConnectionString = await createSiblingDatabase(
         sourceConnectionString,
-        "paperclip_restore_target",
+        "bullpen_restore_target",
       );
-      const backupDir = createTempDir("paperclip-db-backup-output-");
+      const backupDir = createTempDir("bullpen-db-backup-output-");
       const sourceSql = postgres(sourceConnectionString, { max: 1, onnotice: () => {} });
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
 
@@ -166,11 +166,11 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
-          filenamePrefix: "paperclip-test",
+          filenamePrefix: "bullpen-test",
           backupEngine: "javascript",
         });
 
-        expect(result.backupFile).toMatch(/paperclip-test-.*\.sql\.gz$/);
+        expect(result.backupFile).toMatch(/bullpen-test-.*\.sql\.gz$/);
         expect(result.sizeBytes).toBeGreaterThan(0);
         expect(fs.existsSync(result.backupFile)).toBe(true);
 
@@ -227,9 +227,9 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
       const sourceConnectionString = await createTempDatabase();
       const restoreConnectionString = await createSiblingDatabase(
         sourceConnectionString,
-        "paperclip_full_logical_restore_target",
+        "bullpen_full_logical_restore_target",
       );
-      const backupDir = createTempDir("paperclip-db-full-logical-backup-");
+      const backupDir = createTempDir("bullpen-db-full-logical-backup-");
       const sourceSql = postgres(sourceConnectionString, { max: 1, onnotice: () => {} });
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
 
@@ -242,7 +242,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
             "created_at" bigint
           );
           INSERT INTO "drizzle"."__drizzle_migrations" ("hash", "created_at")
-          VALUES ('paperclip-migration-history', 1770000000000);
+          VALUES ('bullpen-migration-history', 1770000000000);
         `);
         await sourceSql.unsafe(`
           CREATE TABLE "public"."backup_parent_records" (
@@ -290,7 +290,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
-          filenamePrefix: "paperclip-full-logical-test",
+          filenamePrefix: "bullpen-full-logical-test",
           backupEngine: "javascript",
           excludeTables: ["plugin_rows"],
           nullifyColumns: {
@@ -306,9 +306,9 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
         const migrationRows = await restoreSql.unsafe<{ hash: string }[]>(`
           SELECT "hash"
           FROM "drizzle"."__drizzle_migrations"
-          WHERE "hash" = 'paperclip-migration-history'
+          WHERE "hash" = 'bullpen-migration-history'
         `);
-        expect(migrationRows).toEqual([{ hash: "paperclip-migration-history" }]);
+        expect(migrationRows).toEqual([{ hash: "bullpen-migration-history" }]);
 
         const pluginRows = await restoreSql.unsafe<{ note: string; status: string; parent_name: string }[]>(`
           SELECT r."note", r."status"::text AS "status", p."name" AS "parent_name"
@@ -355,9 +355,9 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
       const sourceConnectionString = await createTempDatabase();
       const restoreConnectionString = await createSiblingDatabase(
         sourceConnectionString,
-        "paperclip_composite_fk_restore_target",
+        "bullpen_composite_fk_restore_target",
       );
-      const backupDir = createTempDir("paperclip-db-composite-fk-backup-");
+      const backupDir = createTempDir("bullpen-db-composite-fk-backup-");
       const sourceSql = postgres(sourceConnectionString, { max: 1, onnotice: () => {} });
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
 
@@ -401,7 +401,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
-          filenamePrefix: "paperclip-composite-fk-test",
+          filenamePrefix: "bullpen-composite-fk-test",
           backupEngine: "javascript",
         });
 
@@ -456,13 +456,13 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
       const sourceConnectionString = await createTempDatabase();
       const restoreConnectionString = await createSiblingDatabase(
         sourceConnectionString,
-        "paperclip_copy_fk_restore_target",
+        "bullpen_copy_fk_restore_target",
       );
-      const backupDir = createTempDir("paperclip-db-copy-fk-backup-");
+      const backupDir = createTempDir("bullpen-db-copy-fk-backup-");
       const sourceSql = postgres(sourceConnectionString, { max: 1, onnotice: () => {} });
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
-      const originalPgDumpPath = process.env.PAPERCLIP_PG_DUMP_PATH;
-      process.env.PAPERCLIP_PG_DUMP_PATH = "/bin/false";
+      const originalPgDumpPath = process.env.BULLPEN_PG_DUMP_PATH;
+      process.env.BULLPEN_PG_DUMP_PATH = "/bin/false";
 
       try {
         await sourceSql.unsafe(`
@@ -489,7 +489,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
-          filenamePrefix: "paperclip-copy-fk-test",
+          filenamePrefix: "bullpen-copy-fk-test",
           backupEngine: "auto",
         });
 
@@ -512,9 +512,9 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
         expect(rows).toEqual([{ note: "child emitted before parent", name: "parent" }]);
       } finally {
         if (originalPgDumpPath === undefined) {
-          delete process.env.PAPERCLIP_PG_DUMP_PATH;
+          delete process.env.BULLPEN_PG_DUMP_PATH;
         } else {
-          process.env.PAPERCLIP_PG_DUMP_PATH = originalPgDumpPath;
+          process.env.BULLPEN_PG_DUMP_PATH = originalPgDumpPath;
         }
         await sourceSql.end();
         await restoreSql.end();
@@ -528,25 +528,25 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
     async () => {
       const restoreConnectionString = await createTempDatabase();
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
-      const backupDir = createTempDir("paperclip-db-restore-manual-");
+      const backupDir = createTempDir("bullpen-db-restore-manual-");
       const backupFile = path.join(backupDir, "manual.sql");
 
       try {
         await fs.promises.writeFile(
           backupFile,
           [
-            "-- Paperclip database backup",
+            "-- Bullpen database backup",
             "-- Created: 2026-04-06T00:00:00.000Z",
             "",
             "BEGIN;",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- bullpen statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
             "CREATE TABLE public.restore_stream_test (id integer primary key, payload text not null);",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- bullpen statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
             "INSERT INTO public.restore_stream_test (id, payload)",
             "VALUES (1, 'hello');",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- bullpen statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
             "COMMIT;",
-            "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
+            "-- bullpen statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900",
           ].join("\n"),
           "utf8",
         );

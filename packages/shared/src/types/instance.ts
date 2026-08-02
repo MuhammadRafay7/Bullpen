@@ -78,7 +78,7 @@ export interface InstanceExperimentalSettings {
    */
   enableOwnerInstanceAdmin: boolean;
   /**
-   * Worktree preview instances (`PAPERCLIP_IN_WORKTREE=true`) suppress the
+   * Worktree preview instances (`BULLPEN_IN_WORKTREE=true`) suppress the
    * heartbeat run engine by default so previews never self-execute tasks. When
    * this is enabled the worktree-instance scheduling suppression is lifted so
    * runs actually execute inside the preview. Ignored outside a worktree.
@@ -108,17 +108,17 @@ export type ManagedExperimentalFeatureKey = {
     : never;
 }[keyof InstanceExperimentalSettings];
 
-export const PAPERCLIP_CLOUD_MANAGED_BY = "paperclip-cloud" as const;
+export const BULLPEN_CLOUD_MANAGED_BY = "bullpen-cloud" as const;
 
 /** Per-key metadata attached to settings responses for cloud-overlaid keys. */
 export interface ManagedSettingMetadata {
   managed: true;
-  managedBy: typeof PAPERCLIP_CLOUD_MANAGED_BY;
+  managedBy: typeof BULLPEN_CLOUD_MANAGED_BY;
 }
 
 /**
  * Experimental settings as returned by the settings API. On cloud-managed
- * instances (`PAPERCLIP_MANAGED_CONFIG` present) `managedKeys` lists every key
+ * instances (`BULLPEN_MANAGED_CONFIG` present) `managedKeys` lists every key
  * whose value is overlaid by the harness; self-hosted responses omit it.
  */
 export interface InstanceExperimentalSettingsWithManaged extends InstanceExperimentalSettings {

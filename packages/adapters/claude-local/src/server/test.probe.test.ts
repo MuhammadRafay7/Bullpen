@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterExecutionTarget } from "@bullpen/adapter-utils/execution-target";
 
 const {
   ensureAdapterExecutionTargetDirectory,
@@ -28,13 +28,13 @@ const {
       startedAt: new Date().toISOString(),
     })),
     describeAdapterExecutionTarget: vi.fn(() => "Daytona"),
-    resolveAdapterExecutionTargetCwd: vi.fn(() => "/home/daytona/paperclip-workspace"),
+    resolveAdapterExecutionTargetCwd: vi.fn(() => "/home/daytona/bullpen-workspace"),
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@bullpen/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@bullpen/adapter-utils/execution-target")>(
+    "@bullpen/adapter-utils/execution-target",
   );
   return {
     ...actual,
@@ -53,7 +53,7 @@ const sandboxTarget: AdapterExecutionTarget = {
   kind: "remote",
   transport: "sandbox",
   providerKey: "daytona",
-  remoteCwd: "/home/daytona/paperclip-workspace",
+  remoteCwd: "/home/daytona/bullpen-workspace",
   runner: {
     execute: async () => ({
       exitCode: 0,
@@ -68,7 +68,7 @@ const sandboxTarget: AdapterExecutionTarget = {
 };
 
 const initLine =
-  '{"type":"system","subtype":"init","cwd":"/home/daytona/paperclip-workspace","session_id":"abc","tools":["Bash","Read"]}';
+  '{"type":"system","subtype":"init","cwd":"/home/daytona/bullpen-workspace","session_id":"abc","tools":["Bash","Read"]}';
 
 afterEach(() => {
   vi.clearAllMocks();

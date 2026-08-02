@@ -4,37 +4,37 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { serviceHealthChecks } from "../checks/service-health-check.js";
 import { resolveRestartExpectedVersion, withHotRestartLock } from "../commands/service.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { BullpenConfig } from "../config/schema.js";
 import { buildLocalHealthUrl } from "../utils/health-url.js";
 
 const config = {
   server: { host: "127.0.0.1", port: 3100 },
-} as PaperclipConfig;
+} as BullpenConfig;
 
-let previousPaperclipHome: string | undefined;
+let previousBullpenHome: string | undefined;
 let previousServiceManaged: string | undefined;
 
 beforeEach(() => {
-  previousPaperclipHome = process.env.PAPERCLIP_HOME;
-  previousServiceManaged = process.env.PAPERCLIP_SERVICE_MANAGED;
-  process.env.PAPERCLIP_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-service-restart-"));
+  previousBullpenHome = process.env.BULLPEN_HOME;
+  previousServiceManaged = process.env.BULLPEN_SERVICE_MANAGED;
+  process.env.BULLPEN_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-service-restart-"));
 });
 
 afterEach(() => {
-  if (previousPaperclipHome === undefined) delete process.env.PAPERCLIP_HOME;
-  else process.env.PAPERCLIP_HOME = previousPaperclipHome;
-  if (previousServiceManaged === undefined) delete process.env.PAPERCLIP_SERVICE_MANAGED;
-  else process.env.PAPERCLIP_SERVICE_MANAGED = previousServiceManaged;
+  if (previousBullpenHome === undefined) delete process.env.BULLPEN_HOME;
+  else process.env.BULLPEN_HOME = previousBullpenHome;
+  if (previousServiceManaged === undefined) delete process.env.BULLPEN_SERVICE_MANAGED;
+  else process.env.BULLPEN_SERVICE_MANAGED = previousServiceManaged;
 });
 
 function managerFixture(active = true) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-service-doctor-"));
-  const definitionPath = path.join(root, "paperclipai.service");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-service-doctor-"));
+  const definitionPath = path.join(root, "bullpen.service");
   fs.writeFileSync(definitionPath, "unit");
   return {
     platform: "systemd" as const,
     instanceId: "default",
-    serviceName: "paperclipai.service",
+    serviceName: "bullpen.service",
     definitionPath,
     renderDefinition: () => "unit",
     install: vi.fn(async () => ({ changed: false })),
@@ -44,7 +44,7 @@ function managerFixture(active = true) {
     restart: vi.fn(async () => undefined),
     status: vi.fn(async () => ({
       platform: "systemd" as const,
-      serviceName: "paperclipai.service",
+      serviceName: "bullpen.service",
       installed: true,
       active,
       enabled: true,
@@ -57,7 +57,7 @@ function managerFixture(active = true) {
 
 describe("service health doctor checks", () => {
   it("skips live service checks during the managed unit's own activation", async () => {
-    process.env.PAPERCLIP_SERVICE_MANAGED = "1";
+    process.env.BULLPEN_SERVICE_MANAGED = "1";
     const detect = vi.fn();
     const probe = vi.fn();
     await expect(serviceHealthChecks(config, { detect, probe })).resolves.toEqual([]);
@@ -94,7 +94,7 @@ describe("service health doctor checks", () => {
   });
 
   it("reclaims restart locks left by terminated processes", async () => {
-    const lockPath = path.join(process.env.PAPERCLIP_HOME!, "instances", "default", "hot-restart.lock");
+    const lockPath = path.join(process.env.BULLPEN_HOME!, "instances", "default", "hot-restart.lock");
     fs.mkdirSync(path.dirname(lockPath), { recursive: true });
     fs.writeFileSync(lockPath, "424242:stale-token\n");
     const callback = vi.fn(async () => "restarted");
@@ -135,7 +135,7 @@ describe("service health doctor checks", () => {
       expect.objectContaining({
         name: "Service runtime",
         status: "fail",
-        message: expect.stringContaining("another Paperclip process"),
+        message: expect.stringContaining("another Bullpen process"),
       }),
     );
   });

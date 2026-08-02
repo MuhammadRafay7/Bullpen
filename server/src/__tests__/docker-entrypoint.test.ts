@@ -84,12 +84,12 @@ describe("docker-entrypoint.sh", () => {
     expect(calls).not.toContain("chown");
   });
 
-  it("remaps the node user and chowns /paperclip before gosu when root requests a different UID/GID", async () => {
+  it("remaps the node user and chowns /bullpen before gosu when root requests a different UID/GID", async () => {
     // The stubbed node uid stays 1000 while the stat probe reports the old
     // ownership, modelling the post-remap mismatch that must trigger chown.
     installStubs({ uid: 0, gid: 0, homeMismatch: true });
 
-    const { stdout, calls } = await runEntrypoint({ USER_UID: "1001", USER_GID: "1001", PAPERCLIP_HOME: stubDir });
+    const { stdout, calls } = await runEntrypoint({ USER_UID: "1001", USER_GID: "1001", BULLPEN_HOME: stubDir });
 
     expect(stdout).toContain("ENTRYPOINT-CMD-RAN");
     expect(calls).toContain("usermod -o -u 1001 node");
@@ -105,7 +105,7 @@ describe("docker-entrypoint.sh", () => {
     // first mkdir.
     installStubs({ uid: 0, gid: 0, homeMismatch: true });
 
-    const { stdout, calls } = await runEntrypoint({ PAPERCLIP_HOME: stubDir });
+    const { stdout, calls } = await runEntrypoint({ BULLPEN_HOME: stubDir });
 
     expect(stdout).toContain("ENTRYPOINT-CMD-RAN");
     expect(calls).toContain(`chown -R node:node ${stubDir}`);
@@ -116,7 +116,7 @@ describe("docker-entrypoint.sh", () => {
   it("repairs ownership on a GID-only remap (stale group on persisted descendants)", async () => {
     installStubs({ uid: 0, gid: 0, homeMismatch: true });
 
-    const { calls } = await runEntrypoint({ USER_GID: "1001", PAPERCLIP_HOME: stubDir });
+    const { calls } = await runEntrypoint({ USER_GID: "1001", BULLPEN_HOME: stubDir });
 
     expect(calls).toContain("groupmod -o -g 1001 node");
     expect(calls).toContain(`chown -R node:node ${stubDir}`);
@@ -125,16 +125,16 @@ describe("docker-entrypoint.sh", () => {
   it("keeps a fully node-owned tree chown-free (no per-boot recursive chown)", async () => {
     installStubs({ uid: 0, gid: 0, homeMismatch: false });
 
-    const { calls } = await runEntrypoint({ PAPERCLIP_HOME: stubDir });
+    const { calls } = await runEntrypoint({ BULLPEN_HOME: stubDir });
 
     expect(calls).not.toContain("chown");
     expect(calls).toContain("gosu node echo ENTRYPOINT-CMD-RAN");
   });
 
-  it("honours PAPERCLIP_HOME for the ownership probe", async () => {
+  it("honours BULLPEN_HOME for the ownership probe", async () => {
     installStubs({ uid: 0, gid: 0, homeMismatch: true });
 
-    const { calls } = await runEntrypoint({ PAPERCLIP_HOME: stubDir });
+    const { calls } = await runEntrypoint({ BULLPEN_HOME: stubDir });
 
     expect(calls).toContain(`chown -R node:node ${stubDir}`);
   });

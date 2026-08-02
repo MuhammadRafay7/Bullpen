@@ -4,7 +4,7 @@ import { createElement, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ToolCatalogEntry, ToolPolicy } from "@paperclipai/shared";
+import type { ToolCatalogEntry, ToolPolicy } from "@bullpen/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const toolsApiMock = vi.hoisted(() => ({
@@ -272,7 +272,7 @@ describe("PoliciesTab", () => {
     const forget = [...container.querySelectorAll("button")].find((button) => button.textContent?.includes("Forget"));
     flushSync(() => forget?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
     await flushReact();
-    expect(container.textContent).toContain("Paperclip will ask again");
+    expect(container.textContent).toContain("Bullpen will ask again");
 
     const confirmForget = [...container.querySelectorAll("button")].filter((button) => button.textContent?.includes("Forget")).at(-1);
     flushSync(() => confirmForget?.dispatchEvent(new MouseEvent("click", { bubbles: true })));

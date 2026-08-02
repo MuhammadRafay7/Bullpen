@@ -16,8 +16,8 @@ import {
   issues,
   principalPermissionGrants,
   userInboxAgentPolicies,
-} from "@paperclipai/db";
-import { LOW_TRUST_REVIEW_PRESET } from "@paperclipai/shared";
+} from "@bullpen/db";
+import { LOW_TRUST_REVIEW_PRESET } from "@bullpen/shared";
 import { errorHandler } from "../middleware/index.js";
 import { issueRoutes } from "../routes/issues.js";
 import {
@@ -33,7 +33,7 @@ describeEmbeddedPostgres("inbox archive routes", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-inbox-archive-routes-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-inbox-archive-routes-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

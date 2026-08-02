@@ -1,4 +1,4 @@
-import type { ServerInfoSnapshot } from "@paperclipai/shared";
+import type { ServerInfoSnapshot } from "@bullpen/shared";
 
 export type DevServerHealthStatus = {
   enabled: true;

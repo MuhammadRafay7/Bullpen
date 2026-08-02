@@ -1,11 +1,11 @@
-import type { Db } from "@paperclipai/db";
-import type { Environment, EnvironmentLease } from "@paperclipai/shared";
-import { adapterSupportsRemoteManagedEnvironments } from "@paperclipai/shared";
+import type { Db } from "@bullpen/db";
+import type { Environment, EnvironmentLease } from "@bullpen/shared";
+import { adapterSupportsRemoteManagedEnvironments } from "@bullpen/shared";
 import {
   adapterExecutionTargetToRemoteSpec,
   type AdapterExecutionTarget,
-} from "@paperclipai/adapter-utils/execution-target";
-import { normalizeProviderFamily } from "@paperclipai/adapter-utils/acpx-engine/startup-timing";
+} from "@bullpen/adapter-utils/execution-target";
+import { normalizeProviderFamily } from "@bullpen/adapter-utils/acpx-engine/startup-timing";
 import { parseObject } from "../adapters/utils.js";
 import { getStartupTracer } from "../instrumentation.js";
 import { resolveEnvironmentDriverConfigForRuntime } from "./environment-config.js";

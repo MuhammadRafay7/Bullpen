@@ -14,7 +14,7 @@ import {
   isSuccessfulRunHandoffRequiredNoticeBody,
   noticeMetadataReferencesRecoveryAction,
 } from "./successful-run-handoff.js";
-import { UNMANAGED_BACKGROUND_TASK_LIVENESS_REASON } from "@paperclipai/adapter-utils/server-utils";
+import { UNMANAGED_BACKGROUND_TASK_LIVENESS_REASON } from "@bullpen/adapter-utils/server-utils";
 
 const run = {
   id: "run-1",

@@ -168,32 +168,32 @@ describe("sandbox managed runtime", () => {
   });
 
   it("preserves excluded local workspace artifacts during restore mirroring", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-restore-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-restore-"));
     cleanupDirs.push(rootDir);
     const sourceDir = path.join(rootDir, "source");
     const targetDir = path.join(rootDir, "target");
     await mkdir(path.join(sourceDir, "src"), { recursive: true });
     await mkdir(path.join(targetDir, ".claude"), { recursive: true });
-    await mkdir(path.join(targetDir, ".paperclip-runtime"), { recursive: true });
+    await mkdir(path.join(targetDir, ".bullpen-runtime"), { recursive: true });
     await writeFile(path.join(sourceDir, "src", "app.ts"), "export const value = 2;\n", "utf8");
     await writeFile(path.join(targetDir, "stale.txt"), "remove me\n", "utf8");
     await writeFile(path.join(targetDir, ".claude", "settings.json"), "{\"keep\":true}\n", "utf8");
     await writeFile(path.join(targetDir, ".claude.json"), "{\"keep\":true}\n", "utf8");
-    await writeFile(path.join(targetDir, ".paperclip-runtime", "state.json"), "{}\n", "utf8");
+    await writeFile(path.join(targetDir, ".bullpen-runtime", "state.json"), "{}\n", "utf8");
 
     await mirrorDirectory(sourceDir, targetDir, {
-      preserveAbsent: [".paperclip-runtime", ".claude", ".claude.json"],
+      preserveAbsent: [".bullpen-runtime", ".claude", ".claude.json"],
     });
 
     await expect(readFile(path.join(targetDir, "src", "app.ts"), "utf8")).resolves.toBe("export const value = 2;\n");
     await expect(readFile(path.join(targetDir, ".claude", "settings.json"), "utf8")).resolves.toBe("{\"keep\":true}\n");
     await expect(readFile(path.join(targetDir, ".claude.json"), "utf8")).resolves.toBe("{\"keep\":true}\n");
-    await expect(readFile(path.join(targetDir, ".paperclip-runtime", "state.json"), "utf8")).resolves.toBe("{}\n");
+    await expect(readFile(path.join(targetDir, ".bullpen-runtime", "state.json"), "utf8")).resolves.toBe("{}\n");
     await expect(readFile(path.join(targetDir, "stale.txt"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("applies file mode on a staged sibling before renaming into place", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-copy-mode-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-copy-mode-"));
     cleanupDirs.push(rootDir);
     const sourceDir = path.join(rootDir, "source");
     const targetDir = path.join(rootDir, "target");
@@ -214,13 +214,13 @@ describe("sandbox managed runtime", () => {
     await expect(readFile(targetPath, "utf8")).resolves.toBe("#!/bin/sh\necho hello\n");
     expect(chmodMock).toHaveBeenCalledTimes(1);
     expect(renameMock).toHaveBeenCalledTimes(1);
-    expect(chmodMock.mock.calls[0]?.[0]).toContain(".paperclip-copy.");
+    expect(chmodMock.mock.calls[0]?.[0]).toContain(".bullpen-copy.");
     expect(chmodMock.mock.calls[0]?.[0]).not.toBe(targetPath);
     expect(chmodMock.mock.invocationCallOrder[0]).toBeLessThan(renameMock.mock.invocationCallOrder[0]);
   });
 
   it("cleans up a staged sibling when chmod fails before rename", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-copy-cleanup-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-copy-cleanup-"));
     cleanupDirs.push(rootDir);
     const sourceDir = path.join(rootDir, "source");
     const targetDir = path.join(rootDir, "target");
@@ -244,13 +244,13 @@ describe("sandbox managed runtime", () => {
     expect(chmodMock).toHaveBeenCalledTimes(1);
     expect(renameMock).not.toHaveBeenCalled();
     const stagedPath = chmodMock.mock.calls[0]?.[0];
-    expect(stagedPath).toContain(".paperclip-copy.");
+    expect(stagedPath).toContain(".bullpen-copy.");
     await expect(readFile(stagedPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     await expect(readFile(targetPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("syncs workspace and assets through a provider-neutral sandbox client", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-managed-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-managed-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -324,8 +324,8 @@ describe("sandbox managed runtime", () => {
 
     await writeFile(path.join(remoteWorkspaceDir, "README.md"), "remote workspace\n", "utf8");
     await writeFile(path.join(remoteWorkspaceDir, "remote-only.txt"), "sync back\n", "utf8");
-    await mkdir(path.join(localWorkspaceDir, ".paperclip-runtime"), { recursive: true });
-    await writeFile(path.join(localWorkspaceDir, ".paperclip-runtime", "state.json"), "{}\n", "utf8");
+    await mkdir(path.join(localWorkspaceDir, ".bullpen-runtime"), { recursive: true });
+    await writeFile(path.join(localWorkspaceDir, ".bullpen-runtime", "state.json"), "{}\n", "utf8");
     await writeFile(path.join(localWorkspaceDir, "local-stale.txt"), "remove\n", "utf8");
     await prepared.restoreWorkspace();
 
@@ -333,7 +333,7 @@ describe("sandbox managed runtime", () => {
     await expect(readFile(path.join(localWorkspaceDir, "remote-only.txt"), "utf8")).resolves.toBe("sync back\n");
     await expect(readFile(path.join(localWorkspaceDir, "local-stale.txt"), "utf8")).resolves.toBe("remove\n");
     await expect(readFile(path.join(localWorkspaceDir, ".claude", "settings.json"), "utf8")).resolves.toBe("{\"local\":true}\n");
-    await expect(readFile(path.join(localWorkspaceDir, ".paperclip-runtime", "state.json"), "utf8")).resolves.toBe("{}\n");
+    await expect(readFile(path.join(localWorkspaceDir, ".bullpen-runtime", "state.json"), "utf8")).resolves.toBe("{}\n");
     expect(runtimeStatuses).toEqual(expect.arrayContaining([
       "config_sync:Syncing workspace to sandbox",
       "config_sync:Syncing runtime assets to sandbox",
@@ -349,7 +349,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("syncs git-backed workspaces through a shallow standalone clone and keeps .git out of archives", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-git-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-git-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-worktree");
@@ -358,7 +358,7 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(sourceRepoDir, ".gitignore"), "node_modules/\n", "utf8");
     await writeFile(path.join(sourceRepoDir, "tracked.txt"), "base\n", "utf8");
@@ -452,7 +452,7 @@ describe("sandbox managed runtime", () => {
     expect(workspaceMembers).not.toContain("clean.txt");
     expect(workspaceMembers.some((entry) => entry === "node_modules" || entry.startsWith("node_modules/"))).toBe(false);
 
-    await git(remoteWorkspaceDir, ["config", "user.name", "Paperclip Sandbox"]);
+    await git(remoteWorkspaceDir, ["config", "user.name", "Bullpen Sandbox"]);
     await git(remoteWorkspaceDir, ["config", "user.email", "sandbox@paperclip.dev"]);
     await git(remoteWorkspaceDir, ["add", "-A"]);
     await git(remoteWorkspaceDir, ["commit", "-m", "sandbox update"]);
@@ -494,7 +494,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("repairs stale host index deletions when the sandbox restores a clean git worktree", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-clean-restore-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-clean-restore-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-worktree");
@@ -503,7 +503,7 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(sourceRepoDir, "kept.txt"), "kept\n", "utf8");
     await writeFile(path.join(sourceRepoDir, "restored.txt"), "restored\n", "utf8");
@@ -569,7 +569,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("does not fail clean restore checks when local working tree changes survive", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-preserved-local-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-preserved-local-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-worktree");
@@ -577,7 +577,7 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(sourceRepoDir, "kept.txt"), "base\n", "utf8");
     await git(sourceRepoDir, ["add", "kept.txt"]);
@@ -593,7 +593,7 @@ describe("sandbox managed runtime", () => {
         checkWorkingTreeClean: true,
       });
       expect(warnSpy).toHaveBeenCalledWith(
-        "[paperclip] Workspace restore preserved local working tree changes after clean sandbox restore.",
+        "[bullpen] Workspace restore preserved local working tree changes after clean sandbox restore.",
       );
     } finally {
       warnSpy.mockRestore();
@@ -605,7 +605,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("excludes unignored dependency trees from git-backed workspace overlay archives", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-unignored-deps-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-unignored-deps-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-worktree");
@@ -614,7 +614,7 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await mkdir(path.join(sourceRepoDir, "src"), { recursive: true });
     await writeFile(path.join(sourceRepoDir, "src", "tracked.ts"), "export const tracked = true;\n", "utf8");
@@ -713,7 +713,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("builds workspace/asset tarballs without a './' self-entry (so untar does not chmod/utime an unowned target dir)", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-tarself-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-tarself-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -791,7 +791,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("excludes transient symlinked home dirs from the asset tar while keeping required content", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-home-tmp-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-home-tmp-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -883,7 +883,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("emits throttled, labeled upload and restore progress with direction and percentages", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-progress-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-progress-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -967,7 +967,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("creates valid empty workspace tarballs when the workspace is empty", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-empty-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-empty-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -1023,7 +1023,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("provisions a contribution-less asset via a plain tar extract and restores it as a no-op", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-default-asset-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-default-asset-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -1088,7 +1088,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("round-trips a non-codex asset through generic provision + restore contributions", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-seam-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-seam-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -1170,7 +1170,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("rejects a provision stageFile.name that is not a simple basename", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-traversal-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-traversal-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -1234,7 +1234,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("routes a custom-provisioned asset through a single syncIn operation with its post-upload command (native runner → 0 direct writeFile/run)", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-native-asset-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-native-asset-"));
     cleanupDirs.push(rootDir);
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -1333,8 +1333,8 @@ describe("sandbox managed runtime", () => {
     await expect(readFile(path.join(prepared.assetDirs.widget, "seed.txt"), "utf8")).resolves.toBe("seed\n");
   });
 
-  it("stages git and workspace via syncIn preserving .paperclip-runtime (native runner → 0 direct writeFile/run)", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-native-git-"));
+  it("stages git and workspace via syncIn preserving .bullpen-runtime (native runner → 0 direct writeFile/run)", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-native-git-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -1342,15 +1342,15 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(sourceRepoDir, "tracked.txt"), "tracked\n", "utf8");
     await git(sourceRepoDir, ["add", "tracked.txt"]);
     await git(sourceRepoDir, ["commit", "-m", "base"]);
     await git(sourceRepoDir, ["worktree", "add", "-b", "work", localWorkspaceDir, "HEAD"]);
-    // Pre-seed the sandbox with a `.paperclip-runtime` dir that MUST survive.
-    await mkdir(path.join(remoteWorkspaceDir, ".paperclip-runtime"), { recursive: true });
-    await writeFile(path.join(remoteWorkspaceDir, ".paperclip-runtime", "keep.txt"), "keep\n", "utf8");
+    // Pre-seed the sandbox with a `.bullpen-runtime` dir that MUST survive.
+    await mkdir(path.join(remoteWorkspaceDir, ".bullpen-runtime"), { recursive: true });
+    await writeFile(path.join(remoteWorkspaceDir, ".bullpen-runtime", "keep.txt"), "keep\n", "utf8");
 
     const directWrites: string[] = [];
     const directRuns: string[] = [];
@@ -1404,21 +1404,21 @@ describe("sandbox managed runtime", () => {
     expect(byBase("workspace-upload.tar")).toBeDefined();
     expect(op.files.every((mapping) => mapping.kind === "file")).toBe(true);
     // The first post-upload command extracts the git history and preserves
-    // `.paperclip-runtime` while replacing the rest of the tree (wipe-except-preserved).
+    // `.bullpen-runtime` while replacing the rest of the tree (wipe-except-preserved).
     const gitCommand = op.postUploadCommands![0].command;
-    expect(gitCommand).toContain(".paperclip-runtime");
+    expect(gitCommand).toContain(".bullpen-runtime");
     expect(gitCommand).toContain("tar -xf");
 
     // The pre-seeded runtime dir survived the git+workspace staging.
     await expect(
-      readFile(path.join(remoteWorkspaceDir, ".paperclip-runtime", "keep.txt"), "utf8"),
+      readFile(path.join(remoteWorkspaceDir, ".bullpen-runtime", "keep.txt"), "utf8"),
     ).resolves.toBe("keep\n");
     await expect(readFile(path.join(remoteWorkspaceDir, "tracked.txt"), "utf8")).resolves.toBe("tracked\n");
     expect(prepared.workspaceRemoteDir).toBe(remoteWorkspaceDir);
   });
 
   it("issues one merged syncIn operation for a git-backed workspace stage-sync with two ordered extract commands", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-merged-git-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-merged-git-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -1426,15 +1426,15 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(sourceRepoDir, "tracked.txt"), "tracked\n", "utf8");
     await git(sourceRepoDir, ["add", "tracked.txt"]);
     await git(sourceRepoDir, ["commit", "-m", "base"]);
     await git(sourceRepoDir, ["worktree", "add", "-b", "work", localWorkspaceDir, "HEAD"]);
-    // Pre-seed the sandbox with a `.paperclip-runtime` dir that MUST survive.
-    await mkdir(path.join(remoteWorkspaceDir, ".paperclip-runtime"), { recursive: true });
-    await writeFile(path.join(remoteWorkspaceDir, ".paperclip-runtime", "keep.txt"), "keep\n", "utf8");
+    // Pre-seed the sandbox with a `.bullpen-runtime` dir that MUST survive.
+    await mkdir(path.join(remoteWorkspaceDir, ".bullpen-runtime"), { recursive: true });
+    await writeFile(path.join(remoteWorkspaceDir, ".bullpen-runtime", "keep.txt"), "keep\n", "utf8");
 
     const client: SandboxManagedRuntimeClient = {
       makeDir: async (remotePath) => {
@@ -1493,11 +1493,11 @@ describe("sandbox managed runtime", () => {
     expect(op.files).toHaveLength(2);
     expect(op.files.every((mapping) => mapping.kind === "file")).toBe(true);
 
-    // Both tar targets live under `.paperclip-runtime`, so the git extract's wipe
-    // (which preserves `.paperclip-runtime`) cannot delete the overlay tar before
+    // Both tar targets live under `.bullpen-runtime`, so the git extract's wipe
+    // (which preserves `.bullpen-runtime`) cannot delete the overlay tar before
     // the overlay extract runs.
     for (const mapping of op.files) {
-      expect(mapping.targetPath).toContain("/.paperclip-runtime/");
+      expect(mapping.targetPath).toContain("/.bullpen-runtime/");
     }
 
     // Two ordered extract commands: git history first (wipe-except-preserved),
@@ -1505,7 +1505,7 @@ describe("sandbox managed runtime", () => {
     const commands = op.postUploadCommands ?? [];
     expect(commands).toHaveLength(2);
     expect(commands[0].command).toContain("git-workspace-upload.tar");
-    expect(commands[0].command).toContain(".paperclip-runtime");
+    expect(commands[0].command).toContain(".bullpen-runtime");
     expect(commands[0].command).toContain("find ");
     expect(commands[1].command).toContain("workspace-upload.tar");
     expect(commands[1].command).not.toContain("git-workspace-upload.tar");
@@ -1513,14 +1513,14 @@ describe("sandbox managed runtime", () => {
 
     // The pre-seeded runtime dir survived and the workspace overlay applied.
     await expect(
-      readFile(path.join(remoteWorkspaceDir, ".paperclip-runtime", "keep.txt"), "utf8"),
+      readFile(path.join(remoteWorkspaceDir, ".bullpen-runtime", "keep.txt"), "utf8"),
     ).resolves.toBe("keep\n");
     await expect(readFile(path.join(remoteWorkspaceDir, "tracked.txt"), "utf8")).resolves.toBe("tracked\n");
   });
 
   it("the merged workspace confine guard covers both tar mappings (escape in either trips it)", () => {
-    const runtimeRoot = "/home/daytona/paperclip-workspace/.paperclip-runtime/test-adapter";
-    const tempRoot = "/tmp/paperclip-sandbox-sync-abc";
+    const runtimeRoot = "/home/daytona/bullpen-workspace/.bullpen-runtime/test-adapter";
+    const tempRoot = "/tmp/bullpen-sandbox-sync-abc";
     const gitMapping = {
       sourcePath: `${tempRoot}/git-workspace.tar`,
       targetPath: `${runtimeRoot}/git-workspace-upload.tar`,
@@ -1579,7 +1579,7 @@ describe("sandbox managed runtime", () => {
   // workspace operation back into two — fails loudly here instead of silently
   // regressing the start path.
   it("collapses a representative codex_local start to two syncIn round-trips: one merged workspace op plus the asset op", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-sandbox-codex-roundtrip-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-sandbox-codex-roundtrip-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -1590,7 +1590,7 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(sourceRepoDir, "tracked.txt"), "tracked\n", "utf8");
     await git(sourceRepoDir, ["add", "tracked.txt"]);
@@ -1691,7 +1691,7 @@ describe("sandbox managed runtime", () => {
   });
 
   it("authors the advisory access intent rw on workspace, git, and asset inbound mappings", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-access-rw-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-access-rw-"));
     cleanupDirs.push(rootDir);
     const sourceRepoDir = path.join(rootDir, "source-repo");
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -1702,7 +1702,7 @@ describe("sandbox managed runtime", () => {
     await mkdir(sourceRepoDir, { recursive: true });
     await git(sourceRepoDir, ["init"]);
     await git(sourceRepoDir, ["checkout", "-b", "main"]);
-    await git(sourceRepoDir, ["config", "user.name", "Paperclip Test"]);
+    await git(sourceRepoDir, ["config", "user.name", "Bullpen Test"]);
     await git(sourceRepoDir, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(sourceRepoDir, "tracked.txt"), "tracked\n", "utf8");
     await git(sourceRepoDir, ["add", "tracked.txt"]);
@@ -1757,18 +1757,18 @@ describe("sandbox managed runtime", () => {
     // directory that the post-upload extract command fills: the workspace
     // directory for the workspace and git tars, and the asset directory for the
     // asset tar.
-    const remoteAssetDir = path.posix.join(remoteWorkspaceDir, ".paperclip-runtime", "test-adapter", "home");
+    const remoteAssetDir = path.posix.join(remoteWorkspaceDir, ".bullpen-runtime", "test-adapter", "home");
     expect(findMapping("workspace-upload.tar")?.writablePath).toBe(remoteWorkspaceDir);
     expect(findMapping("git-workspace-upload.tar")?.writablePath).toBe(remoteWorkspaceDir);
     expect(findMapping("home-upload.tar")?.writablePath).toBe(remoteAssetDir);
   });
 
   it("authors the advisory access intent ro on referenced-project inbound mappings", async () => {
-    const flagKey = "PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC";
+    const flagKey = "BULLPEN_MULTI_PROJECT_WORKSPACE_SYNC";
     const priorFlag = process.env[flagKey];
     process.env[flagKey] = "1";
     try {
-      const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-access-ro-"));
+      const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-access-ro-"));
       cleanupDirs.push(rootDir);
       const localWorkspaceDir = path.join(rootDir, "local-workspace");
       const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
@@ -1835,16 +1835,16 @@ describe("sandbox managed runtime", () => {
   // host filesystem (host FS stands in for the sandbox FS). The runner exposes no
   // native syncIn, so staging rides the base64/tar fallback, the same transport a
   // provider without native sync uses. In production the kill-switch
-  // `PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC` gates whether run prep resolves any
+  // `BULLPEN_MULTI_PROJECT_WORKSPACE_SYNC` gates whether run prep resolves any
   // referenced projects (OFF ⇒ none reach this layer). Enable it in-test only to
   // model the ON scenario, and prove multi-project isolation plus one-failure
   // isolation end-to-end.
   it("stages multiple referenced projects into isolated sandbox dirs end-to-end, skipping a failing source", async () => {
-    const flagKey = "PAPERCLIP_MULTI_PROJECT_WORKSPACE_SYNC";
+    const flagKey = "BULLPEN_MULTI_PROJECT_WORKSPACE_SYNC";
     const priorFlag = process.env[flagKey];
     process.env[flagKey] = "1";
     try {
-      const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-e2e-additional-"));
+      const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-e2e-additional-"));
       cleanupDirs.push(rootDir);
 
       const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -1892,7 +1892,7 @@ describe("sandbox managed runtime", () => {
         ],
       });
 
-      const runtimeRootDir = path.posix.join(remoteWorkspaceDir, ".paperclip-runtime", "test-adapter");
+      const runtimeRootDir = path.posix.join(remoteWorkspaceDir, ".bullpen-runtime", "test-adapter");
 
       // The anchor workspace synced normally and stays byte-identical.
       await expect(readFile(path.join(remoteWorkspaceDir, "README.md"), "utf8")).resolves.toBe("anchor content\n");

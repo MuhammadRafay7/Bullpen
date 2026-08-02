@@ -50,7 +50,7 @@ import type {
   CreateToolMcpGatewayToken,
   UpdateToolMcpGateway,
   CreateToolTrustRuleFromActionRequest,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { api } from "./client";
 
 /**

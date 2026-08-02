@@ -3,7 +3,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
-import type { CompanySkillDetail, CompanySkillVersion, FolderListResult } from "@paperclipai/shared";
+import type { CompanySkillDetail, CompanySkillVersion, FolderListResult } from "@bullpen/shared";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DiscoveryGrid,
@@ -350,7 +350,7 @@ describe("DiscoveryGrid Studio entry points", () => {
       catalogRef: null,
       name: "Demo Skill",
       slug: "demo-skill",
-      author: "Paperclip",
+      author: "Bullpen",
       version: null,
       tagline: null,
       description: null,
@@ -390,7 +390,7 @@ describe("DiscoveryGrid Studio entry points", () => {
       catalogRef: null,
       name: "Bundled Skill",
       slug: "bundled-skill",
-      author: "Paperclip",
+      author: "Bullpen",
       version: null,
       tagline: null,
       description: null,
@@ -581,7 +581,7 @@ describe("SkillDetailPage settings", () => {
 
   it("renders long source paths in full so they can wrap inside the sidebar", async () => {
     const v1 = makeVersion(1, "# Demo Skill");
-    const longSourcePath = "/srv/paperclip/home/paperclipai/paperclip/.agents/skills/prepare-pr/SKILL.md";
+    const longSourcePath = "/srv/bullpen/home/bullpen/bullpen/.agents/skills/prepare-pr/SKILL.md";
     const node = await renderSkillDetail([v1], {
       activeTab: "agents",
       detail: makeDetail(v1, {

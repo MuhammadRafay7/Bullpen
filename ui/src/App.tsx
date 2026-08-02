@@ -13,7 +13,7 @@ import { Cases } from "./pages/Cases";
 import { CaseDetail } from "./pages/CaseDetail";
 import { OnboardingWizardVariant } from "./components/OnboardingWizardVariant";
 import { CloudAccessGate } from "./components/CloudAccessGate";
-import { PaperclipLoading } from "./components/AnimatedPaperclipIcon";
+import { BullpenLoading } from "./components/AnimatedBullpenIcon";
 import { Dashboard } from "./pages/Dashboard";
 import { DashboardLive } from "./pages/DashboardLive";
 import { Timeline } from "./pages/Timeline";
@@ -349,7 +349,7 @@ function LegacySettingsRedirect() {
   const { companyPrefix } = useParams<{ companyPrefix?: string }>();
 
   if (loading) {
-    return <PaperclipLoading />;
+    return <BullpenLoading />;
   }
 
   const targetCompany =
@@ -457,7 +457,7 @@ function CompanyRootRedirect() {
   const location = useLocation();
 
   if (loading) {
-    return <PaperclipLoading />;
+    return <BullpenLoading />;
   }
 
   const targetCompany = selectedCompany ?? companies[0] ?? null;
@@ -488,7 +488,7 @@ function UnprefixedBoardRedirect() {
   const { companies, selectedCompany, loading } = useCompany();
 
   if (loading) {
-    return <PaperclipLoading />;
+    return <BullpenLoading />;
   }
 
   const targetCompany = selectedCompany ?? companies[0] ?? null;

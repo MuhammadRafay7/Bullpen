@@ -35,7 +35,7 @@ import {
   toolRuntimeMetricCounters,
   toolRuntimeSlots,
   toolStdioCommandTemplates,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import { and, eq } from "drizzle-orm";
 import {
   getEmbeddedPostgresTestSupport,
@@ -94,7 +94,7 @@ function mcpSseResponse(payload: unknown): Response {
 
 function mockToolsList(tools: unknown[]) {
   return vi.spyOn(globalThis, "fetch").mockResolvedValue(
-    mcpHttpResponse({ jsonrpc: "2.0", id: "paperclip-catalog-refresh", result: { tools } }),
+    mcpHttpResponse({ jsonrpc: "2.0", id: "bullpen-catalog-refresh", result: { tools } }),
   );
 }
 
@@ -263,8 +263,8 @@ async function createBrokerConnection(
   });
   const [application] = await db.insert(toolApplications).values({
     companyId,
-    applicationKey: "paperclip-pages",
-    name: `Paperclip Pages ${randomUUID()}`,
+    applicationKey: "bullpen-pages",
+    name: `Bullpen Pages ${randomUUID()}`,
     type: "mcp_http",
     status: "active",
   }).returning();
@@ -424,7 +424,7 @@ describeEmbeddedPostgres("tool access service", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-tool-access-service-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-tool-access-service-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -497,7 +497,7 @@ describeEmbeddedPostgres("tool access service", () => {
 
     const res = await request(app)
       .post(`/api/agents/me/connections/${encodeURIComponent(connection.uid)}/token`)
-      .set("X-Paperclip-Run-Id", run.id)
+      .set("X-Bullpen-Run-Id", run.id)
       .send({ scope: "pages:publish:ns/dotta", requestedTtlSeconds: 5000 });
 
     expect(res.status).toBe(200);
@@ -705,7 +705,7 @@ describeEmbeddedPostgres("tool access service", () => {
 
     const res = await request(app)
       .post(`/api/agents/me/connections/${connection.id}/token`)
-      .set("X-Paperclip-Run-Id", run.id)
+      .set("X-Bullpen-Run-Id", run.id)
       .send({ scope: "pages:publish:ns/dotta" });
 
     expect(res.status).toBe(403);
@@ -934,7 +934,7 @@ describeEmbeddedPostgres("tool access service", () => {
       .where(eq(toolCatalogEntries.toolName, "send_email"));
     fetchMock.mockResolvedValueOnce(mcpHttpResponse({
       jsonrpc: "2.0",
-      id: "paperclip-catalog-refresh",
+      id: "bullpen-catalog-refresh",
       result: {
         tools: [
           {
@@ -985,7 +985,7 @@ describeEmbeddedPostgres("tool access service", () => {
       }
       return mcpSseResponse({
         jsonrpc: "2.0",
-        id: "paperclip-catalog-refresh",
+        id: "bullpen-catalog-refresh",
         result: { tools: [{ name: "kv_get", description: "Read a value.", annotations: { readOnlyHint: true } }] },
       });
     });
@@ -1024,7 +1024,7 @@ describeEmbeddedPostgres("tool access service", () => {
     const connection = await service.createConnection(company.id, {
       name: "Local echo fixture",
       transport: "local_stdio",
-      config: { templateId: "paperclip.echo-calculator-time" },
+      config: { templateId: "bullpen.echo-calculator-time" },
       enabled: true,
       status: "active",
     });
@@ -1036,13 +1036,13 @@ describeEmbeddedPostgres("tool access service", () => {
       connectionId: connection.id,
       runtimeKind: "local_stdio",
       status: "stopped",
-      commandTemplateKey: "paperclip.echo-calculator-time",
+      commandTemplateKey: "bullpen.echo-calculator-time",
     });
     expect(refresh.catalog.map((entry) => entry.toolName).sort()).toEqual(["add", "echo", "fail_with_code", "now"]);
     expect(runtimeSlots).toEqual([
       expect.objectContaining({
         connectionId: connection.id,
-        providerRef: "template:paperclip.echo-calculator-time",
+        providerRef: "template:bullpen.echo-calculator-time",
         healthStatus: "ok",
       }),
     ]);
@@ -1106,7 +1106,7 @@ describeEmbeddedPostgres("tool access service", () => {
     const listed = await request(app).get(`/api/companies/${company.id}/tools/stdio-templates`).expect(200);
     expect(listed.body.templates).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ templateId: "paperclip.echo-calculator-time", source: "built_in" }),
+        expect.objectContaining({ templateId: "bullpen.echo-calculator-time", source: "built_in" }),
         expect.objectContaining({ templateId: "local.echo-admin", source: "admin", status: "active" }),
       ]),
     );
@@ -1346,7 +1346,7 @@ describeEmbeddedPostgres("tool access service", () => {
     });
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(mcpHttpResponse({
       jsonrpc: "2.0",
-      id: "paperclip-tool-test",
+      id: "bullpen-tool-test",
       result: { content: [{ type: "text", text: "sent" }] },
     }));
     const app = createRouteApp(
@@ -1527,7 +1527,7 @@ describeEmbeddedPostgres("tool access service", () => {
     // 3. Approving from the review queue is what runs the parked test call.
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(mcpHttpResponse({
       jsonrpc: "2.0",
-      id: "paperclip-tool-test",
+      id: "bullpen-tool-test",
       result: { content: [{ type: "text", text: "sent" }] },
     }));
     await gateway.approveActionRequest({ companyId: company.id, actionRequestId, actor: { userId } });
@@ -1570,7 +1570,7 @@ describeEmbeddedPostgres("tool access service", () => {
 
     vi.spyOn(globalThis, "fetch").mockResolvedValue(mcpHttpResponse({
       jsonrpc: "2.0",
-      id: "paperclip-tool-test",
+      id: "bullpen-tool-test",
       result: { content: [{ type: "text", text: "sent" }] },
     }));
     await gateway.approveActionRequest({
@@ -2286,7 +2286,7 @@ describeEmbeddedPostgres("tool access service", () => {
     expect(install.created).toBe(true);
     expect(secondInstall.created).toBe(false);
     expect(install.application).toMatchObject({
-      applicationKey: "paperclip.examples.safe-read-only-todo-kv",
+      applicationKey: "bullpen.examples.safe-read-only-todo-kv",
       type: "mcp_stdio",
       status: "active",
     });
@@ -2294,10 +2294,10 @@ describeEmbeddedPostgres("tool access service", () => {
       transport: "local_stdio",
       status: "active",
       enabled: true,
-      config: expect.objectContaining({ templateId: "paperclip.synthetic-todo-kv" }),
+      config: expect.objectContaining({ templateId: "bullpen.synthetic-todo-kv" }),
     });
     expect(install.profile).toMatchObject({
-      profileKey: "paperclip.examples.safe-read-only-todo-kv.profile",
+      profileKey: "bullpen.examples.safe-read-only-todo-kv.profile",
       defaultAction: "deny",
       status: "active",
     });
@@ -2528,7 +2528,7 @@ describeEmbeddedPostgres("tool access service", () => {
       expect(headers.Authorization).toBe("Bearer imported-token");
       return mcpHttpResponse({
         jsonrpc: "2.0",
-        id: "paperclip-catalog-refresh",
+        id: "bullpen-catalog-refresh",
         result: {
           tools: [
             {
@@ -2774,7 +2774,7 @@ describeEmbeddedPostgres("tool access service", () => {
       .patch(`/api/tool-connections/${companyAConnection.connectionId}`)
       .send({
         config: {
-          templateId: "paperclip.google-sheets",
+          templateId: "bullpen.google-sheets",
           sourceTemplateKey: "google-sheets",
           allowedSpreadsheetIds: ["company-b-sheet"],
           env: { GOOGLE_SHEETS_ALLOWED_SPREADSHEET_IDS: "company-b-sheet" },
@@ -2857,7 +2857,7 @@ describeEmbeddedPostgres("tool access service", () => {
 
     const updated = await service.updateConnection(second.connectionId, {
       config: {
-        templateId: "paperclip.google-sheets",
+        templateId: "bullpen.google-sheets",
         sourceTemplateKey: "google-sheets",
         allowedSpreadsheetIds: ["same-company-sheet", "new-company-sheet", "same-company-sheet"],
         env: {
@@ -2877,8 +2877,8 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("creates and resolves an agent-initiated user authorization grant card", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
     const company = await createCompany(db);
     const agent = await createAgent(db, company.id);
     const { issue, run } = await createIssueAndRun(db, company.id, agent.id);
@@ -2886,7 +2886,7 @@ describeEmbeddedPostgres("tool access service", () => {
     const connected = await service.connectGalleryApp(company.id, { galleryKey: "slack", name: "Slack user auth" });
 
     const workspaceStarted = await service.startOAuth(company.id, connected.connectionId, {
-      redirectUri: "https://paperclip.example/api/tools/oauth/callback",
+      redirectUri: "https://bullpen.example/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "workspace-owner" },
     });
     const workspaceState = new URL(workspaceStarted.authorizationUrl).searchParams.get("state")!;
@@ -2906,14 +2906,14 @@ describeEmbeddedPostgres("tool access service", () => {
         } as Response;
       }
       if (href === "https://mcp.slack.com/mcp") {
-        return mcpHttpResponse({ jsonrpc: "2.0", id: "paperclip-catalog-refresh", result: { tools: [] } });
+        return mcpHttpResponse({ jsonrpc: "2.0", id: "bullpen-catalog-refresh", result: { tools: [] } });
       }
       throw new Error(`unexpected fetch ${href}`);
     });
     await service.completeOAuthCallback({
       state: workspaceState,
       code: "workspace-authorization-code",
-      redirectUri: "https://paperclip.example/api/tools/oauth/callback",
+      redirectUri: "https://bullpen.example/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "workspace-owner" },
     });
     const [workspaceConnection] = await db.select().from(toolConnections).where(eq(toolConnections.id, connected.connectionId));
@@ -2926,7 +2926,7 @@ describeEmbeddedPostgres("tool access service", () => {
       runId: run.id,
       subjectUserId: "user-for-run",
       scopes: ["users:read"],
-      redirectUri: "https://paperclip.example/api/tools/oauth/callback",
+      redirectUri: "https://bullpen.example/api/tools/oauth/callback",
     });
     const authorizationUrl = new URL(started.authorizationUrl);
     expect(authorizationUrl.searchParams.get("scope")).toBe("users:read");
@@ -2945,7 +2945,7 @@ describeEmbeddedPostgres("tool access service", () => {
     await service.completeOAuthCallback({
       state: state.state,
       code: "user-authorization-code",
-      redirectUri: "https://paperclip.example/api/tools/oauth/callback",
+      redirectUri: "https://bullpen.example/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "user-for-run" },
     });
 
@@ -2963,9 +2963,9 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("starts and completes OAuth app sign-in with PKCE state and secret-backed tokens", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "https://paperclip-public.example");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
+    vi.stubEnv("BULLPEN_PUBLIC_URL", "https://bullpen-public.example");
     const company = await createCompany(db);
     const app = createRouteApp(db);
 
@@ -2985,7 +2985,7 @@ describeEmbeddedPostgres("tool access service", () => {
     expect(startUrl.searchParams.get("client_id")).toBe("slack-client-id");
     expect(startUrl.searchParams.get("code_challenge_method")).toBe("S256");
     expect(startUrl.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    expect(startUrl.searchParams.get("redirect_uri")).toBe("https://paperclip-public.example/api/tools/oauth/callback");
+    expect(startUrl.searchParams.get("redirect_uri")).toBe("https://bullpen-public.example/api/tools/oauth/callback");
     const state = startUrl.searchParams.get("state");
     expect(state).toBeTruthy();
     await expect(db.select().from(toolOauthStates)).resolves.toEqual([
@@ -3007,7 +3007,7 @@ describeEmbeddedPostgres("tool access service", () => {
         expect(body.get("code")).toBe("oauth-code");
         expect(body.get("client_secret")).toBe("slack-client-secret");
         expect(body.get("code_verifier")).toBeTruthy();
-        expect(body.get("redirect_uri")).toBe("https://paperclip-public.example/api/tools/oauth/callback");
+        expect(body.get("redirect_uri")).toBe("https://bullpen-public.example/api/tools/oauth/callback");
         return {
           ok: true,
           json: async () => ({
@@ -3024,7 +3024,7 @@ describeEmbeddedPostgres("tool access service", () => {
         expect(init?.headers).toEqual(expect.objectContaining({ Authorization: "Bearer access-token" }));
         return mcpHttpResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "bullpen-catalog-refresh",
           result: {
             tools: [
               { name: "search_messages", description: "Search messages.", annotations: { readOnlyHint: true } },
@@ -3082,8 +3082,8 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("requires non-viewer board access to start OAuth for active app connections", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "http://paperclip.test");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
+    vi.stubEnv("BULLPEN_PUBLIC_URL", "http://bullpen.test");
     const company = await createCompany(db);
     const service = toolAccessService(db);
     const connect = await service.connectGalleryApp(company.id, { galleryKey: "slack", name: "Slack reauth" });
@@ -3157,9 +3157,9 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("binds OAuth callback completion to the initiating board session", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "http://paperclip.test");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
+    vi.stubEnv("BULLPEN_PUBLIC_URL", "http://bullpen.test");
     const company = await createCompany(db);
     const service = toolAccessService(db);
     const connect = await service.connectGalleryApp(company.id, { galleryKey: "slack", name: "Slack bound" });
@@ -3226,7 +3226,7 @@ describeEmbeddedPostgres("tool access service", () => {
         expect(init?.headers).toEqual(expect.objectContaining({ Authorization: "Bearer bound-access-token" }));
         return mcpHttpResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "bullpen-catalog-refresh",
           result: { tools: [{ name: "search_messages", annotations: { readOnlyHint: true } }] },
         });
       }
@@ -3241,14 +3241,14 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("refreshes expired OAuth access tokens before remote app calls", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
     const company = await createCompany(db);
     const service = toolAccessService(db);
 
     const connect = await service.connectGalleryApp(company.id, { galleryKey: "slack", name: "Slack refresh" });
     const start = await service.startOAuth(company.id, connect.connectionId, {
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     });
     const state = new URL(start.authorizationUrl).searchParams.get("state")!;
@@ -3284,7 +3284,7 @@ describeEmbeddedPostgres("tool access service", () => {
       if (href === "https://mcp.slack.com/mcp") {
         return mcpHttpResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "bullpen-catalog-refresh",
           result: { tools: [{ name: "search_messages", annotations: { readOnlyHint: true } }] },
         });
       }
@@ -3294,7 +3294,7 @@ describeEmbeddedPostgres("tool access service", () => {
     await service.completeOAuthCallback({
       state,
       code: "oauth-code",
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     });
     const [connected] = await db.select().from(toolConnections).where(eq(toolConnections.id, connect.connectionId));
@@ -3337,8 +3337,8 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("uses OAuth client credentials for shared machine-to-machine MCP connections", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_M2M_CLIENT_ID", "m2m-client-id");
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_M2M_CLIENT_SECRET", "m2m-client-secret");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_M2M_CLIENT_ID", "m2m-client-id");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_M2M_CLIENT_SECRET", "m2m-client-secret");
     const company = await createCompany(db);
     const service = toolAccessService(db);
     const connection = await service.createConnection(company.id, {
@@ -3377,7 +3377,7 @@ describeEmbeddedPostgres("tool access service", () => {
         expect(init?.headers).toEqual(expect.objectContaining({ Authorization: "Bearer m2m-access-token" }));
         return mcpHttpResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "bullpen-catalog-refresh",
           result: { tools: [{ name: "machine_read", annotations: { readOnlyHint: true } }] },
         });
       }
@@ -3398,13 +3398,13 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("fails expired OAuth credentials without a refresh token and returns reconnect links", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_ID", "slack-client-id");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_SLACK_CLIENT_SECRET", "slack-client-secret");
     const company = await createCompany(db);
     const service = toolAccessService(db);
     const connect = await service.connectGalleryApp(company.id, { galleryKey: "slack", name: "Slack no refresh" });
     const start = await service.startOAuth(company.id, connect.connectionId, {
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     });
     const state = new URL(start.authorizationUrl).searchParams.get("state")!;
@@ -3424,7 +3424,7 @@ describeEmbeddedPostgres("tool access service", () => {
       if (href === "https://mcp.slack.com/mcp") {
         return mcpHttpResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "bullpen-catalog-refresh",
           result: { tools: [{ name: "search_messages", annotations: { readOnlyHint: true } }] },
         });
       }
@@ -3434,7 +3434,7 @@ describeEmbeddedPostgres("tool access service", () => {
     await service.completeOAuthCallback({
       state,
       code: "oauth-code",
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     });
     const [connected] = await db.select().from(toolConnections).where(eq(toolConnections.id, connect.connectionId));
@@ -3584,7 +3584,7 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("cancels stale pending action requests with invalid signatures before listing the review queue", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_ACTION_SIGNING_SECRET", "current-secret");
+    vi.stubEnv("BULLPEN_TOOL_ACTION_SIGNING_SECRET", "current-secret");
     const company = await createCompany(db);
     const [application] = await db.insert(toolApplications).values({
       companyId: company.id,
@@ -4208,9 +4208,9 @@ describeEmbeddedPostgres("tool access service", () => {
   });
 
   it("discovers OAuth for pasted MCP links and completes sign-in without a gallery entry", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_GENERIC_EXAMPLE_TEST_CLIENT_ID", "generic-client-id");
-    vi.stubEnv("PAPERCLIP_TOOL_OAUTH_GENERIC_EXAMPLE_TEST_CLIENT_SECRET", "generic-client-secret");
-    vi.stubEnv("PAPERCLIP_PUBLIC_URL", "http://paperclip.test");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_GENERIC_EXAMPLE_TEST_CLIENT_ID", "generic-client-id");
+    vi.stubEnv("BULLPEN_TOOL_OAUTH_GENERIC_EXAMPLE_TEST_CLIENT_SECRET", "generic-client-secret");
+    vi.stubEnv("BULLPEN_PUBLIC_URL", "http://bullpen.test");
     const company = await createCompany(db);
     const app = createRouteApp(db);
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
@@ -4294,7 +4294,7 @@ describeEmbeddedPostgres("tool access service", () => {
         expect(init?.headers).toEqual(expect.objectContaining({ Authorization: "Bearer generic-access-token" }));
         return mcpHttpResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "bullpen-catalog-refresh",
           result: { tools: [{ name: "read_generic", annotations: { readOnlyHint: true } }] },
         });
       }
@@ -4355,7 +4355,7 @@ describeEmbeddedPostgres("tool access service", () => {
     }).returning();
 
     await expect(service.startOAuth(company.id, connection!.id, {
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     })).rejects.toMatchObject({
       status: 422,
@@ -4378,7 +4378,7 @@ describeEmbeddedPostgres("tool access service", () => {
     await expect(service.completeOAuthCallback({
       state: "legacy-smoke-state",
       code: "smoke-code",
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     })).rejects.toMatchObject({
       status: 422,
@@ -4397,7 +4397,7 @@ describeEmbeddedPostgres("tool access service", () => {
     const service = toolAccessService(db);
     const [application] = await db.insert(toolApplications).values({
       companyId: company.id,
-      applicationKey: "paperclip.smoke-lab.http-fixture",
+      applicationKey: "bullpen.smoke-lab.http-fixture",
       name: "Smoke Lab HTTP MCP fixture",
       type: "mcp_http",
       status: "active",
@@ -4426,15 +4426,15 @@ describeEmbeddedPostgres("tool access service", () => {
     }).returning();
 
     const result = await service.startOAuth(company.id, connection!.id, {
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     });
 
     const authorizationUrl = new URL(result.authorizationUrl);
     expect(`${authorizationUrl.origin}${authorizationUrl.pathname}`).toBe(
-      `http://paperclip.test/api/companies/${company.id}/smoke-lab/oauth/authorize`,
+      `http://bullpen.test/api/companies/${company.id}/smoke-lab/oauth/authorize`,
     );
-    expect(authorizationUrl.searchParams.get("client_id")).toBe("paperclip-smoke-lab");
+    expect(authorizationUrl.searchParams.get("client_id")).toBe("bullpen-smoke-lab");
     expect(authorizationUrl.searchParams.get("scope")).toBe("smoke:openid smoke:profile smoke:email");
     await expect(db.select().from(toolOauthStates)).resolves.toHaveLength(1);
 
@@ -4455,7 +4455,7 @@ describeEmbeddedPostgres("tool access service", () => {
       if (String(url) === "http://smoke-fixture.test/mcp") {
         return mcpHttpResponse({
           jsonrpc: "2.0",
-          id: "paperclip-catalog-refresh",
+          id: "bullpen-catalog-refresh",
           result: { tools: [{ name: "todo.list", annotations: { readOnlyHint: true } }] },
         });
       }
@@ -4465,12 +4465,12 @@ describeEmbeddedPostgres("tool access service", () => {
     await service.completeOAuthCallback({
       state: state!,
       code: "smoke-code",
-      redirectUri: "http://paperclip.test/api/tools/oauth/callback",
+      redirectUri: "http://bullpen.test/api/tools/oauth/callback",
       actor: { actorType: "user", actorId: "board" },
     });
 
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain(
-      `http://paperclip.test/api/companies/${company.id}/smoke-lab/oauth/token`,
+      `http://bullpen.test/api/companies/${company.id}/smoke-lab/oauth/token`,
     );
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toContain("http://smoke-fixture.test/mcp");
     const [updatedConnection] = await db.select().from(toolConnections).where(eq(toolConnections.id, connection!.id));
@@ -4604,7 +4604,7 @@ describeEmbeddedPostgres("tool access service", () => {
 
     fetchMock.mockResolvedValueOnce(mcpHttpResponse({
       jsonrpc: "2.0",
-      id: "paperclip-catalog-refresh",
+      id: "bullpen-catalog-refresh",
       result: {
         tools: [
           {
@@ -4785,7 +4785,7 @@ describeEmbeddedPostgres("tool access service", () => {
     const connection = await service.createConnection(company.id, {
       name: "Restartable local fixture",
       transport: "local_stdio",
-      config: { templateId: "paperclip.echo-calculator-time" },
+      config: { templateId: "bullpen.echo-calculator-time" },
       enabled: true,
       status: "active",
     });
@@ -4844,7 +4844,7 @@ describeEmbeddedPostgres("tool access service", () => {
     const connection = await service.createConnection(company.id, {
       name: "Route local fixture",
       transport: "local_stdio",
-      config: { templateId: "paperclip.echo-calculator-time" },
+      config: { templateId: "bullpen.echo-calculator-time" },
       enabled: true,
       status: "active",
     });
@@ -4892,7 +4892,7 @@ describeEmbeddedPostgres("tool access service", () => {
     const connection = await service.createConnection(company.id, {
       name: "Permissioned local fixture",
       transport: "local_stdio",
-      config: { templateId: "paperclip.echo-calculator-time" },
+      config: { templateId: "bullpen.echo-calculator-time" },
       enabled: true,
       status: "active",
     });
@@ -5855,7 +5855,7 @@ describeEmbeddedPostgres("tool access service", () => {
       runtimeKind: "mcp_remote",
       status: "running",
       reuseKey: connection.id,
-      provider: "paperclip",
+      provider: "bullpen",
       providerRef: "remote:https://fixture.example/mcp",
       healthStatus: "ok",
     }).returning();
@@ -5893,8 +5893,8 @@ describeEmbeddedPostgres("tool access service", () => {
       transport: "local_stdio",
       status: "active",
       enabled: true,
-      config: { templateId: "paperclip.echo-calculator-time" },
-      transportConfig: { templateId: "paperclip.echo-calculator-time" },
+      config: { templateId: "bullpen.echo-calculator-time" },
+      transportConfig: { templateId: "bullpen.echo-calculator-time" },
       healthStatus: "missing_secret",
       healthMessage: "A configured credential secret could not be resolved.",
     }).returning();
@@ -5903,15 +5903,15 @@ describeEmbeddedPostgres("tool access service", () => {
       companyId: company.id,
       applicationId: application.id,
       connectionId: connection.id,
-      slotKey: `${connection.id}:paperclip.echo-calculator-time`,
+      slotKey: `${connection.id}:bullpen.echo-calculator-time`,
       ownerScopeType: "connection",
       ownerScopeId: connection.id,
       runtimeKind: "local_stdio",
       status: "running",
       reuseKey: connection.id,
-      provider: "paperclip",
+      provider: "bullpen",
       providerRef: "local-stdio:test-host:slot",
-      commandTemplateKey: "paperclip.echo-calculator-time",
+      commandTemplateKey: "bullpen.echo-calculator-time",
       healthStatus: "ok",
       startedAt: staleAt,
       lastUsedAt: staleAt,
@@ -6070,7 +6070,7 @@ describeEmbeddedPostgres("tool access service", () => {
     await expect(hostedService.createConnection(company.id, {
       name: "Hosted local stdio",
       transport: "local_stdio",
-      config: { templateId: "paperclip.echo-calculator-time" },
+      config: { templateId: "bullpen.echo-calculator-time" },
       enabled: true,
       status: "active",
     })).rejects.toMatchObject({
@@ -6086,7 +6086,7 @@ describeEmbeddedPostgres("tool access service", () => {
     await expect(trustedService.createConnection(company.id, {
       name: "Trusted hosted local stdio",
       transport: "local_stdio",
-      config: { templateId: "paperclip.echo-calculator-time" },
+      config: { templateId: "bullpen.echo-calculator-time" },
       enabled: true,
       status: "active",
     })).resolves.toMatchObject({
@@ -6121,14 +6121,14 @@ describeEmbeddedPostgres("tool access service", () => {
           transport: "mcp_remote",
           status: "draft",
           config: { url: "https://mcp.example/github" },
-          warnings: [expect.stringContaining("Paperclip secret")],
+          warnings: [expect.stringContaining("Bullpen secret")],
         }),
         expect.objectContaining({
           name: "local",
           transport: "local_stdio",
           status: "draft",
           config: { importedCommand: "npx", importedArgs: ["-y", "@example/local-mcp"] },
-          warnings: [expect.stringContaining("approved Paperclip template")],
+          warnings: [expect.stringContaining("approved Bullpen template")],
         }),
       ]),
     );

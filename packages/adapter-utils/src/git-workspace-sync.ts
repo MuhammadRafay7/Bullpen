@@ -117,8 +117,8 @@ export async function withShallowGitWorkspaceClone<T>(
   },
   fn: (cloneDir: string) => Promise<T>,
 ): Promise<T> {
-  const cloneDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-git-workspace-"));
-  const tempRef = `refs/paperclip/git-sync/import/${randomUUID()}`;
+  const cloneDir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-git-workspace-"));
+  const tempRef = `refs/bullpen/git-sync/import/${randomUUID()}`;
   try {
     await runLocalGit(input.localDir, ["update-ref", tempRef, input.snapshot.headCommit], {
       timeout: 10_000,
@@ -157,11 +157,11 @@ export async function withShallowGitWorkspaceClone<T>(
 }
 
 export function createImportedGitRef(scope = "remote"): string {
-  return `refs/paperclip/git-sync/imported/${scope}/${randomUUID()}`;
+  return `refs/bullpen/git-sync/imported/${scope}/${randomUUID()}`;
 }
 
 export function createRemoteGitExportRef(scope = "remote"): string {
-  return `refs/paperclip/git-sync/export/${scope}/${randomUUID()}`;
+  return `refs/bullpen/git-sync/export/${scope}/${randomUUID()}`;
 }
 
 export async function deleteLocalGitRef(input: {
@@ -367,7 +367,7 @@ export async function integrateImportedGitHead(input: {
         "-p",
         input.importedHead,
         "-m",
-        `Paperclip remote git sync merge ${input.importedHead.slice(0, 12)}`,
+        `Bullpen remote git sync merge ${input.importedHead.slice(0, 12)}`,
       ],
       {
         timeout: 60_000,
@@ -427,7 +427,7 @@ export async function resetLocalGitIndexToHead(input: {
   });
   if (workingTreeDiff.stdout.trim().length > 0) {
     console.warn(
-      "[paperclip] Workspace restore preserved local working tree changes after clean sandbox restore.",
+      "[bullpen] Workspace restore preserved local working tree changes after clean sandbox restore.",
     );
   }
 }

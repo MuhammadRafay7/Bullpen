@@ -18,8 +18,8 @@ import type {
   AppDefinition,
   ConnectToolAppResult,
   ToolAppConnectionActionSummary,
-} from "@paperclipai/shared";
-import { credentialConfigPath, getAppDefinitionForUrl, getAvailableConnectionMethod } from "@paperclipai/shared";
+} from "@bullpen/shared";
+import { credentialConfigPath, getAppDefinitionForUrl, getAvailableConnectionMethod } from "@bullpen/shared";
 import { useNavigate, useParams, useSearchParams } from "@/lib/router";
 import { useCompany } from "@/context/CompanyContext";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";
@@ -576,7 +576,7 @@ function ZapierConnectStep({
           autoFocus
         />
         <p className="mt-2 text-xs text-muted-foreground">
-          The token is part of the URL. Paperclip stores it securely and checks the connection before enabling actions.
+          The token is part of the URL. Bullpen stores it securely and checks the connection before enabling actions.
         </p>
         {link.trim() && !isZapierLink && (
           <p className="mt-2 text-xs text-destructive">Paste a valid Zapier URL to continue.</p>
@@ -682,7 +682,7 @@ function GalleryStep({
               disabled={oauth || unavailable}
               title={
                 unavailable
-                  ? `${app.name} isn't configured on this instance yet. Ask your Paperclip admin.`
+                  ? `${app.name} isn't configured on this instance yet. Ask your Bullpen admin.`
                   : undefined
               }
               onClick={() => onPick(app)}
@@ -798,7 +798,7 @@ function GalleryStep({
           <ConnectMethodRow
             icon={TerminalSquare}
             title="Run your own"
-            description="Register a command Paperclip runs in your workspace for a tool that isn’t listed."
+            description="Register a command Bullpen runs in your workspace for a tool that isn’t listed."
             onClick={onRunYourOwn}
           />
           <ConnectMethodRow
@@ -1404,7 +1404,7 @@ function WhoStep({
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Anyone you’ve added to Paperclip can use {appName} in their tasks. This is what most teams want.
+                Anyone you’ve added to Bullpen can use {appName} in their tasks. This is what most teams want.
               </p>
             </div>
           </button>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@bullpen/shared";
 import { buildIssuePropertiesPanelKey } from "./issue-properties-panel-key";
 
 function createIssue(overrides: Partial<Issue> = {}) {
@@ -94,12 +94,12 @@ describe("buildIssuePropertiesPanelKey", () => {
           strategyType: "git_worktree",
           name: "PAP-1 workspace",
           status: "active",
-          cwd: "/tmp/paperclip/PAP-1",
+          cwd: "/tmp/bullpen/PAP-1",
           repoUrl: null,
           baseRef: "master",
           branchName: "PAP-1-workspace",
           providerType: "git_worktree",
-          providerRef: "/tmp/paperclip/PAP-1",
+          providerRef: "/tmp/bullpen/PAP-1",
           derivedFromExecutionWorkspaceId: null,
           lastUsedAt: new Date("2026-04-12T12:01:00.000Z"),
           openedAt: new Date("2026-04-12T12:01:00.000Z"),

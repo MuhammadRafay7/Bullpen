@@ -59,7 +59,7 @@ import type {
   ToolRiskLevel,
   ToolRuntimeKind,
   ToolRuntimeSlotStatus,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { agents } from "./agents.js";
 import { approvals } from "./approvals.js";
 import { companies } from "./companies.js";

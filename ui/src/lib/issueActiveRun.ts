@@ -1,4 +1,4 @@
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@bullpen/shared";
 import type { ActiveRunForIssue } from "../api/heartbeats";
 
 export function shouldTrackIssueActiveRun(

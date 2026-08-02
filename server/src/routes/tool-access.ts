@@ -1,6 +1,6 @@
 import { Router, type Request } from "express";
-import type { Db } from "@paperclipai/db";
-import { agents, companies } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
+import { agents, companies } from "@bullpen/db";
 import { eq } from "drizzle-orm";
 import {
   CONNECTABLE_APP_DEFINITIONS,
@@ -39,7 +39,7 @@ import {
   updateToolPolicySchema,
   updateToolProfileEntrySchema,
   updateToolProfileWithEntriesSchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { validate } from "../middleware/validate.js";
 import { getActorInfo, assertBoard, assertCompanyAccess, hasCompanyAccess } from "./authz.js";
 import { badRequest, forbidden, notFound, unprocessable } from "../errors.js";
@@ -93,8 +93,8 @@ export function toolAccessRoutes(
 
   function configuredPublicBaseUrl() {
     const raw = (
-      process.env.PAPERCLIP_PUBLIC_URL?.trim()
-      || process.env.PAPERCLIP_AUTH_PUBLIC_BASE_URL?.trim()
+      process.env.BULLPEN_PUBLIC_URL?.trim()
+      || process.env.BULLPEN_AUTH_PUBLIC_BASE_URL?.trim()
       || process.env.BETTER_AUTH_URL?.trim()
       || process.env.BETTER_AUTH_BASE_URL?.trim()
     );
@@ -109,7 +109,7 @@ export function toolAccessRoutes(
   function oauthRedirectUri() {
     const configured = configuredPublicBaseUrl();
     if (!configured) {
-      throw unprocessable("OAuth connections require PAPERCLIP_PUBLIC_URL or an auth public base URL");
+      throw unprocessable("OAuth connections require BULLPEN_PUBLIC_URL or an auth public base URL");
     }
     return new URL("/api/tools/oauth/callback", configured).toString();
   }
@@ -202,7 +202,7 @@ export function toolAccessRoutes(
       res.status(401).json({ error: "Agent run id required", code: "run_id_required" });
       return;
     }
-    const headerRunId = req.get("X-Paperclip-Run-Id")?.trim();
+    const headerRunId = req.get("X-Bullpen-Run-Id")?.trim();
     if (headerRunId && headerRunId !== req.actor.runId) {
       res.status(403).json({ error: "Run id header does not match agent token", code: "run_id_mismatch" });
       return;

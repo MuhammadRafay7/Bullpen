@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, gte, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   DEFAULT_ISSUE_GRAPH_LIVENESS_AUTO_RECOVERY_LOOKBACK_HOURS,
   MAX_ISSUE_GRAPH_LIVENESS_AUTO_RECOVERY_LOOKBACK_HOURS,
@@ -9,7 +9,7 @@ import {
   type IssueCommentPresentation,
   type IssueGraphLivenessAutoRecoveryPreview,
   type IssueGraphLivenessAutoRecoveryPreviewItem,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
   agents,
   agentWakeupRequests,
@@ -26,7 +26,7 @@ import {
   issueRelations,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import { parseObject, asBoolean, asNumber } from "../../adapters/utils.js";
 import { runningProcesses } from "../../adapters/index.js";
 import { visibleIssueCondition } from "../issue-visibility.js";
@@ -86,7 +86,7 @@ export const DEFAULT_LIVENESS_REESCALATION_COOLDOWN_MS = 60 * 60 * 1000;
 const ACTIVE_RUN_OUTPUT_EVIDENCE_TAIL_BYTES = 8 * 1024;
 const STRANDED_ISSUE_RECOVERY_ORIGIN_KIND = RECOVERY_ORIGIN_KINDS.strandedIssueRecovery;
 const STALE_ACTIVE_RUN_EVALUATION_ORIGIN_KIND = RECOVERY_ORIGIN_KINDS.staleActiveRunEvaluation;
-const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
+const DEFERRED_WAKE_CONTEXT_KEY = "_bullpenWakeContext";
 const EXECUTION_REVIEW_PARTICIPANT_RECOVERY_REASON = "execution_review_participant_recovery";
 const RESOLVED_DEPENDENCY_WAKE_BACKSTOP_CANDIDATE_LIMIT = 500;
 const SESSIONED_LOCAL_ADAPTERS = new Set([
@@ -315,7 +315,7 @@ function summarizeRunFailureForIssueComment(run: LatestIssueRun) {
 function buildExecutionReviewParticipantRecoveryComment(latestRun: LatestIssueRun) {
   const failureSummary = summarizeRunFailureForIssueComment(latestRun);
   return (
-    "Paperclip retried the pending execution-review participant once, but the review stage still has no completed decision " +
+    "Bullpen retried the pending execution-review participant once, but the review stage still has no completed decision " +
     `or live reviewer run.${failureSummary ?? ""} ` +
     "Moving it to `blocked` with a source-scoped recovery action so the recovery owner can repair the reviewer runtime, " +
     "restore the review stage, or record an intentional manual resolution."
@@ -325,7 +325,7 @@ function buildExecutionReviewParticipantRecoveryComment(latestRun: LatestIssueRu
 function buildExecutionReviewParticipantUnavailableComment(latestRun: LatestIssueRun) {
   const failureSummary = summarizeRunFailureForIssueComment(latestRun);
   return (
-    "Paperclip cannot continue the pending execution-review participant because the participant is not invokable " +
+    "Bullpen cannot continue the pending execution-review participant because the participant is not invokable " +
     `and the review stage has no completed decision or live reviewer run.${failureSummary ?? ""} ` +
     "Moving it to `blocked` with a source-scoped recovery action so the recovery owner can repair the reviewer runtime, " +
     "restore the review stage, or record an intentional manual resolution."
@@ -736,7 +736,7 @@ function buildLivenessEscalationDescription(finding: IssueLivenessFinding) {
   const selectedOwner = finding.recommendedOwnerAgentId ?? "none";
 
   return [
-    "Paperclip detected a harness-level issue graph liveness incident.",
+    "Bullpen detected a harness-level issue graph liveness incident.",
     "",
     "## Source",
     "",
@@ -762,7 +762,7 @@ function buildLivenessEscalationDescription(finding: IssueLivenessFinding) {
 
 function buildLivenessOriginalIssueComment(finding: IssueLivenessFinding, escalation: typeof issues.$inferSelect) {
   return [
-    "Paperclip detected a harness-level liveness incident in this issue's dependency graph.",
+    "Bullpen detected a harness-level liveness incident in this issue's dependency graph.",
     "",
     `- Escalation issue: ${escalation.identifier ?? escalation.id}`,
     `- Incident key: \`${finding.incidentKey}\``,
@@ -1272,7 +1272,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
         [
           "## Assigned Orphan Blocker",
           "",
-          `Paperclip found this issue is blocking ${blockingLinks} but had no assignee, so no heartbeat could pick it up.`,
+          `Bullpen found this issue is blocking ${blockingLinks} but had no assignee, so no heartbeat could pick it up.`,
           "",
           "- Assigned it back to the agent that created the blocker.",
           "- Next action: resolve this blocker or reassign it to the right owner.",
@@ -1942,7 +1942,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
       ).join("\n")
       : "- none detected";
     return [
-      `Paperclip detected ${input.level} output silence on an active heartbeat run.`,
+      `Bullpen detected ${input.level} output silence on an active heartbeat run.`,
       "",
       "## Run",
       "",
@@ -2036,7 +2036,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
     // They are already parented under the source issue. Adding them as hard blockers
     // creates a self-amplifying loop: block → silence → new alert → block again.
     await issuesSvc.addComment(input.sourceIssue.id, [
-      "Paperclip detected critical output silence on this issue's active run.",
+      "Bullpen detected critical output silence on this issue's active run.",
       "",
       `- Evaluation issue: ${input.evaluationIssue.identifier ?? input.evaluationIssue.id}`,
       `- Run: \`${input.run.id}\``,
@@ -2657,7 +2657,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
         : "unknown";
       const missingDisposition = input.successfulRunHandoffEvidence?.missingDisposition ?? "clear_next_step";
       return [
-        "Paperclip exhausted the bounded corrective handoff for a successful run that still has no valid issue disposition.",
+        "Bullpen exhausted the bounded corrective handoff for a successful run that still has no valid issue disposition.",
         "",
         "This is not a runtime/adapter crash report. The source run succeeded; the remaining problem is the missing `done`, `in_review`, `blocked`, delegated follow-up, or explicit continuation path.",
         "",
@@ -2701,8 +2701,8 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
 
     return [
       isReviewParticipantRecovery
-        ? "Paperclip exhausted automatic recovery for a pending execution-review participant and created this explicit recovery task."
-        : "Paperclip exhausted automatic recovery for an assigned issue and created this explicit recovery task.",
+        ? "Bullpen exhausted automatic recovery for a pending execution-review participant and created this explicit recovery task."
+        : "Bullpen exhausted automatic recovery for an assigned issue and created this explicit recovery task.",
       "",
       "## Source",
       "",
@@ -3120,7 +3120,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
     const failureSummary = summarizeRunFailureForIssueComment(input.latestRun);
 
     return [
-      "Paperclip stopped automatic stranded-work recovery for this recovery issue.",
+      "Bullpen stopped automatic stranded-work recovery for this recovery issue.",
       "",
       `- Recovery issue: ${issueUiLink({ identifier: input.issue.identifier, id: input.issue.id }, input.prefix)}`,
       `- Previous status: \`${input.previousStatus}\``,
@@ -3266,7 +3266,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
       `This task is waiting on ${waitingOn} to finish. ` +
         "It will continue automatically when that work is done — there's nothing you need to do. " +
         "(It was paused because the latest run reported it was waiting for review/approval; " +
-        "Paperclip turned that into a normal dependency wait instead of flagging it as stuck.)",
+        "Bullpen turned that into a normal dependency wait instead of flagging it as stuck.)",
       {},
       {
         authorType: "system",
@@ -3384,7 +3384,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
       : [
         "",
         `- Recovery action: \`${recoveryAction.id}\``,
-        "- Recovery owner: board escalation, because Paperclip could not find an invokable manager, creator, or executive owner with budget available.",
+        "- Recovery owner: board escalation, because Bullpen could not find an invokable manager, creator, or executive owner with budget available.",
         "- Next action: a board operator should assign an invokable recovery owner, fix the agent/runtime state, or record an intentional manual resolution.",
       ].join("\n");
 
@@ -3784,7 +3784,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
             latestRun,
             recoveryCause: "configuration_incomplete",
             comment:
-              "Paperclip classified the latest adapter failure as `configuration_incomplete`. " +
+              "Bullpen classified the latest adapter failure as `configuration_incomplete`. " +
               "Moving the issue to `blocked` with the configuration fix recorded instead of creating a recovery takeover.",
           });
           if (updated) {
@@ -3853,7 +3853,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
               previousStatus: issue.status as StrandedPreviousStatus,
               latestRun: latestPostResolutionRun,
               comment:
-                `Paperclip stopped requeueing accepted interaction \`${acceptedContinuationInteraction.id}\` after ` +
+                `Bullpen stopped requeueing accepted interaction \`${acceptedContinuationInteraction.id}\` after ` +
                 `${consecutive} consecutive continuation wakes were cancelled while waiting on review. ` +
                 "Moving the issue to `blocked` so the missing execution path is visible for intervention.",
             });
@@ -3950,7 +3950,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
             recoveryCause: "configuration_incomplete",
             recoveryOwnerAgentId: participantAgentId,
             comment:
-              "Paperclip classified the active review participant's latest adapter failure as " +
+              "Bullpen classified the active review participant's latest adapter failure as " +
               "`configuration_incomplete`. Moving the issue to `blocked` with the configuration fix " +
               "recorded instead of repeatedly requeueing the reviewer.",
           });
@@ -4073,7 +4073,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
             previousStatus: "todo",
             latestRun,
             comment:
-              "Paperclip automatically retried dispatch for this assigned `todo` issue after a lost wake/run, " +
+              "Bullpen automatically retried dispatch for this assigned `todo` issue after a lost wake/run, " +
               `but it still has no live execution path.${failureSummary ?? ""} ` +
               "Moving it to `blocked` so it is visible for intervention.",
           });
@@ -4160,7 +4160,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
               previousStatus: "in_progress",
               latestRun: successfulRun,
               comment:
-                "Paperclip automatically retried continuation for this assigned `in_progress` issue and the retry " +
+                "Bullpen automatically retried continuation for this assigned `in_progress` issue and the retry " +
                 "made progress, but it still has no live execution path. Moving it to `blocked` so it is visible for intervention.",
             });
             if (updated) {
@@ -4214,7 +4214,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
             previousStatus: "in_progress",
             latestRun,
             comment:
-              "Paperclip detected a non-retryable failure on this issue's continuation run " +
+              "Bullpen detected a non-retryable failure on this issue's continuation run " +
               `(\`${classification.errorCode}\`). Skipping automatic retries and moving it to \`blocked\` ` +
               `so it is visible for intervention.${failureSummary ?? ""}`,
           });
@@ -4245,7 +4245,7 @@ export function recoveryService(db: Db, deps: { enqueueWakeup: RecoveryWakeup })
               previousStatus: "in_progress",
               latestRun,
               comment:
-                "Paperclip automatically retried continuation for this assigned `in_progress` issue after its live " +
+                "Bullpen automatically retried continuation for this assigned `in_progress` issue after its live " +
                 `execution disappeared, but it still has no live execution path${attemptCopy}.${causeCopy}${failureSummary ?? ""} ` +
                 "Moving it to `blocked` so it is visible for intervention.",
             });

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { documentRevisions, documents, issueDocuments, issues } from "@paperclipai/db";
-import { isSystemIssueDocumentKey, issueDocumentKeySchema } from "@paperclipai/shared";
+import type { Db } from "@bullpen/db";
+import { documentRevisions, documents, issueDocuments, issues } from "@bullpen/db";
+import { isSystemIssueDocumentKey, issueDocumentKeySchema } from "@bullpen/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { insertRowsInChunks } from "./batch-insert.js";
 import type { ImportIssueDocumentRow } from "./import-write-types.js";

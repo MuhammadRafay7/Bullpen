@@ -10,7 +10,7 @@ import type {
   PluginPostUploadCommand,
   PluginSyncFileMapping,
   PluginSyncOperation,
-} from "@paperclipai/plugin-sdk";
+} from "@bullpen/plugin-sdk";
 
 const execFileAsync = promisify(execFile);
 
@@ -20,10 +20,10 @@ function toTimeoutSeconds(timeoutMs: number): number {
 }
 
 // Reserved scratch-name stem for staged uploads/downloads and remote tarballs.
-// The runtime's base64 fallback stages to `<path>.paperclip-upload`; the native
+// The runtime's base64 fallback stages to `<path>.bullpen-upload`; the native
 // transport reuses the same reserved prefix so a provider temp never collides
 // with a real target or with the fallback's scratch name.
-const SCRATCH_PREFIX = ".paperclip-upload";
+const SCRATCH_PREFIX = ".bullpen-upload";
 
 function scratchName(suffix = ""): string {
   return `${SCRATCH_PREFIX}-${randomUUID()}${suffix}`;
@@ -73,7 +73,7 @@ export function assertConfinedSandboxPath(remoteDir: string, candidate: string, 
 }
 
 async function withHostTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-daytona-sync-"));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "bullpen-daytona-sync-"));
   try {
     return await fn(dir);
   } finally {
@@ -346,7 +346,7 @@ async function snapshotOutboundFileSources(input: {
 /**
  * Best-effort removal of reserved sandbox-side scratch files (upload/download
  * snapshots or partially promoted temps) on both the happy path and error paths,
- * so a failed transfer never accumulates `.paperclip-upload-*` scratch in the
+ * so a failed transfer never accumulates `.bullpen-upload-*` scratch in the
  * sandbox. Swallows its own failure — cleanup must never mask the original error.
  */
 async function removeSandboxScratch(
@@ -422,7 +422,7 @@ async function syncInFileMappings(input: {
 
   // A failed upload or a mid-batch `mv -f` failure leaves reserved temps (some
   // targets promoted, others not) — sweep every staged temp on any error so a
-  // retry never accumulates stale `.paperclip-upload-*` scratch.
+  // retry never accumulates stale `.bullpen-upload-*` scratch.
   try {
     // One batched bulk upload (single /files/bulk-upload) for all file mappings.
     await sandbox.fs.uploadFiles(uploads, timeoutSeconds);

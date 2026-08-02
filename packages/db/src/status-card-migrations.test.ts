@@ -23,7 +23,7 @@ describeEmbeddedPostgres("status card migrations", () => {
   });
 
   it("can be reapplied after the schema already exists", async () => {
-    const database = await startEmbeddedPostgresTestDatabase("paperclip-status-card-migrations-");
+    const database = await startEmbeddedPostgresTestDatabase("bullpen-status-card-migrations-");
     cleanups.push(database.cleanup);
     const sql = postgres(database.connectionString, { max: 1 });
     cleanups.push(async () => sql.end());

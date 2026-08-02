@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { pluginOperationIssueOriginKind } from "@paperclipai/shared";
+import { pluginOperationIssueOriginKind } from "@bullpen/shared";
 import type {
-  PaperclipPluginManifestV1,
+  BullpenPluginManifestV1,
   PluginCapability,
   PluginEventType,
   PluginIssueOriginKind,
@@ -22,7 +22,7 @@ import type {
   Agent,
   Goal,
   Approval,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import type {
   EventFilter,
   PluginContext,
@@ -74,7 +74,7 @@ import type {
 
 export interface TestHarnessOptions {
   /** Plugin manifest used to seed capability checks and metadata. */
-  manifest: PaperclipPluginManifestV1;
+  manifest: BullpenPluginManifestV1;
   /** Optional capability override. Defaults to `manifest.capabilities`. */
   capabilities?: PluginCapability[];
   /** Initial config returned by `ctx.config.get(companyId)`. */
@@ -451,7 +451,7 @@ function allowsEvent(filter: EventFilter | undefined, event: PluginEvent): boole
   return true;
 }
 
-function requireCapability(manifest: PaperclipPluginManifestV1, allowed: Set<PluginCapability>, capability: PluginCapability) {
+function requireCapability(manifest: BullpenPluginManifestV1, allowed: Set<PluginCapability>, capability: PluginCapability) {
   if (allowed.has(capability)) return;
   throw new Error(`Plugin '${manifest.id}' is missing required capability '${capability}' in test harness`);
 }
@@ -472,7 +472,7 @@ function isInCompany<T extends { companyId: string | null | undefined }>(
  * Create an in-memory host harness for plugin worker tests.
  *
  * The harness enforces declared capabilities and simulates host APIs, so tests
- * can validate plugin behavior without spinning up the Paperclip server runtime.
+ * can validate plugin behavior without spinning up the Bullpen server runtime.
  */
 export function createTestHarness(options: TestHarnessOptions): TestHarness {
   const manifest = options.manifest;
@@ -686,7 +686,7 @@ export function createTestHarness(options: TestHarnessOptions): TestHarness {
   }
 
   function isManagedAgent(agent: Agent, agentKey: string) {
-    const marker = agent.metadata?.paperclipManagedResource;
+    const marker = agent.metadata?.bullpenManagedResource;
     return Boolean(
       marker
       && typeof marker === "object"
@@ -700,7 +700,7 @@ export function createTestHarness(options: TestHarnessOptions): TestHarness {
   function managedAgentMetadata(agentKey: string, existing?: Record<string, unknown> | null) {
     return {
       ...(existing ?? {}),
-      paperclipManagedResource: {
+      bullpenManagedResource: {
         pluginKey: manifest.id,
         resourceKind: "agent",
         resourceKey: agentKey,

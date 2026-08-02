@@ -16,7 +16,7 @@ import {
   routineRuns,
   routines,
   routineTriggers,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -29,9 +29,9 @@ vi.mock("../telemetry.js", () => ({
   getTelemetryClient: () => mockTelemetryClient,
 }));
 
-vi.mock("@paperclipai/shared/telemetry", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/shared/telemetry")>(
-    "@paperclipai/shared/telemetry",
+vi.mock("@bullpen/shared/telemetry", async () => {
+  const actual = await vi.importActual<typeof import("@bullpen/shared/telemetry")>(
+    "@bullpen/shared/telemetry",
   );
   return {
     ...actual,
@@ -49,7 +49,7 @@ describeEmbeddedPostgres("routine run telemetry", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-routine-telemetry-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-routine-telemetry-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -81,7 +81,7 @@ describeEmbeddedPostgres("routine run telemetry", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Bullpen",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
       defaultResponsibleUserId: "responsible-user",

@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray, lte } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   environmentCustomImageSetupSessions,
   environmentCustomImageTemplates,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   ENVIRONMENT_CUSTOM_IMAGE_SETUP_CONNECTION_TYPES,
   ENVIRONMENT_CUSTOM_IMAGE_SETUP_SESSION_STATUSES,
@@ -16,14 +16,14 @@ import {
   type EnvironmentCustomImageTemplateKind,
   type SandboxEnvironmentConfig,
   redactEnvironmentCustomImageValue,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import type {
   PluginEnvironmentCancelInteractiveSetupResult,
   PluginEnvironmentCaptureTemplateResult,
   PluginEnvironmentInteractiveSetupConnectionPayload,
   PluginEnvironmentInteractiveSetupSession,
   PluginEnvironmentTemplateRefKind,
-} from "@paperclipai/plugin-sdk";
+} from "@bullpen/plugin-sdk";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import {
   parseEnvironmentDriverConfig,
@@ -463,7 +463,7 @@ export function environmentCustomImageService(
       setupMetadata: input.session.metadata ?? undefined,
       sourceTemplateRef: input.session.baseTemplateRef,
       previousTemplateRef: input.previousTemplate?.templateRef ?? null,
-      templateLabel: `paperclip-${environment.id}-${input.session.id.slice(0, 8)}`,
+      templateLabel: `bullpen-${environment.id}-${input.session.id.slice(0, 8)}`,
       timeoutMs: typeof provider.driverConfig.timeoutMs === "number" ? provider.driverConfig.timeoutMs : null,
     }, resolvePluginExecuteRpcTimeoutMs({
       requestedTimeoutMs: typeof provider.driverConfig.timeoutMs === "number" ? provider.driverConfig.timeoutMs : undefined,

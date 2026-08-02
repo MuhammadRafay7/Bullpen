@@ -6,7 +6,7 @@ import type {
   EnvBinding,
   UserSecretCoverageSummary,
   UserSecretDefinition,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { MemoryRouter } from "react-router-dom";
 import { MyUserSecretsTab } from "@/pages/secrets/MyUserSecretsTab";
 import { UserSecretDefinitionsTab } from "@/pages/secrets/UserSecretDefinitionsTab";
@@ -19,7 +19,7 @@ import { queryKeys } from "@/lib/queryKeys";
 const COMPANY_ID = "company-storybook";
 
 if (typeof window !== "undefined") {
-  window.localStorage.setItem("paperclip.selectedCompanyId", COMPANY_ID);
+  window.localStorage.setItem("bullpen.selectedCompanyId", COMPANY_ID);
 }
 
 function makeDefinition(overrides: Partial<UserSecretDefinition>): UserSecretDefinition {
@@ -31,7 +31,7 @@ function makeDefinition(overrides: Partial<UserSecretDefinition>): UserSecretDef
     description: null,
     status: "active",
     provider: "local_encrypted",
-    managedMode: "paperclip_managed",
+    managedMode: "bullpen_managed",
     providerConfigId: null,
     providerMetadata: null,
     usageGuidance: null,
@@ -57,7 +57,7 @@ function makeValue(definitionId: string): CompanySecret {
     name: "User secret",
     provider: "local_encrypted",
     status: "active",
-    managedMode: "paperclip_managed",
+    managedMode: "bullpen_managed",
     externalRef: null,
     providerConfigId: null,
     providerMetadata: null,

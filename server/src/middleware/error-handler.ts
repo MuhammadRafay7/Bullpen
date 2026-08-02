@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import { ZodError } from "zod";
 import { HttpError } from "../errors.js";
-import { trackErrorHandlerCrash } from "@paperclipai/shared/telemetry";
+import { trackErrorHandlerCrash } from "@bullpen/shared/telemetry";
 import { getTelemetryClient } from "../telemetry.js";
 import { COMPANY_IMPORT_API_PATH } from "../routes/company-import-paths.js";
 import { logger } from "./logger.js";
@@ -42,9 +42,9 @@ function attachErrorContext(
   }
 }
 
-function getPaperclipDb(req: Request): Db | null {
-  const locals = req.app?.locals as { paperclipDb?: Db; db?: Db } | undefined;
-  return locals?.paperclipDb ?? locals?.db ?? null;
+function getBullpenDb(req: Request): Db | null {
+  const locals = req.app?.locals as { bullpenDb?: Db; db?: Db } | undefined;
+  return locals?.bullpenDb ?? locals?.db ?? null;
 }
 
 function recordResponsibleUserDenialFromHttpError(
@@ -52,7 +52,7 @@ function recordResponsibleUserDenialFromHttpError(
   details: Record<string, unknown> | null,
 ) {
   if (req.actor?.type !== "agent") return;
-  const db = getPaperclipDb(req);
+  const db = getBullpenDb(req);
   if (!db) return;
 
   void recordResponsibleUserDenialOnActiveRun(db, {

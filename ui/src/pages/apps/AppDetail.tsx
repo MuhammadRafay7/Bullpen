@@ -5,12 +5,12 @@ import type {
   ToolConnection,
   ToolPolicy,
   ToolProfileWithDetails,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
   connectionDisplaySecondaryHint,
   humanizeConnectionDisplayName,
   isToolConnectionAttentionHealth as isAttentionHealthStatus,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { Navigate, useParams, useNavigate } from "@/lib/router";
 import { useCompany } from "@/context/CompanyContext";
 import { useBreadcrumbs } from "@/context/BreadcrumbContext";

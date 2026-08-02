@@ -9,17 +9,17 @@ import {
   companyMemberships,
   createDb,
   principalPermissionGrants,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 
 vi.hoisted(() => {
-  process.env.PAPERCLIP_HOME = "/tmp/paperclip-test-home";
-  process.env.PAPERCLIP_INSTANCE_ID = "vitest";
-  process.env.PAPERCLIP_LOG_DIR = "/tmp/paperclip-test-home/logs";
-  process.env.PAPERCLIP_IN_WORKTREE = "false";
+  process.env.BULLPEN_HOME = "/tmp/bullpen-test-home";
+  process.env.BULLPEN_INSTANCE_ID = "vitest";
+  process.env.BULLPEN_LOG_DIR = "/tmp/bullpen-test-home/logs";
+  process.env.BULLPEN_IN_WORKTREE = "false";
 });
 
 const embeddedPostgresSupport = await getEmbeddedPostgresTestSupport();
@@ -28,8 +28,8 @@ const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : 
 type Db = ReturnType<typeof createDb>;
 
 async function createApp(db: Db, companyId: string, userId: string) {
-  process.env.PAPERCLIP_LOG_DIR = "/tmp/paperclip-test-home/logs";
-  process.env.PAPERCLIP_IN_WORKTREE = "false";
+  process.env.BULLPEN_LOG_DIR = "/tmp/bullpen-test-home/logs";
+  process.env.BULLPEN_IN_WORKTREE = "false";
   const { accessRoutes } = await import("../routes/access.js");
   const app = express();
   app.use(express.json());
@@ -84,7 +84,7 @@ describeEmbeddedPostgres("access routes permissions upgrade compatibility", () =
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-access-routes-permissions-upgrade-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-access-routes-permissions-upgrade-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

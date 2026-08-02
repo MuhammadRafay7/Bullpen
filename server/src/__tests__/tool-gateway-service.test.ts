@@ -20,7 +20,7 @@ import {
   toolGatewaySessions,
   toolInvocations,
   toolPolicies,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import type { PluginToolDispatcher } from "../services/plugin-tool-dispatcher.js";
 import {
   createToolGatewayService,
@@ -143,7 +143,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-tool-gateway-");
+    tempDb = await startEmbeddedPostgresTestDatabase("bullpen-tool-gateway-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -508,7 +508,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
   });
 
   it("does not leave unsigned action requests pending when signing is unavailable", async () => {
-    vi.stubEnv("PAPERCLIP_TOOL_ACTION_SIGNING_SECRET", "");
+    vi.stubEnv("BULLPEN_TOOL_ACTION_SIGNING_SECRET", "");
     const { company, agent, run } = await createRunFixture(db);
     await db.insert(toolPolicies).values({
       companyId: company.id,
@@ -782,7 +782,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () => new Response(JSON.stringify({
       jsonrpc: "2.0",
-      id: "paperclip-tool-test",
+      id: "bullpen-tool-test",
       result: {
         _meta: {
           elicitation: {
@@ -882,7 +882,7 @@ describeEmbeddedPostgres("tool gateway service", () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = async () => new Response(JSON.stringify({
       jsonrpc: "2.0",
-      id: "paperclip-tool-test",
+      id: "bullpen-tool-test",
       result: { elicitation: { message: "Need input" }, content: [] },
     }), { status: 200, headers: { "content-type": "application/json" } });
     try {

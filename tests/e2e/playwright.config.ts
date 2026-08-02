@@ -5,23 +5,23 @@ import { defineConfig } from "@playwright/test";
 
 // Use a dedicated port so e2e tests always start their own server in local_trusted mode,
 // even when the dev server is running on :3100 in authenticated mode.
-const PORT = Number(process.env.PAPERCLIP_E2E_PORT ?? 3199);
+const PORT = Number(process.env.BULLPEN_E2E_PORT ?? 3199);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
-const PAPERCLIP_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-e2e-home-"));
-const PAPERCLIP_INSTANCE_ID = "playwright-e2e";
-const PAPERCLIP_CONFIG = path.join(PAPERCLIP_HOME, "instances", PAPERCLIP_INSTANCE_ID, "config.json");
-const PAPERCLIP_AGENT_JWT_SECRET = process.env.PAPERCLIP_AGENT_JWT_SECRET ?? "playwright-e2e-agent-jwt-secret";
-const PAPERCLIP_DECISION_SIGNING_SECRET =
-  process.env.PAPERCLIP_DECISION_SIGNING_SECRET ?? "playwright-e2e-decision-signing-secret";
-const PAPERCLIP_TOOL_ACTION_SIGNING_SECRET =
-  process.env.PAPERCLIP_TOOL_ACTION_SIGNING_SECRET ?? "playwright-e2e-tool-action-signing-secret";
-const PLAYWRIGHT_CHANNEL = process.env.PAPERCLIP_PLAYWRIGHT_CHANNEL;
+const BULLPEN_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-e2e-home-"));
+const BULLPEN_INSTANCE_ID = "playwright-e2e";
+const BULLPEN_CONFIG = path.join(BULLPEN_HOME, "instances", BULLPEN_INSTANCE_ID, "config.json");
+const BULLPEN_AGENT_JWT_SECRET = process.env.BULLPEN_AGENT_JWT_SECRET ?? "playwright-e2e-agent-jwt-secret";
+const BULLPEN_DECISION_SIGNING_SECRET =
+  process.env.BULLPEN_DECISION_SIGNING_SECRET ?? "playwright-e2e-decision-signing-secret";
+const BULLPEN_TOOL_ACTION_SIGNING_SECRET =
+  process.env.BULLPEN_TOOL_ACTION_SIGNING_SECRET ?? "playwright-e2e-tool-action-signing-secret";
+const PLAYWRIGHT_CHANNEL = process.env.BULLPEN_PLAYWRIGHT_CHANNEL;
 
-process.env.PAPERCLIP_HOME = PAPERCLIP_HOME;
-process.env.PAPERCLIP_CONFIG = PAPERCLIP_CONFIG;
-process.env.PAPERCLIP_AGENT_JWT_SECRET = PAPERCLIP_AGENT_JWT_SECRET;
-process.env.PAPERCLIP_DECISION_SIGNING_SECRET = PAPERCLIP_DECISION_SIGNING_SECRET;
-process.env.PAPERCLIP_TOOL_ACTION_SIGNING_SECRET = PAPERCLIP_TOOL_ACTION_SIGNING_SECRET;
+process.env.BULLPEN_HOME = BULLPEN_HOME;
+process.env.BULLPEN_CONFIG = BULLPEN_CONFIG;
+process.env.BULLPEN_AGENT_JWT_SECRET = BULLPEN_AGENT_JWT_SECRET;
+process.env.BULLPEN_DECISION_SIGNING_SECRET = BULLPEN_DECISION_SIGNING_SECRET;
+process.env.BULLPEN_TOOL_ACTION_SIGNING_SECRET = BULLPEN_TOOL_ACTION_SIGNING_SECRET;
 
 export default defineConfig({
   testDir: ".",
@@ -52,12 +52,12 @@ export default defineConfig({
     },
   ],
   // The webServer directive bootstraps a throwaway instance and then starts it.
-  // `onboard --yes --run` works in a non-interactive temp PAPERCLIP_HOME.
+  // `onboard --yes --run` works in a non-interactive temp BULLPEN_HOME.
   webServer: {
-    command: `pnpm paperclipai onboard --yes --run`,
+    command: `pnpm bullpen onboard --yes --run`,
     url: `${BASE_URL}/api/health`,
     // Always boot a dedicated throwaway instance for e2e so browser tests
-    // never attach to the developer's active Paperclip home/server.
+    // never attach to the developer's active Bullpen home/server.
     reuseExistingServer: false,
     timeout: 120_000,
     stdout: "pipe",
@@ -66,15 +66,15 @@ export default defineConfig({
       ...process.env,
       NODE_ENV: "test",
       PORT: String(PORT),
-      PAPERCLIP_HOME,
-      PAPERCLIP_INSTANCE_ID,
-      PAPERCLIP_CONFIG,
-      PAPERCLIP_AGENT_JWT_SECRET,
-      PAPERCLIP_DECISION_SIGNING_SECRET,
-      PAPERCLIP_TOOL_ACTION_SIGNING_SECRET,
-      PAPERCLIP_BIND: "loopback",
-      PAPERCLIP_DEPLOYMENT_MODE: "local_trusted",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private",
+      BULLPEN_HOME,
+      BULLPEN_INSTANCE_ID,
+      BULLPEN_CONFIG,
+      BULLPEN_AGENT_JWT_SECRET,
+      BULLPEN_DECISION_SIGNING_SECRET,
+      BULLPEN_TOOL_ACTION_SIGNING_SECRET,
+      BULLPEN_BIND: "loopback",
+      BULLPEN_DEPLOYMENT_MODE: "local_trusted",
+      BULLPEN_DEPLOYMENT_EXPOSURE: "private",
     },
   },
   outputDir: "./test-results",

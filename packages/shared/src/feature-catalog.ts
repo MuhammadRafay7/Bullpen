@@ -14,7 +14,7 @@ import { instanceExperimentalSettingsSchema } from "./validators/instance.js";
  * - `preference`: tenant-controllable taste setting; the cloud harness does
  *   not manage it.
  * - `managed`: the cloud harness may set this per fleet/stack via
- *   `PAPERCLIP_MANAGED_CONFIG`.
+ *   `BULLPEN_MANAGED_CONFIG`.
  * - `floor`: pinned by code on managed instances; no flag value may widen it.
  */
 export const FEATURE_TIERS = ["preference", "managed", "floor"] as const;
@@ -154,14 +154,14 @@ export const INSTANCE_FEATURE_CATALOG: Record<InstanceFeatureKey, FeatureCatalog
   enableBuiltInAgents: {
     title: "Built-in Agents",
     description:
-      "Show Paperclip-managed built-in agent surfaces, including roster badges, the Built-in agents tab, and setup controls.",
+      "Show Bullpen-managed built-in agent surfaces, including roster badges, the Built-in agents tab, and setup controls.",
     tier: "managed",
     cloudDefault: false,
     selfHostedDefault: false,
   },
   enableBetaSkills: {
     title: "Beta skills",
-    description: "Allow agents to pin beta releases of the Paperclip core skill.",
+    description: "Allow agents to pin beta releases of the Bullpen core skill.",
     tier: "preference",
     cloudDefault: false,
     selfHostedDefault: false,

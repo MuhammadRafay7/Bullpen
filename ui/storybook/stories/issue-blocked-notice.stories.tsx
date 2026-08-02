@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { IssueRelationIssueSummary } from "@paperclipai/shared";
+import type { IssueRelationIssueSummary } from "@bullpen/shared";
 import { IssueBlockedNotice } from "@/components/IssueBlockedNotice";
 
 // Rule C (PAP-13554): when a human comment on a `blocked` issue does not reopen

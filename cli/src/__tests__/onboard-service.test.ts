@@ -7,8 +7,8 @@ function supportedDetection() {
     manager: {
       platform: "systemd" as const,
       instanceId: "default",
-      serviceName: "paperclipai.service",
-      definitionPath: "/tmp/paperclipai.service",
+      serviceName: "bullpen.service",
+      definitionPath: "/tmp/bullpen.service",
       renderDefinition: () => "unit",
       install: vi.fn(async () => ({ changed: true })),
       uninstall: vi.fn(async () => undefined),
@@ -17,7 +17,7 @@ function supportedDetection() {
       restart: vi.fn(async () => undefined),
       status: vi.fn(async () => ({
         platform: "systemd" as const,
-        serviceName: "paperclipai.service",
+        serviceName: "bullpen.service",
         installed: true,
         active: true,
         enabled: true,

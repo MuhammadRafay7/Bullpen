@@ -91,7 +91,7 @@ describe("errorHandler", () => {
     const db = { marker: "db" };
     const req = {
       ...makeReq(),
-      app: { locals: { paperclipDb: db } },
+      app: { locals: { bullpenDb: db } },
       actor: {
         type: "agent",
         agentId: "agent-1",

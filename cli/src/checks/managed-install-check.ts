@@ -40,7 +40,7 @@ export function nodeRuntimeCheck(): CheckResult {
         name: "Node.js runtime",
         status: "fail",
         message: `Node.js ${process.versions.node} is unsupported`,
-        repairHint: "Install Node.js 20 or newer before installing or running Paperclip",
+        repairHint: "Install Node.js 20 or newer before installing or running Bullpen",
       };
 }
 
@@ -66,7 +66,7 @@ export function managedInstallChecks(
         name: "Managed install manifest",
         status: "fail",
         message: error instanceof Error ? error.message : String(error),
-        repairHint: "Re-run `paperclipai install` to rebuild the managed install metadata",
+        repairHint: "Re-run `bullpen install` to rebuild the managed install metadata",
       },
     ];
   }
@@ -77,7 +77,7 @@ export function managedInstallChecks(
         name: "Managed install manifest",
         status: "fail",
         message: `Managed install artifacts exist but ${paths.manifestPath} is missing`,
-        repairHint: "Re-run `paperclipai install`",
+        repairHint: "Re-run `bullpen install`",
       },
     ];
   }
@@ -108,7 +108,7 @@ export function managedInstallChecks(
           message: !payloadExists
             ? `Manifest payload is missing or outside the install store: ${manifest.payloadPath}`
             : `Current link does not point to ${manifest.payloadPath}`,
-          repairHint: "Re-run `paperclipai install` or roll back to a retained payload",
+          repairHint: "Re-run `bullpen install` or roll back to a retained payload",
         },
   );
 
@@ -125,7 +125,7 @@ export function managedInstallChecks(
           name: "Managed install shim",
           status: "fail",
           message: `Missing or unrecognized shim at ${paths.shimPath}`,
-          repairHint: "Re-run `paperclipai install`",
+          repairHint: "Re-run `bullpen install`",
         },
   );
 
@@ -160,7 +160,7 @@ export function managedInstallChecks(
           name: "Managed install retention",
           status: "warn",
           message: `${orphaned.length} orphaned payload${orphaned.length === 1 ? "" : "s"} found`,
-          repairHint: "A successful `paperclipai update` prunes unretained payloads",
+          repairHint: "A successful `bullpen update` prunes unretained payloads",
         },
   );
 

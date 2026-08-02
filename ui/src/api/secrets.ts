@@ -14,7 +14,7 @@ import type {
   SecretStatus,
   UserSecretCoverageSummary,
   UserSecretDefinition,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { api } from "./client";
 
 export interface SecretUsageResponse {

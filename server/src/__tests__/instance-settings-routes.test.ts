@@ -637,10 +637,10 @@ describe("instance settings routes", () => {
     };
 
     beforeEach(() => {
-      process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
+      process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN = "test-server-token";
     });
     afterEach(() => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN;
     });
 
     it("rejects a write that changes executionMode", async () => {
@@ -705,7 +705,7 @@ describe("instance settings routes", () => {
     });
 
     it("keeps executionMode writable on self-hosted instances", async () => {
-      delete process.env.PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN;
+      delete process.env.BULLPEN_CLOUD_TENANT_SERVER_TOKEN;
       const app = await createApp({
         type: "board",
         userId: "admin-1",

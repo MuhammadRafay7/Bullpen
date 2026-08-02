@@ -5571,7 +5571,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paperclip_managed'"
+          "default": "'bullpen_managed'"
         },
         "external_ref": {
           "name": "external_ref",
@@ -12534,7 +12534,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"environments\".\"driver\" = 'sandbox' AND (\"environments\".\"metadata\" ->> 'managedByPaperclip')::boolean = true",
+          "where": "\"environments\".\"driver\" = 'sandbox' AND (\"environments\".\"metadata\" ->> 'managedByBullpen')::boolean = true",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -13715,21 +13715,21 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paperclip-feedback-envelope-v2'"
+          "default": "'bullpen-feedback-envelope-v2'"
         },
         "bundle_version": {
           "name": "bundle_version",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paperclip-feedback-bundle-v2'"
+          "default": "'bullpen-feedback-bundle-v2'"
         },
         "payload_version": {
           "name": "payload_version",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paperclip-feedback-v1'"
+          "default": "'bullpen-feedback-v1'"
         },
         "payload_digest": {
           "name": "payload_digest",
@@ -36699,7 +36699,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'paperclip_managed'"
+          "default": "'bullpen_managed'"
         },
         "provider_config_id": {
           "name": "provider_config_id",

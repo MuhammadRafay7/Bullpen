@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import express from "express";
 import request from "supertest";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import { healthRoutes } from "../routes/health.js";
 import * as devServerStatus from "../dev-server-status.js";
 import { serverVersion } from "../version.js";
@@ -137,8 +137,8 @@ describe("GET /health", () => {
   });
 
   it("surfaces a stale database backup warning in full health details", async () => {
-    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-health-backups-"));
-    const backupFile = path.join(backupDir, "paperclip-20260705-031702.sql.gz");
+    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-health-backups-"));
+    const backupFile = path.join(backupDir, "bullpen-20260705-031702.sql.gz");
     fs.writeFileSync(backupFile, "backup");
     fs.utimesSync(
       backupFile,
@@ -160,7 +160,7 @@ describe("GET /health", () => {
       backupDir,
       maxAgeHours: 26,
       latestBackup: {
-        name: "paperclip-20260705-031702.sql.gz",
+        name: "bullpen-20260705-031702.sql.gz",
         ageHours: 33.7,
       },
       warnings: [
@@ -173,8 +173,8 @@ describe("GET /health", () => {
   });
 
   it("surfaces database backup failure markers in full health details", async () => {
-    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-health-backups-"));
-    const backupFile = path.join(backupDir, "paperclip-20260706-031702.sql.gz");
+    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-health-backups-"));
+    const backupFile = path.join(backupDir, "bullpen-20260706-031702.sql.gz");
     const alertFile = path.join(backupDir, "db-backup-to-s3.failure");
     fs.writeFileSync(backupFile, "backup");
     fs.writeFileSync(alertFile, "db-backup-to-s3 failed at 2026-07-06T03:17:00.000Z exit=1\n");
@@ -205,10 +205,10 @@ describe("GET /health", () => {
   });
 
   it("finds conventional database backup failure markers without an explicit alert file", async () => {
-    const backupRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-health-backups-root-"));
+    const backupRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-health-backups-root-"));
     const backupDir = path.join(backupRoot, "backups");
     fs.mkdirSync(backupDir);
-    const backupFile = path.join(backupDir, "paperclip-20260706-031702.sql.gz");
+    const backupFile = path.join(backupDir, "bullpen-20260706-031702.sql.gz");
     const alertFile = path.join(backupRoot, "db-backup-to-s3.failure");
     fs.writeFileSync(backupFile, "backup");
     fs.writeFileSync(alertFile, "db-backup-to-s3 failed beside backups\n");
@@ -238,8 +238,8 @@ describe("GET /health", () => {
   });
 
   it("surfaces redacted database backup warnings for anonymous authenticated probes", async () => {
-    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-health-redacted-backups-"));
-    const backupFile = path.join(backupDir, "paperclip-20260705-031702.sql.gz");
+    const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "bullpen-health-redacted-backups-"));
+    const backupFile = path.join(backupDir, "bullpen-20260705-031702.sql.gz");
     fs.writeFileSync(backupFile, "backup");
     fs.utimesSync(
       backupFile,
@@ -470,7 +470,7 @@ describe("GET /health", () => {
   });
 
   it("reports bootstrapStatus ready for cloud-managed instances regardless of instance admin count", async () => {
-    vi.stubEnv("PAPERCLIP_CLOUD_TENANT_SERVER_TOKEN", "test-tenant-server-token");
+    vi.stubEnv("BULLPEN_CLOUD_TENANT_SERVER_TOKEN", "test-tenant-server-token");
     const { healthRoutes } = await import("../routes/health.js");
     const db = {
       execute: vi.fn().mockResolvedValue([{ "?column?": 1 }]),

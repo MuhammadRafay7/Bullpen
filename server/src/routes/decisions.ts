@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import type { Db } from "@paperclipai/db";
-import { decisionInputsSchema, decisionOptionsSchema } from "@paperclipai/shared";
+import type { Db } from "@bullpen/db";
+import { decisionInputsSchema, decisionOptionsSchema } from "@bullpen/shared";
 import { validate } from "../middleware/validate.js";
 import { decisionService, type DecisionServiceOptions } from "../services/decisions.js";
 import { assertBoard, assertBoardOrAgent, assertCompanyAccess, getAccessibleResource, getActorInfo } from "./authz.js";

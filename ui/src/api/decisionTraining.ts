@@ -2,7 +2,7 @@ import type {
   DecisionTrainingExample,
   DecisionTrainingPreview,
   DecisionTrainingSourceKind,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { api, type RequestOptions } from "./client";
 
 export interface DecisionTrainingListItem {

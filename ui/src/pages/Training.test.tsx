@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import type { DecisionTrainingExample } from "@paperclipai/shared";
+import type { DecisionTrainingExample } from "@bullpen/shared";
 import { describe, expect, it } from "vitest";
 import { TrainingThreadPanel, partitionTrainingThread } from "./Training";
 

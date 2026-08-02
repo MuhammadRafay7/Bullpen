@@ -5,9 +5,9 @@ import net from "node:net";
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import type { AdapterRuntimeServiceReport } from "@paperclipai/adapter-utils";
-import type { Db } from "@paperclipai/db";
-import { executionWorkspaces, issueComments, issues, projectWorkspaces, workspaceRuntimeServices } from "@paperclipai/db";
+import type { AdapterRuntimeServiceReport } from "@bullpen/adapter-utils";
+import type { Db } from "@bullpen/db";
+import { executionWorkspaces, issueComments, issues, projectWorkspaces, workspaceRuntimeServices } from "@bullpen/db";
 import {
   listWorkspaceServiceCommandDefinitions,
   type GitWorktreeBranchAncestryVerdict,
@@ -18,7 +18,7 @@ import {
   type WorkspaceOperationPhase,
   type WorkspaceRuntimeDesiredState,
   type WorkspaceRuntimeServiceStateMap,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { and, desc, eq, inArray, isNull, ne } from "drizzle-orm";
 import { asNumber, asString, parseObject, renderTemplate } from "../adapters/utils.js";
 import { resolveHomeAwarePath } from "../home-paths.js";
@@ -231,7 +231,7 @@ function isLinkedGitWorktreeCheckout(rootDir: string) {
 
 function discoverWorkspacePackagePaths(rootDir: string): Map<string, string> {
   const packagePaths = new Map<string, string>();
-  const ignoredDirNames = new Set([".git", ".paperclip", "dist", "node_modules"]);
+  const ignoredDirNames = new Set([".git", ".bullpen", "dist", "node_modules"]);
 
   function visit(dirPath: string) {
     if (!existsSync(dirPath)) return;
@@ -333,7 +333,7 @@ export async function ensureServerWorkspaceLinksCurrent(
 export function sanitizeRuntimeServiceBaseEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...baseEnv };
   for (const key of Object.keys(env)) {
-    if (key.startsWith("PAPERCLIP_")) {
+    if (key.startsWith("BULLPEN_")) {
       delete env[key];
     }
   }
@@ -446,7 +446,7 @@ function sanitizeBranchName(value: string): string {
     .replace(/[^A-Za-z0-9._/-]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^[-/.]+|[-/.]+$/g, "")
-    .slice(0, 120) || "paperclip-work";
+    .slice(0, 120) || "bullpen-work";
 }
 
 function isAbsolutePath(value: string) {
@@ -785,7 +785,7 @@ function formatUtcBranchTimestamp(date = new Date()) {
 
 function buildDirtyQuarantineRescueBranch(sourceIssue: ExecutionWorkspaceIssueRef | null) {
   const issueComponent = sanitizeBranchName(sourceIssue?.identifier ?? sourceIssue?.id ?? "issue");
-  return sanitizeBranchName(`paperclip/rescue/${issueComponent}/${formatUtcBranchTimestamp()}`);
+  return sanitizeBranchName(`bullpen/rescue/${issueComponent}/${formatUtcBranchTimestamp()}`);
 }
 
 function formatIssueReference(issueId: string | null | undefined, identifier: string | null | undefined) {
@@ -957,7 +957,7 @@ function explainGitWorktreeBranchIncoherence(input: {
 }) {
   const actualBranch = formatBranchForMessage(input.actualBranchName);
   if (!input.expectedHeadSha || !input.actualHeadSha) {
-    return `Paperclip could not determine branch ancestry because the recorded branch "${input.expectedBranchName}" or checked-out branch "${actualBranch}" is missing a resolvable HEAD commit.`;
+    return `Bullpen could not determine branch ancestry because the recorded branch "${input.expectedBranchName}" or checked-out branch "${actualBranch}" is missing a resolvable HEAD commit.`;
   }
   if (input.sameHead) {
     return `The recorded branch "${input.expectedBranchName}" and checked-out branch "${actualBranch}" resolve to the same commit, so the mismatch is branch metadata rather than commit divergence.`;
@@ -966,9 +966,9 @@ function explainGitWorktreeBranchIncoherence(input: {
     return `The recorded branch "${input.expectedBranchName}" is an ancestor of the checked-out branch "${actualBranch}", so the checked-out branch is forward of the recorded branch.`;
   }
   if (input.ancestryVerdict === "diverged") {
-    return `The recorded branch "${input.expectedBranchName}" is not an ancestor of the checked-out branch "${actualBranch}", so Paperclip cannot prove a forward-only reconciliation.`;
+    return `The recorded branch "${input.expectedBranchName}" is not an ancestor of the checked-out branch "${actualBranch}", so Bullpen cannot prove a forward-only reconciliation.`;
   }
-  return `Paperclip could not determine whether the checked-out branch "${actualBranch}" is forward of the recorded branch "${input.expectedBranchName}".`;
+  return `Bullpen could not determine whether the checked-out branch "${actualBranch}" is forward of the recorded branch "${input.expectedBranchName}".`;
 }
 
 async function inspectGitWorktreeBranchIncoherence(input: {
@@ -1399,7 +1399,7 @@ async function quarantineDirtyWorktreeBranchIncoherence(input: {
       args: [
         "commit",
         "-m",
-        "Paperclip dirty workspace rescue",
+        "Bullpen dirty workspace rescue",
         "-m",
         [
           `Source-Issue: ${input.evidence.sourceIdentifier ?? input.evidence.sourceIssueId ?? "unknown"}`,
@@ -1783,7 +1783,7 @@ export async function ensureGitWorktreeBranchCoherent(input: {
   ) {
     const reason = evidence.provenance.expectedBranchExists
       ? "Automatic forward reconciliation: recorded branch is an ancestor of the checked-out branch."
-      : "Automatic forward reconciliation: the recorded branch no longer exists, so Paperclip adopted the clean checked-out branch.";
+      : "Automatic forward reconciliation: the recorded branch no longer exists, so Bullpen adopted the clean checked-out branch.";
     if (input.executionWorkspaceId && input.persistForwardReconcile !== false) {
       if (!input.db) {
         evidence.safeRepair.reason = "forward reconciliation requires database access to update the execution workspace record";
@@ -1882,7 +1882,7 @@ export async function ensureGitWorktreeBranchCoherent(input: {
       branchName: currentBranch,
       reconciledForward: false,
       warnings: [
-        `${warningPrefix} The checked-out branch contains the recorded branch plus newer commits, so Paperclip adopted it for subsequent runs.`,
+        `${warningPrefix} The checked-out branch contains the recorded branch plus newer commits, so Bullpen adopted it for subsequent runs.`,
       ],
     };
   }
@@ -1932,7 +1932,7 @@ export async function ensureGitWorktreeBranchCoherent(input: {
       branchName: expectedBranchName,
       reconciledForward: false,
       warnings: [
-        `${warningPrefix} The detached HEAD contained the recorded branch plus newer commits, so Paperclip moved the recorded branch to that HEAD.`,
+        `${warningPrefix} The detached HEAD contained the recorded branch plus newer commits, so Bullpen moved the recorded branch to that HEAD.`,
       ],
     };
   }
@@ -2380,25 +2380,25 @@ function buildWorkspaceCommandEnv(input: {
   created: boolean;
 }) {
   const env: NodeJS.ProcessEnv = { ...process.env };
-  env.PAPERCLIP_WORKSPACE_CWD = input.worktreePath;
-  env.PAPERCLIP_WORKSPACE_PATH = input.worktreePath;
-  env.PAPERCLIP_WORKSPACE_WORKTREE_PATH = input.worktreePath;
-  env.PAPERCLIP_WORKSPACE_BRANCH = input.branchName;
-  env.PAPERCLIP_WORKSPACE_BASE_CWD = input.base.baseCwd;
-  env.PAPERCLIP_WORKSPACE_REPO_ROOT = input.repoRoot;
-  env.PAPERCLIP_WORKSPACE_SOURCE = input.base.source;
-  env.PAPERCLIP_WORKSPACE_REPO_REF = input.base.repoRef ?? "";
-  env.PAPERCLIP_WORKSPACE_REPO_URL = input.base.repoUrl ?? "";
-  env.PAPERCLIP_WORKSPACE_CREATED = input.created ? "true" : "false";
-  env.PAPERCLIP_PROJECT_ID = input.base.projectId ?? "";
-  env.PAPERCLIP_PROJECT_WORKSPACE_ID = input.base.workspaceId ?? "";
-  env.PAPERCLIP_AGENT_ID = input.agent.id ?? "";
-  env.PAPERCLIP_AGENT_NAME = input.agent.name;
-  env.PAPERCLIP_COMPANY_ID = input.agent.companyId;
-  env.PAPERCLIP_ISSUE_ID = input.issue?.id ?? "";
-  env.PAPERCLIP_ISSUE_IDENTIFIER = input.issue?.identifier ?? "";
-  env.PAPERCLIP_ISSUE_TITLE = input.issue?.title ?? "";
-  env.PAPERCLIP_ISSUE_WORK_MODE = input.issue?.workMode ?? "";
+  env.BULLPEN_WORKSPACE_CWD = input.worktreePath;
+  env.BULLPEN_WORKSPACE_PATH = input.worktreePath;
+  env.BULLPEN_WORKSPACE_WORKTREE_PATH = input.worktreePath;
+  env.BULLPEN_WORKSPACE_BRANCH = input.branchName;
+  env.BULLPEN_WORKSPACE_BASE_CWD = input.base.baseCwd;
+  env.BULLPEN_WORKSPACE_REPO_ROOT = input.repoRoot;
+  env.BULLPEN_WORKSPACE_SOURCE = input.base.source;
+  env.BULLPEN_WORKSPACE_REPO_REF = input.base.repoRef ?? "";
+  env.BULLPEN_WORKSPACE_REPO_URL = input.base.repoUrl ?? "";
+  env.BULLPEN_WORKSPACE_CREATED = input.created ? "true" : "false";
+  env.BULLPEN_PROJECT_ID = input.base.projectId ?? "";
+  env.BULLPEN_PROJECT_WORKSPACE_ID = input.base.workspaceId ?? "";
+  env.BULLPEN_AGENT_ID = input.agent.id ?? "";
+  env.BULLPEN_AGENT_NAME = input.agent.name;
+  env.BULLPEN_COMPANY_ID = input.agent.companyId;
+  env.BULLPEN_ISSUE_ID = input.issue?.id ?? "";
+  env.BULLPEN_ISSUE_IDENTIFIER = input.issue?.identifier ?? "";
+  env.BULLPEN_ISSUE_TITLE = input.issue?.title ?? "";
+  env.BULLPEN_ISSUE_WORK_MODE = input.issue?.workMode ?? "";
   return env;
 }
 
@@ -2635,18 +2635,18 @@ function buildExecutionWorkspaceCleanupEnv(input: {
   projectWorkspaceCwd?: string | null;
 }) {
   const env: NodeJS.ProcessEnv = sanitizeRuntimeServiceBaseEnv(process.env);
-  env.PAPERCLIP_WORKSPACE_CWD = input.workspace.cwd ?? "";
-  env.PAPERCLIP_WORKSPACE_PATH = input.workspace.cwd ?? "";
-  env.PAPERCLIP_WORKSPACE_WORKTREE_PATH =
+  env.BULLPEN_WORKSPACE_CWD = input.workspace.cwd ?? "";
+  env.BULLPEN_WORKSPACE_PATH = input.workspace.cwd ?? "";
+  env.BULLPEN_WORKSPACE_WORKTREE_PATH =
     input.workspace.providerRef ?? input.workspace.cwd ?? "";
-  env.PAPERCLIP_WORKSPACE_BRANCH = input.workspace.branchName ?? "";
-  env.PAPERCLIP_WORKSPACE_BASE_CWD = input.projectWorkspaceCwd ?? "";
-  env.PAPERCLIP_WORKSPACE_REPO_ROOT = input.projectWorkspaceCwd ?? "";
-  env.PAPERCLIP_WORKSPACE_REPO_URL = input.workspace.repoUrl ?? "";
-  env.PAPERCLIP_WORKSPACE_REPO_REF = input.workspace.baseRef ?? "";
-  env.PAPERCLIP_PROJECT_ID = input.workspace.projectId ?? "";
-  env.PAPERCLIP_PROJECT_WORKSPACE_ID = input.workspace.projectWorkspaceId ?? "";
-  env.PAPERCLIP_ISSUE_ID = input.workspace.sourceIssueId ?? "";
+  env.BULLPEN_WORKSPACE_BRANCH = input.workspace.branchName ?? "";
+  env.BULLPEN_WORKSPACE_BASE_CWD = input.projectWorkspaceCwd ?? "";
+  env.BULLPEN_WORKSPACE_REPO_ROOT = input.projectWorkspaceCwd ?? "";
+  env.BULLPEN_WORKSPACE_REPO_URL = input.workspace.repoUrl ?? "";
+  env.BULLPEN_WORKSPACE_REPO_REF = input.workspace.baseRef ?? "";
+  env.BULLPEN_PROJECT_ID = input.workspace.projectId ?? "";
+  env.BULLPEN_PROJECT_WORKSPACE_ID = input.workspace.projectWorkspaceId ?? "";
+  env.BULLPEN_ISSUE_ID = input.workspace.sourceIssueId ?? "";
   return env;
 }
 
@@ -2708,7 +2708,7 @@ export async function realizeExecutionWorkspace(input: {
   const configuredParentDir = asString(rawStrategy.worktreeParentDir, "");
   const worktreeParentDir = configuredParentDir
     ? resolveConfiguredPath(configuredParentDir, repoRoot)
-    : path.join(repoRoot, ".paperclip", "worktrees");
+    : path.join(repoRoot, ".bullpen", "worktrees");
   const worktreePath = path.join(worktreeParentDir, branchName);
   let pendingForwardBranchReconcile: PendingForwardBranchReconcile | null = null;
   const configuredBaseRef = typeof rawStrategy.baseRef === "string" && rawStrategy.baseRef.length > 0
@@ -3639,12 +3639,12 @@ async function waitForReadiness(input: {
   throw new Error(`Readiness check failed for ${readinessUrl}: ${lastError}`);
 }
 
-function isPaperclipDevRuntimeService(input: { serviceName?: string | null; command?: string | null }) {
+function isBullpenDevRuntimeService(input: { serviceName?: string | null; command?: string | null }) {
   const serviceName = (input.serviceName ?? "").trim().toLowerCase();
   const command = (input.command ?? "").trim().toLowerCase();
   return (
-    serviceName === "paperclip-dev"
-    || serviceName === "paperclip-dev-once"
+    serviceName === "bullpen-dev"
+    || serviceName === "bullpen-dev-once"
     || (command.includes("dev:once") && command.includes("tailscale-auth"))
   );
 }
@@ -3653,7 +3653,7 @@ function resolveRuntimeServiceHealthUrl(
   url: string | null,
   input?: { serviceName?: string | null; command?: string | null },
 ) {
-  if (!url || !isPaperclipDevRuntimeService(input ?? {})) return url;
+  if (!url || !isBullpenDevRuntimeService(input ?? {})) return url;
   try {
     const parsed = new URL(url);
     if (parsed.pathname === "/" || parsed.pathname === "") {
@@ -4948,7 +4948,7 @@ export async function restartDesiredRuntimeServicesOnStartup(db: Db) {
     try {
       const refs = await startRuntimeServicesForWorkspaceControl({
         db,
-        actor: { id: null, name: "Paperclip", companyId: row.companyId },
+        actor: { id: null, name: "Bullpen", companyId: row.companyId },
         issue: null,
         workspace: {
           baseCwd: row.cwd,
@@ -4996,7 +4996,7 @@ export async function restartDesiredRuntimeServicesOnStartup(db: Db) {
     try {
       const refs = await startRuntimeServicesForWorkspaceControl({
         db,
-        actor: { id: null, name: "Paperclip", companyId: row.companyId },
+        actor: { id: null, name: "Bullpen", companyId: row.companyId },
         issue: row.sourceIssueId
           ? {
               id: row.sourceIssueId,

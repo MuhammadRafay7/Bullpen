@@ -161,7 +161,7 @@ export async function stopEmbeddedPostgresIfRunning(
 }
 
 export async function readWorktreeInstancePointer(workspacePath: string): Promise<WorktreeInstancePointer | null> {
-  const envPath = path.join(workspacePath, ".paperclip", ".env");
+  const envPath = path.join(workspacePath, ".bullpen", ".env");
   try {
     return {
       envPath,
@@ -177,15 +177,15 @@ function resolveConfiguredInstanceRoot(pointer: WorktreeInstancePointer, expecte
   | { instanceRoot: string }
   | { warning: string; instanceRoot: string | null; refusalReason: string | null } {
   const env = parseEnvContents(pointer.envContents);
-  const configuredHome = env.PAPERCLIP_HOME?.trim();
-  const instanceId = env.PAPERCLIP_INSTANCE_ID?.trim();
+  const configuredHome = env.BULLPEN_HOME?.trim();
+  const instanceId = env.BULLPEN_INSTANCE_ID?.trim();
   if (!configuredHome || !instanceId) {
     return { warning: "", instanceRoot: null, refusalReason: null };
   }
   if (!INSTANCE_ID_RE.test(instanceId)) {
     return {
       instanceRoot: null,
-      warning: `Refusing worktree instance cleanup from ${pointer.envPath}: PAPERCLIP_INSTANCE_ID is not a safe path segment.`,
+      warning: `Refusing worktree instance cleanup from ${pointer.envPath}: BULLPEN_INSTANCE_ID is not a safe path segment.`,
       refusalReason: "unsafe_instance_id",
     };
   }
@@ -194,7 +194,7 @@ function resolveConfiguredInstanceRoot(pointer: WorktreeInstancePointer, expecte
   if (!path.isAbsolute(expandedHome)) {
     return {
       instanceRoot: null,
-      warning: `Refusing worktree instance cleanup from ${pointer.envPath}: PAPERCLIP_HOME is not absolute.`,
+      warning: `Refusing worktree instance cleanup from ${pointer.envPath}: BULLPEN_HOME is not absolute.`,
       refusalReason: "non_absolute_home",
     };
   }
@@ -202,7 +202,7 @@ function resolveConfiguredInstanceRoot(pointer: WorktreeInstancePointer, expecte
   if (instanceId !== expectedInstanceId) {
     return {
       instanceRoot,
-      warning: `Refusing worktree instance cleanup from ${pointer.envPath}: PAPERCLIP_INSTANCE_ID "${instanceId}" does not match the expected workspace instance "${expectedInstanceId}".`,
+      warning: `Refusing worktree instance cleanup from ${pointer.envPath}: BULLPEN_INSTANCE_ID "${instanceId}" does not match the expected workspace instance "${expectedInstanceId}".`,
       refusalReason: "instance_id_mismatch",
     };
   }
@@ -222,7 +222,7 @@ export async function cleanupWorktreeInstanceArtifacts(input: {
   if ("warning" in configured && !configured.warning) return { status: "not_configured" };
 
   const managedWorktreesDir = path.resolve(
-    expandHomePrefix(input.worktreesDir?.trim() || process.env.PAPERCLIP_WORKTREES_DIR?.trim() || path.join(os.homedir(), ".paperclip-worktrees")),
+    expandHomePrefix(input.worktreesDir?.trim() || process.env.BULLPEN_WORKTREES_DIR?.trim() || path.join(os.homedir(), ".bullpen-worktrees")),
   );
   const managedInstancesDir = path.join(managedWorktreesDir, "instances");
   const recordRefusal = async (

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowUpRight, Loader2, Lock } from "lucide-react";
-import type { AppDefinition, ToolConnection } from "@paperclipai/shared";
-import { credentialConfigPath, getAvailableConnectionMethod, humanizeConnectionDisplayName } from "@paperclipai/shared";
+import type { AppDefinition, ToolConnection } from "@bullpen/shared";
+import { credentialConfigPath, getAvailableConnectionMethod, humanizeConnectionDisplayName } from "@bullpen/shared";
 import { toolsApi } from "@/api/tools";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

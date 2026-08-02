@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-base_cwd="${PAPERCLIP_WORKSPACE_BASE_CWD:?PAPERCLIP_WORKSPACE_BASE_CWD is required}"
-worktree_cwd="${PAPERCLIP_WORKSPACE_CWD:?PAPERCLIP_WORKSPACE_CWD is required}"
-paperclip_home="${PAPERCLIP_HOME:-$HOME/.paperclip}"
-paperclip_instance_id="${PAPERCLIP_INSTANCE_ID:-default}"
-paperclip_dir="$worktree_cwd/.paperclip"
-worktree_config_path="$paperclip_dir/config.json"
-worktree_env_path="$paperclip_dir/.env"
-worktree_name="${PAPERCLIP_WORKSPACE_BRANCH:-$(basename "$worktree_cwd")}"
+base_cwd="${BULLPEN_WORKSPACE_BASE_CWD:?BULLPEN_WORKSPACE_BASE_CWD is required}"
+worktree_cwd="${BULLPEN_WORKSPACE_CWD:?BULLPEN_WORKSPACE_CWD is required}"
+bullpen_home="${BULLPEN_HOME:-$HOME/.bullpen}"
+bullpen_instance_id="${BULLPEN_INSTANCE_ID:-default}"
+bullpen_dir="$worktree_cwd/.bullpen"
+worktree_config_path="$bullpen_dir/config.json"
+worktree_env_path="$bullpen_dir/.env"
+worktree_name="${BULLPEN_WORKSPACE_BRANCH:-$(basename "$worktree_cwd")}"
 worktree_instance_id="$(WORKTREE_CWD="$worktree_cwd" node <<'EOF'
 const crypto = require("node:crypto");
 const path = require("node:path");
@@ -36,16 +36,16 @@ if [[ ! -d "$worktree_cwd" ]]; then
   exit 1
 fi
 
-source_config_path="${PAPERCLIP_CONFIG:-}"
-if [[ -z "$source_config_path" && ( -e "$base_cwd/.paperclip/config.json" || -L "$base_cwd/.paperclip/config.json" ) ]]; then
-  source_config_path="$base_cwd/.paperclip/config.json"
+source_config_path="${BULLPEN_CONFIG:-}"
+if [[ -z "$source_config_path" && ( -e "$base_cwd/.bullpen/config.json" || -L "$base_cwd/.bullpen/config.json" ) ]]; then
+  source_config_path="$base_cwd/.bullpen/config.json"
 fi
 if [[ -z "$source_config_path" ]]; then
-  source_config_path="$paperclip_home/instances/$paperclip_instance_id/config.json"
+  source_config_path="$bullpen_home/instances/$bullpen_instance_id/config.json"
 fi
 source_env_path="$(dirname "$source_config_path")/.env"
 
-mkdir -p "$paperclip_dir"
+mkdir -p "$bullpen_dir"
 
 base_cli_runner_path="$base_cwd/cli/node_modules/tsx/dist/cli.mjs"
 base_cli_entry_path="$base_cwd/cli/src/index.ts"
@@ -87,7 +87,7 @@ repair_base_workspace_install() {
     # process that queued behind a peer's repair can skip its own reinstall.
     (
       cd "$base_cwd" || exit 1
-      exec 9>"$repair_lock_dir/paperclip-provision-repair.lock"
+      exec 9>"$repair_lock_dir/bullpen-provision-repair.lock"
       flock 9
       if base_cli_healthy; then
         echo "Base workspace CLI became healthy while waiting for the repair lock; skipping reinstall." >&2
@@ -116,18 +116,18 @@ run_isolated_worktree_init() {
     return
   fi
 
-  if command -v pnpm >/dev/null 2>&1 && pnpm paperclipai --help >/dev/null 2>&1; then
+  if command -v pnpm >/dev/null 2>&1 && pnpm bullpen --help >/dev/null 2>&1; then
     (
       cd "$worktree_cwd" &&
-        pnpm paperclipai worktree init --force --seed-mode minimal --name "$worktree_name" --instance "$worktree_instance_id" --from-config "$source_config_path"
+        pnpm bullpen worktree init --force --seed-mode minimal --name "$worktree_name" --instance "$worktree_instance_id" --from-config "$source_config_path"
     )
     return
   fi
 
-  if command -v paperclipai >/dev/null 2>&1; then
+  if command -v bullpen >/dev/null 2>&1; then
     (
       cd "$worktree_cwd" &&
-        paperclipai worktree init --force --seed-mode minimal --name "$worktree_name" --instance "$worktree_instance_id" --from-config "$source_config_path"
+        bullpen worktree init --force --seed-mode minimal --name "$worktree_name" --instance "$worktree_instance_id" --from-config "$source_config_path"
     )
     return
   fi
@@ -135,8 +135,8 @@ run_isolated_worktree_init() {
   return 127
 }
 
-paperclipai_command_available() {
-  if command -v pnpm >/dev/null 2>&1 && pnpm paperclipai --help >/dev/null 2>&1; then
+bullpen_command_available() {
+  if command -v pnpm >/dev/null 2>&1 && pnpm bullpen --help >/dev/null 2>&1; then
     return 0
   fi
 
@@ -144,7 +144,7 @@ paperclipai_command_available() {
     return 0
   fi
 
-  if command -v paperclipai >/dev/null 2>&1; then
+  if command -v bullpen >/dev/null 2>&1; then
     return 0
   fi
 
@@ -197,16 +197,16 @@ const configPath = path.resolve(process.env.WORKTREE_CONFIG_PATH);
 const envPath = path.resolve(process.env.WORKTREE_ENV_PATH);
 const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
 const env = parseEnvFile(fs.readFileSync(envPath, "utf8"));
-const envConfigPath = expandHomePrefix(env.PAPERCLIP_CONFIG);
+const envConfigPath = expandHomePrefix(env.BULLPEN_CONFIG);
 if (envConfigPath && path.resolve(envConfigPath) !== configPath) {
   fail(`existing worktree env points at ${envConfigPath}, not ${configPath}`);
 }
 
-const homeDir = expandHomePrefix(env.PAPERCLIP_HOME);
-const instanceId = env.PAPERCLIP_INSTANCE_ID;
+const homeDir = expandHomePrefix(env.BULLPEN_HOME);
+const instanceId = env.BULLPEN_INSTANCE_ID;
 const expectedInstanceId = process.env.WORKTREE_INSTANCE_ID;
 if (!homeDir || !instanceId) {
-  fail("existing worktree env is missing PAPERCLIP_HOME or PAPERCLIP_INSTANCE_ID");
+  fail("existing worktree env is missing BULLPEN_HOME or BULLPEN_INSTANCE_ID");
 }
 if (instanceId !== expectedInstanceId) {
   fail(`existing worktree env names legacy or mismatched instance ${instanceId}, expected ${expectedInstanceId}`);
@@ -238,11 +238,11 @@ write_fallback_worktree_config() {
   WORKTREE_NAME="$worktree_name" \
   BASE_CWD="$base_cwd" \
   WORKTREE_CWD="$worktree_cwd" \
-  PAPERCLIP_DIR="$paperclip_dir" \
+  BULLPEN_DIR="$bullpen_dir" \
   SOURCE_CONFIG_PATH="$source_config_path" \
   SOURCE_ENV_PATH="$source_env_path" \
   WORKTREE_INSTANCE_ID="$worktree_instance_id" \
-  PAPERCLIP_WORKTREES_DIR="${PAPERCLIP_WORKTREES_DIR:-}" \
+  BULLPEN_WORKTREES_DIR="${BULLPEN_WORKTREES_DIR:-}" \
   node <<'EOF'
 const fs = require("node:fs");
 const os = require("node:os");
@@ -343,17 +343,17 @@ function resolveRuntimeLikePath(value, configPath) {
 
 async function main() {
   const worktreeName = process.env.WORKTREE_NAME;
-  const paperclipDir = process.env.PAPERCLIP_DIR;
+  const bullpenDir = process.env.BULLPEN_DIR;
   const sourceConfigPath = process.env.SOURCE_CONFIG_PATH;
   const sourceEnvPath = process.env.SOURCE_ENV_PATH;
-  const worktreeHome = path.resolve(expandHomePrefix(nonEmpty(process.env.PAPERCLIP_WORKTREES_DIR) ?? "~/.paperclip-worktrees"));
+  const worktreeHome = path.resolve(expandHomePrefix(nonEmpty(process.env.BULLPEN_WORKTREES_DIR) ?? "~/.bullpen-worktrees"));
   const instanceId = process.env.WORKTREE_INSTANCE_ID;
   if (!/^[A-Za-z0-9_-]+$/.test(instanceId ?? "")) {
     throw new Error("WORKTREE_INSTANCE_ID is missing or unsafe");
   }
   const instanceRoot = path.resolve(worktreeHome, "instances", instanceId);
-  const configPath = path.resolve(paperclipDir, "config.json");
-  const envPath = path.resolve(paperclipDir, ".env");
+  const configPath = path.resolve(bullpenDir, "config.json");
+  const envPath = path.resolve(bullpenDir, ".env");
 
   let sourceConfig = null;
   if (sourceConfigPath && fs.existsSync(sourceConfigPath)) {
@@ -418,7 +418,7 @@ async function main() {
         baseDir: path.resolve(instanceRoot, "data", "storage"),
       },
       s3: {
-        bucket: sourceConfig?.storage?.s3?.bucket ?? "paperclip",
+        bucket: sourceConfig?.storage?.s3?.bucket ?? "bullpen",
         region: sourceConfig?.storage?.s3?.region ?? "us-east-1",
         endpoint: sourceConfig?.storage?.s3?.endpoint,
         prefix: sourceConfig?.storage?.s3?.prefix ?? "",
@@ -436,7 +436,7 @@ async function main() {
 
   fs.writeFileSync(configPath, `${JSON.stringify(targetConfig, null, 2)}\n`, { mode: 0o600 });
 
-  const inlineMasterKey = nonEmpty(sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY);
+  const inlineMasterKey = nonEmpty(sourceEnvEntries.BULLPEN_SECRETS_MASTER_KEY);
   if (inlineMasterKey) {
     fs.mkdirSync(path.resolve(instanceRoot, "secrets"), { recursive: true });
     fs.writeFileSync(targetConfig.secrets.localEncrypted.keyFilePath, inlineMasterKey, {
@@ -444,8 +444,8 @@ async function main() {
       mode: 0o600,
     });
   } else {
-    const sourceKeyFilePath = nonEmpty(sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY_FILE)
-      ? resolveRuntimeLikePath(sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY_FILE, sourceConfigPath)
+    const sourceKeyFilePath = nonEmpty(sourceEnvEntries.BULLPEN_SECRETS_MASTER_KEY_FILE)
+      ? resolveRuntimeLikePath(sourceEnvEntries.BULLPEN_SECRETS_MASTER_KEY_FILE, sourceConfigPath)
       : nonEmpty(sourceConfig?.secrets?.localEncrypted?.keyFilePath)
         ? resolveRuntimeLikePath(sourceConfig.secrets.localEncrypted.keyFilePath, sourceConfigPath)
         : null;
@@ -458,22 +458,22 @@ async function main() {
   }
 
   const envLines = [
-    "PAPERCLIP_HOME=" + JSON.stringify(worktreeHome),
-    "PAPERCLIP_INSTANCE_ID=" + JSON.stringify(instanceId),
-    "PAPERCLIP_CONFIG=" + JSON.stringify(configPath),
-    "PAPERCLIP_CONTEXT=" + JSON.stringify(path.resolve(worktreeHome, "context.json")),
-    "PAPERCLIP_IN_WORKTREE=true",
-    "PAPERCLIP_WORKTREE_NAME=" + JSON.stringify(worktreeName),
+    "BULLPEN_HOME=" + JSON.stringify(worktreeHome),
+    "BULLPEN_INSTANCE_ID=" + JSON.stringify(instanceId),
+    "BULLPEN_CONFIG=" + JSON.stringify(configPath),
+    "BULLPEN_CONTEXT=" + JSON.stringify(path.resolve(worktreeHome, "context.json")),
+    "BULLPEN_IN_WORKTREE=true",
+    "BULLPEN_WORKTREE_NAME=" + JSON.stringify(worktreeName),
   ];
 
   // Secrets that must be carried over from the source instance so the worktree's
-  // dev server behaves like the real one. PAPERCLIP_TOOL_ACTION_SIGNING_SECRET is
+  // dev server behaves like the real one. BULLPEN_TOOL_ACTION_SIGNING_SECRET is
   // required for signed tool-gateway approvals (ask-first MCP policies); without
   // it the first gated POST /tool-gateway/tools/call returns Internal server error.
   // BETTER_AUTH_SECRET keeps auth tokens compatible across the source/worktree pair.
   const propagatedSecretKeys = [
-    "PAPERCLIP_AGENT_JWT_SECRET",
-    "PAPERCLIP_TOOL_ACTION_SIGNING_SECRET",
+    "BULLPEN_AGENT_JWT_SECRET",
+    "BULLPEN_TOOL_ACTION_SIGNING_SECRET",
     "BETTER_AUTH_SECRET",
   ];
   for (const key of propagatedSecretKeys) {
@@ -494,12 +494,12 @@ EOF
 }
 
 if [[ -e "$worktree_config_path" && -e "$worktree_env_path" ]] && existing_worktree_config_is_usable; then
-  echo "Reusing existing isolated Paperclip worktree config at $worktree_config_path" >&2
+  echo "Reusing existing isolated Bullpen worktree config at $worktree_config_path" >&2
 else
   if [[ -e "$worktree_config_path" || -e "$worktree_env_path" ]]; then
-    echo "Existing isolated Paperclip worktree config is stale for this host; regenerating." >&2
+    echo "Existing isolated Bullpen worktree config is stale for this host; regenerating." >&2
   fi
-  if paperclipai_command_available; then
+  if bullpen_command_available; then
     if run_isolated_worktree_init; then
       :
     else
@@ -507,17 +507,17 @@ else
       if [[ "$init_exit_code" -eq 127 ]]; then
         # Every CLI candidate was unusable (e.g. an unhealthy base install that
         # the repair could not fix); degrade instead of stranding the run.
-        echo "No usable paperclipai CLI found; writing isolated fallback config without DB seeding." >&2
+        echo "No usable bullpen CLI found; writing isolated fallback config without DB seeding." >&2
         write_fallback_worktree_config
       else
         # A CLI that ran and failed signals a real problem; do not paper over
         # it with an unseeded fallback config.
-        echo "paperclipai worktree init failed (exit $init_exit_code); failing provisioning instead of writing an unseeded fallback config." >&2
+        echo "bullpen worktree init failed (exit $init_exit_code); failing provisioning instead of writing an unseeded fallback config." >&2
         exit "$init_exit_code"
       fi
     fi
   else
-    echo "paperclipai worktree init unavailable; writing isolated fallback config without DB seeding." >&2
+    echo "bullpen worktree init unavailable; writing isolated fallback config without DB seeding." >&2
     write_fallback_worktree_config
   fi
 fi
@@ -530,7 +530,7 @@ list_base_node_modules_paths() {
       -type d \
       -name node_modules \
       ! -path './.git/*' \
-      ! -path './.paperclip/*' \
+      ! -path './.bullpen/*' \
       | sed 's#^\./##'
 }
 
@@ -541,7 +541,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = process.env.WORKTREE_CWD;
-const ignoredDirs = new Set([".git", ".paperclip", "node_modules", "dist", "storybook-static"]);
+const ignoredDirs = new Set([".git", ".bullpen", "node_modules", "dist", "storybook-static"]);
 const files = [];
 
 function walk(dir) {
@@ -581,7 +581,7 @@ EOF
 
 if [[ -f "$worktree_cwd/package.json" && -f "$worktree_cwd/pnpm-lock.yaml" ]]; then
   needs_install=0
-  install_fingerprint_path="$paperclip_dir/pnpm-install-fingerprint"
+  install_fingerprint_path="$bullpen_dir/pnpm-install-fingerprint"
   current_install_fingerprint="$(compute_pnpm_install_fingerprint)"
   previous_install_fingerprint=""
   if [[ -f "$install_fingerprint_path" ]]; then
@@ -603,7 +603,7 @@ if [[ -f "$worktree_cwd/package.json" && -f "$worktree_cwd/pnpm-lock.yaml" ]]; t
   fi
 
   if [[ "$needs_install" -eq 1 ]]; then
-    backup_suffix=".paperclip-backup-${BASHPID:-$$}"
+    backup_suffix=".bullpen-backup-${BASHPID:-$$}"
     moved_symlink_paths=()
 
     while IFS= read -r relative_path; do

@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   agents,
   companySecretBindings,
@@ -10,7 +10,7 @@ import {
   instanceSettings,
   issues,
   projects,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import {
   ENVIRONMENT_DRIVERS,
   ENVIRONMENT_LEASE_CLEANUP_STATUSES,
@@ -26,7 +26,7 @@ import {
   type EnvironmentLeasePolicy,
   type EnvironmentLeaseStatus,
   type UpdateEnvironment,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { conflict } from "../errors.js";
 import { isCloudManagedInstance } from "../middleware/auth.js";
 
@@ -34,7 +34,7 @@ type EnvironmentRow = typeof environments.$inferSelect;
 type EnvironmentLeaseRow = typeof environmentLeases.$inferSelect;
 const DEFAULT_LOCAL_ENVIRONMENT_NAME = "Local";
 const DEFAULT_LOCAL_ENVIRONMENT_DESCRIPTION =
-  "Default execution environment for Paperclip runs on this machine.";
+  "Default execution environment for Bullpen runs on this machine.";
 
 const DEFAULT_KUBERNETES_ENVIRONMENT_NAME = "Kubernetes Sandbox";
 const DEFAULT_KUBERNETES_ENVIRONMENT_DESCRIPTION =
@@ -70,7 +70,7 @@ export interface KubernetesEnvironmentConfigInput {
    * environment config and validated by the sandbox config schema.
    */
   timeoutMs?: number;
-  adapters?: import("@paperclipai/shared").AdapterRegistryEntry[];
+  adapters?: import("@bullpen/shared").AdapterRegistryEntry[];
   [key: string]: unknown;
 }
 
@@ -205,7 +205,7 @@ type DbTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
 type EnvironmentWriteDb = Pick<Db | DbTransaction, "select" | "insert" | "update" | "delete">;
 
 export function environmentService(db: Db) {
-  /** The single Paperclip-managed sandbox row (`environments_managed_sandbox_idx`), if present. */
+  /** The single Bullpen-managed sandbox row (`environments_managed_sandbox_idx`), if present. */
   const findManagedSandboxRow = () =>
     db
       .select()
@@ -215,12 +215,12 @@ export function environmentService(db: Db) {
         (rows) =>
           rows.find(
             (row) =>
-              (row.metadata as Record<string, unknown> | null)?.managedByPaperclip === true,
+              (row.metadata as Record<string, unknown> | null)?.managedByBullpen === true,
           ) ?? null,
       );
 
   /**
-   * Idempotently ensure THE Paperclip-managed sandbox environment for this
+   * Idempotently ensure THE Bullpen-managed sandbox environment for this
    * instance, configured for an arbitrary sandbox provider plugin. Mirrors
    * `ensureLocalEnvironment`; the partial unique index
    * `environments_managed_sandbox_idx` enforces at most one managed sandbox
@@ -244,7 +244,7 @@ export function environmentService(db: Db) {
       provider: input.provider,
     };
     const desiredMetadata: Record<string, unknown> = {
-      managedByPaperclip: true,
+      managedByBullpen: true,
       managedSandboxProvider: input.provider,
       ...(input.extraMetadata ?? {}),
     };
@@ -288,7 +288,7 @@ export function environmentService(db: Db) {
     if (existing) return adopt(existing);
 
     // The partial unique index `environments_managed_sandbox_idx` enforces
-    // "at most one Paperclip-managed sandbox row per instance" at the DB
+    // "at most one Bullpen-managed sandbox row per instance" at the DB
     // level. Use ON CONFLICT DO NOTHING keyed on that index so concurrent
     // callers can race the INSERT; losers re-read the surviving row.
     const now = new Date();
@@ -308,7 +308,7 @@ export function environmentService(db: Db) {
       .onConflictDoNothing({
         target: [environments.driver],
         where:
-          sql`${environments.driver} = 'sandbox' AND (${environments.metadata} ->> 'managedByPaperclip')::boolean = true`,
+          sql`${environments.driver} = 'sandbox' AND (${environments.metadata} ->> 'managedByBullpen')::boolean = true`,
       })
       .returning()
       .then((rows) => rows[0] ?? null)
@@ -344,7 +344,7 @@ export function environmentService(db: Db) {
   };
 
   /**
-   * Archive the Paperclip-managed sandbox row when its provider became
+   * Archive the Bullpen-managed sandbox row when its provider became
    * unavailable (plugin missing, not ready, or its worker not running), so
    * run scheduling stops selecting an environment whose lease acquisition
    * cannot succeed (`resolveEnvironment` rejects non-active rows).
@@ -413,7 +413,7 @@ export function environmentService(db: Db) {
      * instance.
      *
      * On a cloud-managed instance an existing row is additionally ADOPTED —
-     * stamped `managedByPaperclip: true` (other metadata preserved) — so the
+     * stamped `managedByBullpen: true` (other metadata preserved) — so the
      * single local slot is platform-owned there by construction, mirroring
      * `ensureManagedSandboxEnvironment`'s adoption of the sandbox slot. This
      * is what lets the environment-routes write floor treat a local row's
@@ -435,7 +435,7 @@ export function environmentService(db: Db) {
             config: {},
             envVars: {},
             metadata: {
-              managedByPaperclip: true,
+              managedByBullpen: true,
               defaultForInstance: true,
             },
             createdAt: now,
@@ -464,11 +464,11 @@ export function environmentService(db: Db) {
         throw new Error("Failed to ensure local environment");
       }
       const existingMetadata = (existing.metadata ?? {}) as Record<string, unknown>;
-      if (isCloudManagedInstance() && existingMetadata.managedByPaperclip !== true) {
+      if (isCloudManagedInstance() && existingMetadata.managedByBullpen !== true) {
         const adopted = await db
           .update(environments)
           .set({
-            metadata: { ...existingMetadata, managedByPaperclip: true },
+            metadata: { ...existingMetadata, managedByBullpen: true },
             updatedAt: new Date(),
           })
           .where(eq(environments.id, existing.id))

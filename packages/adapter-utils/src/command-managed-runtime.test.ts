@@ -135,15 +135,15 @@ describe("command managed runtime", () => {
   });
 
   it("keeps the runtime overlay out of sandbox workspace sync by default", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-runtime-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-runtime-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
-    await mkdir(path.join(localWorkspaceDir, ".paperclip-runtime"), { recursive: true });
+    await mkdir(path.join(localWorkspaceDir, ".bullpen-runtime"), { recursive: true });
     await mkdir(remoteWorkspaceDir, { recursive: true });
     await writeFile(path.join(localWorkspaceDir, "README.md"), "local workspace\n", "utf8");
-    await writeFile(path.join(localWorkspaceDir, ".paperclip-runtime", "state.json"), "{\"keep\":true}\n", "utf8");
+    await writeFile(path.join(localWorkspaceDir, ".bullpen-runtime", "state.json"), "{\"keep\":true}\n", "utf8");
 
     const calls: Array<{
       command: string;
@@ -177,8 +177,8 @@ describe("command managed runtime", () => {
           (args[0] === "-c" || args[0] === "-lc") &&
           typeof args[1] === "string"
         ) {
-          env.PAPERCLIP_TEST_STDIN = input.stdin;
-          args[1] = `printf '%s' \"$PAPERCLIP_TEST_STDIN\" | (${args[1]})`;
+          env.BULLPEN_TEST_STDIN = input.stdin;
+          args[1] = `printf '%s' \"$BULLPEN_TEST_STDIN\" | (${args[1]})`;
         }
         try {
           const result = await execFile(command, args, {
@@ -228,21 +228,21 @@ describe("command managed runtime", () => {
     });
 
     await expect(readFile(path.join(remoteWorkspaceDir, "README.md"), "utf8")).resolves.toBe("local workspace\n");
-    await expect(readFile(path.join(remoteWorkspaceDir, ".paperclip-runtime", "state.json"), "utf8")).rejects
+    await expect(readFile(path.join(remoteWorkspaceDir, ".bullpen-runtime", "state.json"), "utf8")).rejects
       .toMatchObject({ code: "ENOENT" });
     // The single-stream upload pipes the tarball through exactly one stdin-backed
     // process (the speed fix); nothing else streams stdin.
     expect(calls.filter((call) => call.stdin != null).length).toBe(1);
 
-    await mkdir(path.join(remoteWorkspaceDir, ".paperclip-runtime"), { recursive: true });
+    await mkdir(path.join(remoteWorkspaceDir, ".bullpen-runtime"), { recursive: true });
     await writeFile(path.join(remoteWorkspaceDir, "README.md"), "remote workspace\n", "utf8");
-    await writeFile(path.join(remoteWorkspaceDir, ".paperclip-runtime", "remote-state.json"), "{\"remote\":true}\n", "utf8");
+    await writeFile(path.join(remoteWorkspaceDir, ".bullpen-runtime", "remote-state.json"), "{\"remote\":true}\n", "utf8");
     await prepared.restoreWorkspace();
 
     await expect(readFile(path.join(localWorkspaceDir, "README.md"), "utf8")).resolves.toBe("remote workspace\n");
-    await expect(readFile(path.join(localWorkspaceDir, ".paperclip-runtime", "state.json"), "utf8")).resolves
+    await expect(readFile(path.join(localWorkspaceDir, ".bullpen-runtime", "state.json"), "utf8")).resolves
       .toBe("{\"keep\":true}\n");
-    await expect(readFile(path.join(localWorkspaceDir, ".paperclip-runtime", "remote-state.json"), "utf8")).rejects
+    await expect(readFile(path.join(localWorkspaceDir, ".bullpen-runtime", "remote-state.json"), "utf8")).rejects
       .toMatchObject({ code: "ENOENT" });
     // Restore streams the download through `base64`/onLog (no stdin), so the only
     // stdin-backed call remains the single upload from prepare.
@@ -250,7 +250,7 @@ describe("command managed runtime", () => {
   });
 
   it("stages runtime assets without replacing or restoring an in-place workspace", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-runtime-assets-only-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-runtime-assets-only-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -286,7 +286,7 @@ describe("command managed runtime", () => {
     });
 
     expect(prepared.workspaceRemoteDir).toBe(remoteWorkspaceDir);
-    expect(prepared.assetDirs.home).toBe(path.join(remoteWorkspaceDir, ".paperclip-runtime", "codex", "home"));
+    expect(prepared.assetDirs.home).toBe(path.join(remoteWorkspaceDir, ".bullpen-runtime", "codex", "home"));
     await expect(readFile(path.join(remoteWorkspaceDir, "README.md"), "utf8")).resolves.toBe(
       "authoritative workspace\n",
     );
@@ -304,7 +304,7 @@ describe("command managed runtime", () => {
   });
 
   it("stages each additional project into an isolated dir on the base64/tar transport, one failure skipped", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-runtime-additional-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-runtime-additional-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -339,7 +339,7 @@ describe("command managed runtime", () => {
       ],
     });
 
-    const runtimeRootDir = path.posix.join(remoteWorkspaceDir, ".paperclip-runtime", "claude");
+    const runtimeRootDir = path.posix.join(remoteWorkspaceDir, ".bullpen-runtime", "claude");
     expect(Object.keys(prepared.additionalSourceDirs).sort()).toEqual(["one", "two"]);
     expect(prepared.additionalSourceDirs.one).toBe(path.posix.join(runtimeRootDir, "project-one"));
     expect(prepared.additionalSourceDirs.two).toBe(path.posix.join(runtimeRootDir, "project-two"));
@@ -357,7 +357,7 @@ describe("command managed runtime", () => {
   });
 
   it("keeps adapter detection on the profile-backed shell path", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-runtime-detect-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-runtime-detect-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -387,12 +387,12 @@ describe("command managed runtime", () => {
   });
 
   it("runs setup commands from a stable root cwd when staging into a nested remote workspace dir", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-runtime-nested-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-runtime-nested-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteBaseDir = path.join(rootDir, "remote-base");
-    const remoteWorkspaceDir = path.join(remoteBaseDir, ".paperclip-runtime", "runs", "test", "workspace");
+    const remoteWorkspaceDir = path.join(remoteBaseDir, ".bullpen-runtime", "runs", "test", "workspace");
     await mkdir(localWorkspaceDir, { recursive: true });
     await mkdir(remoteBaseDir, { recursive: true });
     await writeFile(path.join(localWorkspaceDir, "README.md"), "local workspace\n", "utf8");
@@ -416,7 +416,7 @@ describe("command managed runtime", () => {
   });
 
   it("uploads a multi-MB payload in a single process and preserves exact bytes", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-write-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-write-"));
     cleanupDirs.push(rootDir);
     const remotePath = path.join(rootDir, "nested", "payload.bin");
 
@@ -452,8 +452,8 @@ describe("command managed runtime", () => {
     expect(progress.at(-1)).toEqual({ done: payload.length, total: payload.length });
   });
 
-  it("stages a single-file write to <path>.paperclip-upload then atomically renames it (single-stream path)", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-atomic-"));
+  it("stages a single-file write to <path>.bullpen-upload then atomically renames it (single-stream path)", async () => {
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-atomic-"));
     cleanupDirs.push(rootDir);
     const remotePath = path.join(rootDir, "nested", "payload.bin");
 
@@ -462,17 +462,17 @@ describe("command managed runtime", () => {
     await client.writeFile(remotePath, toArrayBuffer(Buffer.from("hello atomic\n")));
 
     // Characterization guardrail: the legacy single-file transport must keep its
-    // stage-then-atomic-rename shape (temp .paperclip-upload + `mv -f`).
+    // stage-then-atomic-rename shape (temp .bullpen-upload + `mv -f`).
     const script = (calls[0].args ?? []).join(" ");
-    expect(script).toContain(`${remotePath}.paperclip-upload`);
+    expect(script).toContain(`${remotePath}.bullpen-upload`);
     expect(script).toContain(`trap cleanup EXIT`);
     expect(script).toContain(`mv -f`);
-    expect(script.indexOf(".paperclip-upload")).toBeLessThan(script.indexOf("mv -f"));
+    expect(script.indexOf(".bullpen-upload")).toBeLessThan(script.indexOf("mv -f"));
     expect(await readFile(remotePath, "utf8")).toBe("hello atomic\n");
   });
 
   it("cleans up a staged upload when rename fails", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-upload-cleanup-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-upload-cleanup-"));
     cleanupDirs.push(rootDir);
     const remotePath = path.join(rootDir, "nested", "payload.bin");
 
@@ -481,7 +481,7 @@ describe("command managed runtime", () => {
     const delegatedExecute = runner.execute.bind(runner);
     runner.execute = async (input) => {
       const script = (input.args ?? []).join(" ");
-      if (script.includes("mv -f") && script.includes(".paperclip-upload.")) {
+      if (script.includes("mv -f") && script.includes(".bullpen-upload.")) {
         calls.push({ command: input.command, args: input.args, cwd: input.cwd, stdin: input.stdin });
         return {
           exitCode: 1,
@@ -499,9 +499,9 @@ describe("command managed runtime", () => {
 
     await expect(client.writeFile(remotePath, toArrayBuffer(payload))).rejects.toThrow(/rename failed/);
 
-    const uploadCall = calls.find((call) => (call.args ?? []).join(" ").includes(".paperclip-upload."));
+    const uploadCall = calls.find((call) => (call.args ?? []).join(" ").includes(".bullpen-upload."));
     expect(uploadCall).toBeDefined();
-    const stagedPath = (uploadCall?.args ?? []).join(" ").match(/([/A-Za-z0-9_.-]+\.paperclip-upload\.[A-Za-z0-9-]+)/)?.[1];
+    const stagedPath = (uploadCall?.args ?? []).join(" ").match(/([/A-Za-z0-9_.-]+\.bullpen-upload\.[A-Za-z0-9-]+)/)?.[1];
     expect(stagedPath).toBeDefined();
     await expect(readFile(stagedPath!, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
     expect(calls.some((call) => (call.args ?? []).join(" ").includes(`rm -rf '${stagedPath}'`))).toBe(true);
@@ -509,7 +509,7 @@ describe("command managed runtime", () => {
   });
 
   it("stages a single-file write to a temp then renames it on the chunked fallback path too", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-atomic-fallback-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-atomic-fallback-"));
     cleanupDirs.push(rootDir);
     const remotePath = path.join(rootDir, "nested", "payload.bin");
 
@@ -520,7 +520,7 @@ describe("command managed runtime", () => {
     await client.writeFile(remotePath, toArrayBuffer(payload));
 
     const scripts = calls.map((call) => (call.args ?? []).join(" "));
-    expect(scripts.some((script) => script.includes(`${remotePath}.paperclip-upload`))).toBe(true);
+    expect(scripts.some((script) => script.includes(`${remotePath}.bullpen-upload`))).toBe(true);
     expect(scripts.some((script) => script.includes(`mv -f`))).toBe(true);
     expect((await readFile(remotePath)).equals(payload)).toBe(true);
   });
@@ -592,7 +592,7 @@ describe("command managed runtime", () => {
   });
 
   it("fallback syncIn tarballs+uploads a directory then runs post-upload commands in order", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-syncin-fallback-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-syncin-fallback-"));
     cleanupDirs.push(rootDir);
     const sourceDir = path.join(rootDir, "source");
     const targetDir = path.join(rootDir, "target");
@@ -626,7 +626,7 @@ describe("command managed runtime", () => {
     // Ordering: upload → untar → command 1 → command 2. The tarball upload is the
     // single stdin-backed call; the untar and the two commands follow it in order.
     const scripts = calls.map((call) => (call.args ?? []).join("\n"));
-    const uploadIdx = scripts.findIndex((s) => s.includes(".paperclip-syncin.tar") && s.includes("base64 -d"));
+    const uploadIdx = scripts.findIndex((s) => s.includes(".bullpen-syncin.tar") && s.includes("base64 -d"));
     const untarIdx = scripts.findIndex((s) => s.includes("tar -xf") && s.includes(targetDir));
     const cmd1Idx = scripts.findIndex((s) => s.includes("1-first"));
     const cmd2Idx = scripts.findIndex((s) => s.includes("2-second"));
@@ -670,7 +670,7 @@ describe("command managed runtime", () => {
   });
 
   it("fallback syncIn stages mode-constrained files before chmod and rename", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-syncin-mode-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-syncin-mode-"));
     cleanupDirs.push(rootDir);
     const sourceFile = path.join(rootDir, "source.txt");
     const targetFile = path.join(rootDir, "target.txt");
@@ -689,21 +689,21 @@ describe("command managed runtime", () => {
     expect(await readFile(targetFile, "utf8")).toBe("payload\n");
     const scripts = calls.map((call) => (call.args ?? []).join(" "));
     expect(scripts).toHaveLength(5);
-    expect(scripts[0]).toContain(targetFile + ".paperclip-syncin.");
-    expect(scripts[0]).toContain(".paperclip-upload.");
+    expect(scripts[0]).toContain(targetFile + ".bullpen-syncin.");
+    expect(scripts[0]).toContain(".bullpen-upload.");
     expect(scripts[1]).toContain("rm -rf");
-    expect(scripts[1]).toContain(".paperclip-upload.");
+    expect(scripts[1]).toContain(".bullpen-upload.");
     expect(scripts[2]).toContain("chmod 640");
-    expect(scripts[2]).toContain(targetFile + ".paperclip-syncin.");
+    expect(scripts[2]).toContain(targetFile + ".bullpen-syncin.");
     expect(scripts[3]).toContain("mv -f");
-    expect(scripts[3]).toContain(targetFile + ".paperclip-syncin.");
+    expect(scripts[3]).toContain(targetFile + ".bullpen-syncin.");
     expect(scripts[3]).toContain(targetFile);
     expect(scripts[4]).toContain("rm -rf");
-    expect(scripts[4]).toContain(targetFile + ".paperclip-syncin.");
+    expect(scripts[4]).toContain(targetFile + ".bullpen-syncin.");
   });
 
   it("fallback syncIn cleans up a staged file when chmod fails before rename", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-syncin-cleanup-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-syncin-cleanup-"));
     cleanupDirs.push(rootDir);
     const sourceFile = path.join(rootDir, "source.txt");
     const targetFile = path.join(rootDir, "target.txt");
@@ -870,7 +870,7 @@ describe("command managed runtime", () => {
     // Research A1: with single-stream enabled a ≤96 MiB write is ONE round-trip;
     // without it, the chunked path is `2 + ceil(bytes / 3 MiB)`. Same payload,
     // same client API — only the runner capability flag differs.
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-single-stream-collapse-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-single-stream-collapse-"));
     cleanupDirs.push(rootDir);
     const payload = Buffer.alloc(9 * 1024 * 1024, 7); // 9 MiB → chunked = 2 + 3 = 5 execs
 
@@ -891,7 +891,7 @@ describe("command managed runtime", () => {
   });
 
   it("falls back to chunked upload progress when the runner cannot report mid-stream stdin progress", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-write-fallback-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-write-fallback-"));
     cleanupDirs.push(rootDir);
     const remotePath = path.join(rootDir, "nested", "payload.bin");
 
@@ -925,7 +925,7 @@ describe("command managed runtime", () => {
   });
 
   it("falls back to bounded chunks when the runner does not explicitly opt in", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-write-fallback-no-progress-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-write-fallback-no-progress-"));
     cleanupDirs.push(rootDir);
     const remotePath = path.join(rootDir, "nested", "payload.bin");
 
@@ -950,7 +950,7 @@ describe("command managed runtime", () => {
   });
 
   it("downloads in bounded stdout chunks and reports monotonic byte progress to the total", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-read-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-command-read-"));
     cleanupDirs.push(rootDir);
     const remotePath = path.join(rootDir, "download.bin");
 

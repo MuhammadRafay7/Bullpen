@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
+import type { AdapterExecutionContext } from "@bullpen/adapter-utils";
 import { execute } from "./execute.js";
 
 type MockRunOptions = {
@@ -118,7 +118,7 @@ function createContext(
     runtime,
     config,
     context,
-    authToken: "paperclip-run-jwt",
+    authToken: "bullpen-run-jwt",
     onLog: async (stream, chunk) => {
       logs.push({ stream, chunk });
     },
@@ -142,7 +142,7 @@ describe("cursor_cloud execute", () => {
     getRunMock.mockReset();
   });
 
-  it("creates a fresh Cursor agent and injects Paperclip env without CURSOR_API_KEY", async () => {
+  it("creates a fresh Cursor agent and injects Bullpen env without CURSOR_API_KEY", async () => {
     const run = createMockRun({
       agentId: "agent-fresh",
       streamMessages: [
@@ -165,7 +165,7 @@ describe("cursor_cloud execute", () => {
     expect(getRunMock).not.toHaveBeenCalled();
     expect(createMock.mock.calls[0]?.[0]).toMatchObject({
       apiKey: "cursor-secret",
-      name: "Paperclip Cursor Cloud Agent",
+      name: "Bullpen Cursor Cloud Agent",
       model: { id: "gpt-5.4" },
       cloud: {
         env: { type: "cloud" },
@@ -174,10 +174,10 @@ describe("cursor_cloud execute", () => {
     });
     expect(createMock.mock.calls[0]?.[0]?.cloud?.envVars).toMatchObject({
       EXTRA_FLAG: "1",
-      PAPERCLIP_RUN_ID: "run-heartbeat-1",
-      PAPERCLIP_TASK_ID: "issue-1",
-      PAPERCLIP_WAKE_REASON: "issue_commented",
-      PAPERCLIP_API_KEY: "paperclip-run-jwt",
+      BULLPEN_RUN_ID: "run-heartbeat-1",
+      BULLPEN_TASK_ID: "issue-1",
+      BULLPEN_WAKE_REASON: "issue_commented",
+      BULLPEN_API_KEY: "bullpen-run-jwt",
     });
     expect(createMock.mock.calls[0]?.[0]?.cloud?.envVars).not.toHaveProperty("CURSOR_API_KEY");
 
@@ -316,7 +316,7 @@ describe("cursor_cloud execute", () => {
     });
   });
 
-  it("maps non-finished Cursor results to failing Paperclip runs", async () => {
+  it("maps non-finished Cursor results to failing Bullpen runs", async () => {
     const cancelledRun = createMockRun({
       id: "run-cancelled",
       agentId: "agent-cancelled",

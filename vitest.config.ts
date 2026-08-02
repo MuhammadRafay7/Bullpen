@@ -16,7 +16,7 @@ export default defineConfig({
       "packages/adapters/opencode-local",
       "packages/adapters/pi-local",
       "packages/plugins/sdk",
-      "packages/plugins/create-paperclip-plugin",
+      "packages/plugins/create-bullpen-plugin",
       "server",
       "ui",
       "cli",

@@ -13,7 +13,7 @@ import {
   Play,
   Trash2,
 } from "lucide-react";
-import type { AttentionItem, DecisionTrainingExample } from "@paperclipai/shared";
+import type { AttentionItem, DecisionTrainingExample } from "@bullpen/shared";
 import { Link } from "@/lib/router";
 import { decisionTrainingApi, type DecisionTrainingTarget } from "../api/decisionTraining";
 import { useToastActions } from "../context/ToastContext";

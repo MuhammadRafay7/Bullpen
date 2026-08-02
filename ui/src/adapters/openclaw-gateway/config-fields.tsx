@@ -228,7 +228,7 @@ export function OpenClawGatewayConfigFields({
             value={
               isCreate
                 ? values!.sessionKey ?? ""
-                : eff("adapterConfig", "sessionKey", String(config.sessionKey ?? "paperclip"))
+                : eff("adapterConfig", "sessionKey", String(config.sessionKey ?? "bullpen"))
             }
             onCommit={(v) =>
               isCreate
@@ -237,7 +237,7 @@ export function OpenClawGatewayConfigFields({
             }
             immediate
             className={inputClass}
-            placeholder="paperclip"
+            placeholder="bullpen"
           />
         </Field>
       )}
@@ -307,21 +307,21 @@ export function OpenClawGatewayConfigFields({
         mark={mark}
       />
 
-      <Field label="Paperclip API URL override">
+      <Field label="Bullpen API URL override">
         <DraftInput
           value={
             isCreate
-              ? values!.paperclipApiUrl ?? ""
-              : eff("adapterConfig", "paperclipApiUrl", String(config.paperclipApiUrl ?? ""))
+              ? values!.bullpenApiUrl ?? ""
+              : eff("adapterConfig", "bullpenApiUrl", String(config.bullpenApiUrl ?? ""))
           }
           onCommit={(v) =>
             isCreate
-              ? set!({ paperclipApiUrl: v })
-              : mark("adapterConfig", "paperclipApiUrl", v || undefined)
+              ? set!({ bullpenApiUrl: v })
+              : mark("adapterConfig", "bullpenApiUrl", v || undefined)
           }
           immediate
           className={inputClass}
-          placeholder="https://paperclip.example"
+          placeholder="https://bullpen.example"
         />
       </Field>
 
@@ -379,7 +379,7 @@ export function OpenClawGatewayConfigFields({
             onCommit={(v) => mark("adapterConfig", "claimedApiKeyPath", v || undefined)}
             immediate
             className={inputClass}
-            placeholder="~/.openclaw/workspace/paperclip-claimed-api-key.json"
+            placeholder="~/.openclaw/workspace/bullpen-claimed-api-key.json"
           />
         </Field>
       )}
@@ -448,7 +448,7 @@ export function OpenClawGatewayConfigFields({
 
       <Field label="Device auth">
         <div className="text-xs text-muted-foreground leading-relaxed">
-          When enabled, Paperclip persists a device key during onboarding so pairing approvals
+          When enabled, Bullpen persists a device key during onboarding so pairing approvals
           remain stable across runs.
         </div>
       </Field>

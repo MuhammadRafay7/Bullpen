@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, PackageCheck, RefreshCw } from "lucide-react";
-import type { Agent, ToolCatalogEntry } from "@paperclipai/shared";
+import type { Agent, ToolCatalogEntry } from "@bullpen/shared";
 import { useSearchParams } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -134,7 +134,7 @@ function AccessSection({
             />
             <span>
               <span className="text-sm font-semibold text-foreground">All agents</span>
-              <span className="block text-xs text-muted-foreground">Anyone you've added to Paperclip.</span>
+              <span className="block text-xs text-muted-foreground">Anyone you've added to Bullpen.</span>
             </span>
           </label>
           <label className="flex items-start gap-3">

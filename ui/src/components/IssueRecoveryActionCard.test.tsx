@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
 import type { AnchorHTMLAttributes, ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Agent, IssueRecoveryAction } from "@paperclipai/shared";
+import type { Agent, IssueRecoveryAction } from "@bullpen/shared";
 import { IssueRecoveryActionCard, deriveRecoveryCardState } from "./IssueRecoveryActionCard";
 
 vi.mock("@/lib/router", () => ({
@@ -176,7 +176,7 @@ describe("IssueRecoveryActionCard", () => {
     );
     expect(node.textContent).toContain("Task Needs Next Step");
     expect(node.textContent).toContain(
-      "Paperclip could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
+      "Bullpen could not find a clear next step for this open task. Choose whether to continue work, send it for review, mark it done, or record what is blocking it.",
     );
   });
 
@@ -205,7 +205,7 @@ describe("IssueRecoveryActionCard", () => {
     expect(section?.getAttribute("data-recovery-kind")).toBe("workspace_validation");
     expect(node.textContent).toContain("Workspace Validation");
     expect(node.textContent).toContain(
-      "Paperclip stopped this run because the task's git workspace could not be validated.",
+      "Bullpen stopped this run because the task's git workspace could not be validated.",
     );
     expect(node.textContent).toContain("Repair the source issue workspace link");
   });
@@ -332,7 +332,7 @@ function buildWorkspaceValidationAction(
     actualHeadSha: "bbbbbbbbbbbb33334444",
     ancestryVerdict: "diverged",
     plainLanguageReason:
-      'The recorded branch "PAP-522-recorded" is not an ancestor of the checked-out branch "nleach/PAP-1405-live", so Paperclip cannot prove a forward-only reconciliation.',
+      'The recorded branch "PAP-522-recorded" is not an ancestor of the checked-out branch "nleach/PAP-1405-live", so Bullpen cannot prove a forward-only reconciliation.',
     ...overrides.provenance,
   };
   return buildAction({
@@ -641,7 +641,7 @@ describe("IssueRecoveryActionCard repair workspace (quarantine_restore)", () => 
     // rescue branch preview mirrors the server naming (prefix + timestamp marker)
     expect(
       document.body.querySelector("[data-testid='recovery-repair-rescue-branch']")?.textContent,
-    ).toContain("paperclip/rescue/PAP-1405/");
+    ).toContain("bullpen/rescue/PAP-1405/");
     // recorded branch to be restored
     expect(text).toContain("PAP-522-recorded");
 

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ToolMcpGatewayWithTokens } from "@paperclipai/shared";
+import type { ToolMcpGatewayWithTokens } from "@bullpen/shared";
 import { ToastProvider } from "@/context/ToastContext";
 import { queryKeys } from "@/lib/queryKeys";
 import { GatewaysTab } from "@/pages/tools/GatewaysTab";
@@ -73,7 +73,7 @@ const POPULATED: ToolMcpGatewayWithTokens[] = [
         label: "Cursor",
         config: {
           mcpServers: {
-            "paperclip-engineering-inbox": {
+            "bullpen-engineering-inbox": {
               url: "https://paperclip.app/api/mcp/gateways/engineering-inbox",
               headers: { Authorization: "Bearer YOUR_TOKEN" },
             },
@@ -86,7 +86,7 @@ const POPULATED: ToolMcpGatewayWithTokens[] = [
         label: "Claude Desktop",
         config: {
           mcpServers: {
-            "paperclip-engineering-inbox": {
+            "bullpen-engineering-inbox": {
               url: "https://paperclip.app/api/mcp/gateways/engineering-inbox",
               headers: { Authorization: "Bearer YOUR_TOKEN" },
             },
@@ -99,7 +99,7 @@ const POPULATED: ToolMcpGatewayWithTokens[] = [
         label: "VS Code",
         config: {
           servers: {
-            "paperclip-engineering-inbox": {
+            "bullpen-engineering-inbox": {
               type: "http",
               url: "https://paperclip.app/api/mcp/gateways/engineering-inbox",
               headers: { Authorization: "Bearer YOUR_TOKEN" },
@@ -134,7 +134,7 @@ const POPULATED: ToolMcpGatewayWithTokens[] = [
         label: "Claude Code",
         config: {
           mcpServers: {
-            "paperclip-support-ops": {
+            "bullpen-support-ops": {
               url: "https://paperclip.app/api/mcp/gateways/support-ops",
               headers: { Authorization: "Bearer YOUR_TOKEN" },
             },

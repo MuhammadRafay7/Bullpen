@@ -35,7 +35,7 @@ import { normalizeExternalObjectHref } from "../lib/external-object-href";
 import type {
   ExternalObjectLivenessState,
   ExternalObjectStatusCategory,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 
 /**
  * Host-resolved external-object metadata for inline markdown decoration.
@@ -113,7 +113,7 @@ function MarkdownIssueLink({
       data-mention-kind="issue"
       // Boxless inline mention: the unified status glyph + a regular-weight
       // underlined link, optically centered with the body text.
-      className={cn("paperclip-markdown-issue-ref", "font-normal underline")}
+      className={cn("bullpen-markdown-issue-ref", "font-normal underline")}
       title={title}
       aria-label={issueLabel}
     >
@@ -139,7 +139,7 @@ function MarkdownCaseLink({
     <Link
       to={caseHref(identifier)}
       data-mention-kind="case"
-      className={cn("paperclip-markdown-case-ref", "font-normal underline")}
+      className={cn("bullpen-markdown-case-ref", "font-normal underline")}
       aria-label={`Case ${identifier}`}
     >
       {children}
@@ -178,7 +178,7 @@ function MarkdownExternalLink({
       data-external-liveness={reference.liveness}
       title={title}
       aria-label={`${displayKey} ${statusLabel}${livenessSuffix}: ${reference.displayTitle ?? href}`}
-      className="paperclip-markdown-external-ref"
+      className="bullpen-markdown-external-ref"
     >
       <ExternalObjectStatusIcon
         category={reference.statusCategory}
@@ -383,8 +383,8 @@ function createWikiLinkNode(href: string, wikiLink: ParsedWikiLink): MarkdownAst
     title: null,
     data: {
       hProperties: {
-        "data-paperclip-wiki-link": "true",
-        "data-paperclip-wiki-target": wikiLink.target,
+        "data-bullpen-wiki-link": "true",
+        "data-bullpen-wiki-target": wikiLink.target,
       },
     },
     children: [{ type: "text", value: wikiLink.label }],
@@ -589,7 +589,7 @@ function CodeBlock({
   const wrapLabel = wrapLines ? "Unwrap lines" : "Wrap lines";
 
   return (
-    <div className="paperclip-markdown-codeblock" data-wrap-lines={wrapLines || undefined}>
+    <div className="bullpen-markdown-codeblock" data-wrap-lines={wrapLines || undefined}>
       <pre
         {...preProps}
         ref={preRef}
@@ -608,7 +608,7 @@ function CodeBlock({
         {children}
       </pre>
       <div
-        className="paperclip-markdown-codeblock-actions"
+        className="bullpen-markdown-codeblock-actions"
         style={codeBlockActionsStyle}
         data-active={copied || failed || wrapLines || undefined}
       >
@@ -617,7 +617,7 @@ function CodeBlock({
           onClick={() => setWrapLines((value) => !value)}
           aria-label={wrapLabel}
           title={wrapLabel}
-          className="paperclip-markdown-codeblock-action paperclip-markdown-codeblock-wrap"
+          className="bullpen-markdown-codeblock-action bullpen-markdown-codeblock-wrap"
           style={wrapLines
             ? {
                 ...codeBlockWrapActionStyle,
@@ -635,7 +635,7 @@ function CodeBlock({
           onClick={handleCopy}
           aria-label="Copy code"
           title={copyLabel}
-          className="paperclip-markdown-codeblock-action paperclip-markdown-codeblock-copy"
+          className="bullpen-markdown-codeblock-action bullpen-markdown-codeblock-copy"
           style={codeBlockActionStyle}
           data-copied={copied || undefined}
           data-failed={failed || undefined}
@@ -645,7 +645,7 @@ function CodeBlock({
           ) : (
             <Copy aria-hidden="true" className="h-3.5 w-3.5" />
           )}
-          <span className="paperclip-markdown-codeblock-action-label">{copyLabel}</span>
+          <span className="bullpen-markdown-codeblock-action-label">{copyLabel}</span>
         </button>
       </div>
     </div>
@@ -671,7 +671,7 @@ function MermaidDiagramBlock({ source, darkMode }: { source: string; darkMode: b
           fontFamily: "inherit",
           suppressErrorRendering: true,
         });
-        const rendered = await mermaid.render(`paperclip-mermaid-${renderId}`, source);
+        const rendered = await mermaid.render(`bullpen-mermaid-${renderId}`, source);
         if (!active) return;
         setSvg(rendered.svg);
       })
@@ -690,15 +690,15 @@ function MermaidDiagramBlock({ source, darkMode }: { source: string; darkMode: b
   }, [darkMode, renderId, source]);
 
   return (
-    <div className="paperclip-mermaid">
+    <div className="bullpen-mermaid">
       {svg ? (
         <div dangerouslySetInnerHTML={{ __html: svg }} />
       ) : (
         <>
-          <p className={cn("paperclip-mermaid-status", error && "paperclip-mermaid-status-error")}>
+          <p className={cn("bullpen-mermaid-status", error && "bullpen-mermaid-status-error")}>
             {error ? `Unable to render Mermaid diagram: ${error}` : "Rendering Mermaid diagram..."}
           </p>
-          <pre className="paperclip-mermaid-source">
+          <pre className="bullpen-mermaid-source">
             <code className="language-mermaid">{source}</code>
           </pre>
         </>
@@ -786,7 +786,7 @@ function MarkdownBodyImpl({
       </blockquote>
     ),
     table: ({ node: _node, style: tableStyle, children: tableChildren, ...tableProps }) => (
-      <div className="paperclip-markdown-table-scroll" role="region" aria-label="Scrollable table" tabIndex={0}>
+      <div className="bullpen-markdown-table-scroll" role="region" aria-label="Scrollable table" tabIndex={0}>
         <table {...tableProps} style={tableStyle as React.CSSProperties | undefined}>
           {tableChildren}
         </table>
@@ -827,7 +827,7 @@ function MarkdownBodyImpl({
       }
 
       const dataProps = anchorProps as Record<string, unknown>;
-      const isWikiLink = dataProps["data-paperclip-wiki-link"] === "true";
+      const isWikiLink = dataProps["data-bullpen-wiki-link"] === "true";
       if (isWikiLink && href && !/^[a-z][a-z\d+.-]*:/i.test(href) && !href.startsWith("//")) {
         return (
           <Link
@@ -872,9 +872,9 @@ function MarkdownBodyImpl({
           <a
             href={targetHref}
             className={cn(
-              "paperclip-mention-chip",
-              `paperclip-mention-chip--${parsed.kind}`,
-              parsed.kind === "project" && "paperclip-project-mention-chip",
+              "bullpen-mention-chip",
+              `bullpen-mention-chip--${parsed.kind}`,
+              parsed.kind === "project" && "bullpen-project-mention-chip",
             )}
             data-mention-kind={parsed.kind}
             style={{ ...mergeWrapStyle(linkStyle as React.CSSProperties | undefined), ...mentionChipInlineStyle(parsed) }}
@@ -936,7 +936,7 @@ function MarkdownBodyImpl({
   return (
     <div
       className={cn(
-        "paperclip-markdown prose prose-sm min-w-0 max-w-full break-words overflow-hidden",
+        "bullpen-markdown prose prose-sm min-w-0 max-w-full break-words overflow-hidden",
         theme === "dark" && "prose-invert",
         className,
       )}

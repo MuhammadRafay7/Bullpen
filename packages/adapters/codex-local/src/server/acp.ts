@@ -8,33 +8,33 @@ import type {
   AdapterEnvironmentTestResult,
   AdapterExecutionContext,
   AdapterExecutionResult,
-} from "@paperclipai/adapter-utils";
+} from "@bullpen/adapter-utils";
 import {
   parseLocalProcessFilesystemScope,
   parseLocalProcessNetworkScope,
-} from "@paperclipai/adapter-utils/local-process-sandbox";
-import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
+} from "@bullpen/adapter-utils/local-process-sandbox";
+import { inferOpenAiCompatibleBiller } from "@bullpen/adapter-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   readAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@bullpen/adapter-utils/execution-target";
 import {
   DEFAULT_ACP_ENGINE_MODE,
   DEFAULT_ACP_ENGINE_NON_INTERACTIVE_PERMISSIONS,
   DEFAULT_ACP_ENGINE_PERMISSION_MODE,
   DEFAULT_ACP_ENGINE_WARM_HANDLE_IDLE_MS,
-} from "@paperclipai/adapter-utils/acpx-engine/constants";
+} from "@bullpen/adapter-utils/acpx-engine/constants";
 import type {
   AcpxEngineExecutorOptions,
   AcpxRemoteManagedHomeContext,
   AcpxRemoteManagedHomeResult,
-} from "@paperclipai/adapter-utils/acpx-engine/execute";
+} from "@bullpen/adapter-utils/acpx-engine/execute";
 import {
   asNumber,
   asString,
   parseObject,
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@bullpen/adapter-utils/server-utils";
 import { normalizeCodexModel } from "../index.js";
 import { classifyCodexAuthRefreshFailure } from "./parse.js";
 import { copyBackCodexAuth } from "./codex-auth-copyback.js";
@@ -120,7 +120,7 @@ export async function resolveCodexExecutionEngineForRun(
 }
 
 export function formatCodexAcpFallbackMessage(reason: string): string {
-  return `[paperclip] Codex ACP default unavailable; falling back to Codex CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`;
+  return `[bullpen] Codex ACP default unavailable; falling back to Codex CLI. ${reason} Set engine=acp to require ACP or engine=cli to silence this fallback.\n`;
 }
 
 function firstNonEmptyString(...values: unknown[]): string | undefined {
@@ -238,7 +238,7 @@ async function prepareCodexRemoteManagedHome(
       try {
         await onLog(
           "stdout",
-          "[paperclip] Restoring workspace changes and Codex auth from the sandbox.\n",
+          "[bullpen] Restoring workspace changes and Codex auth from the sandbox.\n",
         );
         await stagedRuntime.restoreWorkspace((line) => onLog("stdout", line));
       } catch (err) {
@@ -248,7 +248,7 @@ async function prepareCodexRemoteManagedHome(
         // mask the run result.
         await onLog(
           "stderr",
-          `[paperclip] Codex ACP teardown restore/copy-back failed: ${
+          `[bullpen] Codex ACP teardown restore/copy-back failed: ${
             err instanceof Error ? err.message : String(err)
           }\n`,
         );
@@ -263,7 +263,7 @@ async function prepareCodexRemoteManagedHome(
       await fs.rm(stagedCodexHomeDir, { recursive: true, force: true }).catch(async (error) => {
         await onLog(
           "stderr",
-          `[paperclip] Failed to remove staged Codex home "${stagedCodexHomeDir}": ${
+          `[bullpen] Failed to remove staged Codex home "${stagedCodexHomeDir}": ${
             error instanceof Error ? error.message : String(error)
           }\n`,
         );
@@ -345,7 +345,7 @@ export function createCodexAcpExecutor(options: CodexAcpExecutorOptions = {}): C
   return async (ctx) => {
     let currentExecutor = executor;
     if (!currentExecutor) {
-      const { createAcpxEngineExecutor } = await import("@paperclipai/adapter-utils/acpx-engine/execute");
+      const { createAcpxEngineExecutor } = await import("@bullpen/adapter-utils/acpx-engine/execute");
       currentExecutor = createAcpxEngineExecutor(withCodexAcpDefaults(options));
       executor = currentExecutor;
     }
@@ -524,7 +524,7 @@ export async function testCodexAcpEnvironment(
       code: "codex_acp_remote_target",
       level: "info",
       message: "Codex ACP will run against the remote execution environment.",
-      hint: "Remote ACP requires a bidirectional process target such as SSH or Paperclip's sandbox process-session bridge.",
+      hint: "Remote ACP requires a bidirectional process target such as SSH or Bullpen's sandbox process-session bridge.",
     });
   }
 

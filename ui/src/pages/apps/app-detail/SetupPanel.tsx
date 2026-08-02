@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ToolCatalogEntry, ToolConnection } from "@paperclipai/shared";
+import type { ToolCatalogEntry, ToolConnection } from "@bullpen/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";

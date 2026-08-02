@@ -9,7 +9,7 @@ import type {
   Resources,
   Sandbox,
 } from "@daytonaio/sdk";
-import { definePlugin } from "@paperclipai/plugin-sdk";
+import { definePlugin } from "@bullpen/plugin-sdk";
 import type {
   PluginEnvironmentAcquireLeaseParams,
   PluginEnvironmentCancelInteractiveSetupParams,
@@ -37,7 +37,7 @@ import type {
   PluginEnvironmentValidateConfigParams,
   PluginEnvironmentValidationResult,
   PluginSyncOperation,
-} from "@paperclipai/plugin-sdk";
+} from "@bullpen/plugin-sdk";
 import { performSyncIn, performSyncOut } from "./file-sync.js";
 
 // Injectable monotonic clock for provider-boundary timing (Open Q1). Defaults
@@ -118,7 +118,7 @@ type DaytonaSnapshotService = {
   delete?: (snapshot: unknown) => Promise<void>;
 };
 
-const WORKSPACE_SENTINEL_RELATIVE_PATH = ".paperclip-runtime/reusable-sandbox-lease.json";
+const WORKSPACE_SENTINEL_RELATIVE_PATH = ".bullpen-runtime/reusable-sandbox-lease.json";
 
 // Quota-safety defaults (minutes). Daytona counts *stopped* sandboxes against
 // the storage quota; only *archived* sandboxes move to cold object storage and
@@ -287,13 +287,13 @@ function buildSandboxLabels(input: {
   reuseLease: boolean;
 }): Record<string, string> {
   return {
-    "paperclip-provider": "daytona",
-    "paperclip-company-id": input.companyId,
-    "paperclip-environment-id": input.environmentId,
-    "paperclip-reuse-lease": input.reuseLease ? "true" : "false",
-    ...(input.runId ? { "paperclip-run-id": input.runId } : {}),
-    ...(input.setupSessionId ? { "paperclip-setup-session-id": input.setupSessionId } : {}),
-    ...(input.purpose ? { "paperclip-purpose": input.purpose } : {}),
+    "bullpen-provider": "daytona",
+    "bullpen-company-id": input.companyId,
+    "bullpen-environment-id": input.environmentId,
+    "bullpen-reuse-lease": input.reuseLease ? "true" : "false",
+    ...(input.runId ? { "bullpen-run-id": input.runId } : {}),
+    ...(input.setupSessionId ? { "bullpen-setup-session-id": input.setupSessionId } : {}),
+    ...(input.purpose ? { "bullpen-purpose": input.purpose } : {}),
   };
 }
 
@@ -358,7 +358,7 @@ async function resolveSandboxWorkingDirectory(sandbox: Sandbox): Promise<string>
   const root = (await sandbox.getWorkDir())?.trim()
     || (await sandbox.getUserHomeDir())?.trim()
     || "/home/daytona";
-  const remoteCwd = path.posix.join(root, "paperclip-workspace");
+  const remoteCwd = path.posix.join(root, "bullpen-workspace");
   await sandbox.fs.createFolder(remoteCwd, "755");
   return remoteCwd;
 }
@@ -589,7 +589,7 @@ function leaseMetadata(input: {
     ...(input.config.archiveOnRelease ? { archiveOnRelease: true } : {}),
     remoteCwd: input.remoteCwd,
     resumedLease: input.resumedLease,
-    // Record the resources Paperclip attempted to request so future diagnosis
+    // Record the resources Bullpen attempted to request so future diagnosis
     // can compare requested allocation against what Daytona provisioned.
     ...(input.config.cpu != null ? { cpu: input.config.cpu } : {}),
     ...(input.config.memory != null ? { memory: input.config.memory } : {}),
@@ -1418,7 +1418,7 @@ async function executeOneShot(
   const timeoutMs = resolveTimeoutMs(params.timeoutMs, config);
   const effectiveTimeoutMs = gitNet ? Math.min(timeoutMs, GIT_NETWORK_TIMEOUT_MS) : timeoutMs;
   const timeoutSeconds = toTimeoutSeconds(effectiveTimeoutMs);
-  const stdinPath = params.stdin != null ? `/tmp/paperclip-stdin-${randomUUID()}` : null;
+  const stdinPath = params.stdin != null ? `/tmp/bullpen-stdin-${randomUUID()}` : null;
 
   // Marks the start of the `executeCommand` REST round-trip. Hoisted out of the
   // try so the timeout path below can still attribute the exec wall-time it spent
@@ -1826,7 +1826,7 @@ const plugin = definePlugin({
       typeof params.lease.metadata?.remoteCwd === "string" &&
       params.lease.metadata.remoteCwd.trim().length > 0
         ? params.lease.metadata.remoteCwd.trim()
-        : params.workspace.remotePath ?? params.workspace.localPath ?? "/paperclip-workspace";
+        : params.workspace.remotePath ?? params.workspace.localPath ?? "/bullpen-workspace";
 
     if (params.lease.providerLeaseId) {
       const scope: SandboxScope = {
@@ -1986,7 +1986,7 @@ const plugin = definePlugin({
     }
     const templateRef = sanitizeSnapshotName(
       params.templateLabel,
-      `paperclip-${params.environmentId}-${randomUUID().slice(0, 8)}`,
+      `bullpen-${params.environmentId}-${randomUUID().slice(0, 8)}`,
     );
     const timeoutMs = typeof params.timeoutMs === "number" && Number.isFinite(params.timeoutMs) && params.timeoutMs > 0
       ? Math.trunc(params.timeoutMs)

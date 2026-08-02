@@ -40,7 +40,7 @@ import {
   buildProjectMentionHref,
   buildRoutineMentionHref,
   buildUserMentionHref,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { Boxes, CalendarClock, Hash, User } from "lucide-react";
 import { AgentIcon } from "./AgentIconPicker";
 import { applyMentionChipDecoration, clearMentionChipDecoration, parseMentionChipHref } from "../lib/mention-chips";
@@ -1168,7 +1168,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
       <div
         ref={containerRef}
         className={cn(
-          "relative paperclip-mdxeditor-scope",
+          "relative bullpen-mdxeditor-scope",
           bordered ? "rounded-md border border-border bg-transparent" : "bg-transparent",
           className,
         )}
@@ -1215,7 +1215,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
     <div
       ref={containerRef}
       className={cn(
-        "relative paperclip-mdxeditor-scope",
+        "relative bullpen-mdxeditor-scope",
         bordered ? "rounded-md border border-border bg-transparent" : "bg-transparent",
         isDragOver && "ring-1 ring-primary/60 bg-accent/20",
         className,
@@ -1360,9 +1360,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
           onError={(payload) => {
             handleRichEditorError(payload.error);
           }}
-          className={cn("paperclip-mdxeditor", !bordered && "paperclip-mdxeditor--borderless")}
+          className={cn("bullpen-mdxeditor", !bordered && "bullpen-mdxeditor--borderless")}
           contentEditableClassName={cn(
-            "paperclip-mdxeditor-content focus:outline-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:list-item",
+            "bullpen-mdxeditor-content focus:outline-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:list-item",
             contentClassName,
           )}
           additionalLexicalNodes={[MentionAwareLinkNode, mentionAwareLinkNodeReplacement]}
@@ -1374,7 +1374,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
       {mentionActive && filteredMentions.length > 0 && mentionMenuPosition &&
         createPortal(
           <div
-            data-paperclip-floating-ui=""
+            data-bullpen-floating-ui=""
             data-testid="mention-autocomplete-menu"
             className="pointer-events-auto fixed z-(--z-9999) min-w-(--sz-180px) max-w-(--sz-calc-15) max-h-(--sz-208px) overflow-y-auto rounded-md border border-border bg-popover shadow-md"
             style={{

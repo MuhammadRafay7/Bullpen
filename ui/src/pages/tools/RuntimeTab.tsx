@@ -6,8 +6,8 @@ import type {
   ToolRuntimeAlertRecommendation,
   ToolRuntimeMetricSnapshot,
   ToolRuntimeSlot,
-} from "@paperclipai/shared";
-import { humanizeConnectionDisplayName, isToolConnectionAttentionHealth } from "@paperclipai/shared";
+} from "@bullpen/shared";
+import { humanizeConnectionDisplayName, isToolConnectionAttentionHealth } from "@bullpen/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

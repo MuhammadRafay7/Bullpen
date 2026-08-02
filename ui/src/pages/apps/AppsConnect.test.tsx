@@ -3,7 +3,7 @@
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CONNECTABLE_APP_DEFINITIONS } from "@paperclipai/shared";
+import { CONNECTABLE_APP_DEFINITIONS } from "@bullpen/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppsConnect } from "./AppsConnect";
 
@@ -43,7 +43,7 @@ vi.mock("@/lib/router", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Bullpen" },
   }),
 }));
 
@@ -463,7 +463,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("shows the Google Sheets robot email and keeps empty sheet links from continuing", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@bullpen.iam.gserviceaccount.com" } },
       ],
     });
     await render();
@@ -474,7 +474,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
     await flushReact();
 
     expect(container.textContent).toContain("Share each sheet with this email");
-    expect(container.textContent).toContain("robot@paperclip.iam.gserviceaccount.com");
+    expect(container.textContent).toContain("robot@bullpen.iam.gserviceaccount.com");
     expect(container.textContent).toContain(
       "In Google Sheets, click Share and add this email as an Editor. Then paste the sheet links below.",
     );
@@ -484,7 +484,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("shows inline validation for invalid Google Sheets links", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@bullpen.iam.gserviceaccount.com" } },
       ],
     });
     await render();
@@ -585,7 +585,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("a custom name on the Google Sheets step is sent to the connect mutation", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@bullpen.iam.gserviceaccount.com" } },
       ],
     });
     await render();
@@ -620,7 +620,7 @@ describe("AppsConnect — Connect with a link (M4 frame)", () => {
   it("passes parsed Google Sheets IDs as connection config values", async () => {
     listGalleryMock.mockResolvedValueOnce({
       apps: [
-        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" } },
+        { ...GOOGLE_SHEETS, availability: { available: true, robotEmail: "robot@bullpen.iam.gserviceaccount.com" } },
       ],
     });
     await render();

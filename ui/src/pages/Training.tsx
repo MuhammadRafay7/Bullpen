@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { DecisionTrainingExample, DecisionTrainingSourceKind, IssueComment, Project } from "@paperclipai/shared";
+import type { DecisionTrainingExample, DecisionTrainingSourceKind, IssueComment, Project } from "@bullpen/shared";
 import { ArrowLeft, Download, Search } from "lucide-react";
 import { useNavigate, useParams } from "@/lib/router";
 import { decisionTrainingApi, type DecisionTrainingFilters } from "@/api/decisionTraining";

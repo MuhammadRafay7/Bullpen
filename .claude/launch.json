@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "paperclip",
+      "name": "bullpen",
       "runtimeExecutable": "/bin/sh",
       "runtimeArgs": ["-c", "TMPDIR=/tmp pnpm dev"],
       "port": 3108,

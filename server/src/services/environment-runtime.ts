@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companySecrets, companySecretVersions, environmentLeases } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
+import { companySecrets, companySecretVersions, environmentLeases } from "@bullpen/db";
 import type {
   Environment,
   EnvironmentLease,
@@ -10,7 +10,7 @@ import type {
   IssueExecutionWorkspaceSettings,
   PluginEnvironmentConfig,
   SandboxEnvironmentConfig,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import type {
   PluginEnvironmentAcquireLeaseParams,
   PluginEnvironmentExecuteResult,
@@ -18,8 +18,8 @@ import type {
   PluginEnvironmentRealizeWorkspaceResult,
   PluginEnvironmentSyncResult,
   PluginSyncOperation,
-} from "@paperclipai/plugin-sdk";
-import { ensureSshWorkspaceReady } from "@paperclipai/adapter-utils/ssh";
+} from "@bullpen/plugin-sdk";
+import { ensureSshWorkspaceReady } from "@bullpen/adapter-utils/ssh";
 import { environmentService } from "./environments.js";
 import {
   collectEnvironmentSecretRefs,

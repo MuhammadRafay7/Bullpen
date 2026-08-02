@@ -76,7 +76,7 @@ let tracerApiLoadFailed = false;
  * accessor never throws: a load or lookup failure logs once and returns the
  * local no-op tracer (fail open).
  */
-export function getStartupTracer(name = "paperclip.startup"): StartupTracerHandle {
+export function getStartupTracer(name = "bullpen.startup"): StartupTracerHandle {
   try {
     const require = createRequire(import.meta.url);
     const api = require("@opentelemetry/api") as {
@@ -89,7 +89,7 @@ export function getStartupTracer(name = "paperclip.startup"): StartupTracerHandl
       tracerApiLoadFailed = true;
       // eslint-disable-next-line no-console
       console.warn(
-        "[paperclip] @opentelemetry/api is not available; startup tracing uses a no-op tracer.",
+        "[bullpen] @opentelemetry/api is not available; startup tracing uses a no-op tracer.",
         err,
       );
     }
@@ -131,7 +131,7 @@ let traceContextApiLoadFailed = false;
  * accessor never throws: a load or lookup failure logs once and returns the
  * local no-op trace context (fail open).
  */
-export function getStartupTraceContext(name = "paperclip.startup"): StartupTraceContextHandle {
+export function getStartupTraceContext(name = "bullpen.startup"): StartupTraceContextHandle {
   try {
     const require = createRequire(import.meta.url);
     const api = require("@opentelemetry/api") as {
@@ -158,7 +158,7 @@ export function getStartupTraceContext(name = "paperclip.startup"): StartupTrace
       traceContextApiLoadFailed = true;
       // eslint-disable-next-line no-console
       console.warn(
-        "[paperclip] @opentelemetry/api is not available; startup tracing uses a no-op trace context.",
+        "[bullpen] @opentelemetry/api is not available; startup tracing uses a no-op trace context.",
         err,
       );
     }
@@ -189,7 +189,7 @@ export function shutdownInstrumentation(): Promise<void> {
       await sdkShutdown();
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error("[paperclip] OpenTelemetry shutdown failed", err);
+      console.error("[bullpen] OpenTelemetry shutdown failed", err);
     }
   })();
   return shutdownPromise;
@@ -223,7 +223,7 @@ export function resolveProtocol(): {
     default:
       // eslint-disable-next-line no-console
       console.warn(
-        `[paperclip] Unknown OTEL_EXPORTER_OTLP_PROTOCOL=${raw}; falling back to grpc. ` +
+        `[bullpen] Unknown OTEL_EXPORTER_OTLP_PROTOCOL=${raw}; falling back to grpc. ` +
           `Valid values: grpc, http/protobuf, http/json.`,
       );
       return {
@@ -276,7 +276,7 @@ async function bootstrapOtel(endpoint: string): Promise<void> {
 
     const sdk = new NodeSDK({
       resource: resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || "paperclip",
+        [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || "bullpen",
         [ATTR_SERVICE_VERSION]: process.env.OTEL_SERVICE_VERSION || "unknown",
       }),
       // For the HTTP protocols OTEL_EXPORTER_OTLP_ENDPOINT is a *base* URL
@@ -309,7 +309,7 @@ async function bootstrapOtel(endpoint: string): Promise<void> {
       // rejects the SDK's handshake should not take down the server.
       // eslint-disable-next-line no-console
       console.error(
-        "[paperclip] OpenTelemetry SDK failed to start; continuing without tracing",
+        "[bullpen] OpenTelemetry SDK failed to start; continuing without tracing",
         err,
       );
       return;
@@ -339,7 +339,7 @@ async function bootstrapOtel(endpoint: string): Promise<void> {
     // with a single diagnostic so the opt-in path is self-documenting.
     // eslint-disable-next-line no-console
     console.warn(
-      "[paperclip] OTEL_EXPORTER_OTLP_ENDPOINT is set but the @opentelemetry/* " +
+      "[bullpen] OTEL_EXPORTER_OTLP_ENDPOINT is set but the @opentelemetry/* " +
         `packages are not installed. Install @opentelemetry/sdk-node, ` +
         `@opentelemetry/auto-instrumentations-node, ${exporterPackage}, ` +
         `@opentelemetry/resources, and @opentelemetry/semantic-conventions to enable tracing.`,

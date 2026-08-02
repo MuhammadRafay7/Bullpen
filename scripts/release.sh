@@ -208,7 +208,7 @@ set_cleanup_trap
 
 # The release flow already prepares ui/dist before packaging. Reuse that output
 # so server prepack does not rebuild the UI a second time during preview/publish.
-export PAPERCLIP_RELEASE_REUSE_UI_DIST=1
+export BULLPEN_RELEASE_REUSE_UI_DIST=1
 
 if [ "$skip_verify" = false ]; then
   release_info ""
@@ -262,7 +262,7 @@ if [ "$dry_run" = true ]; then
     cd "$REPO_ROOT/$pkg_dir"
     publish_tool="$(package_publish_tool)"
     if [ "$publish_tool" = "npm" ]; then
-      publish_dir="$(mktemp -d "${TMPDIR:-/tmp}/paperclip-release-package.XXXXXX")"
+      publish_dir="$(mktemp -d "${TMPDIR:-/tmp}/bullpen-release-package.XXXXXX")"
       node "$REPO_ROOT/scripts/prepare-bundled-package.mjs" "$REPO_ROOT/$pkg_dir" "$publish_dir"
       cd "$publish_dir"
       run_bundled_npm_pack pack --pack-destination "$publish_dir" 2>&1 | tail -3
@@ -280,7 +280,7 @@ else
     cd "$REPO_ROOT/$pkg_dir"
     publish_tool="$(package_publish_tool)"
     if [ "$publish_tool" = "npm" ]; then
-      publish_dir="$(mktemp -d "${TMPDIR:-/tmp}/paperclip-release-package.XXXXXX")"
+      publish_dir="$(mktemp -d "${TMPDIR:-/tmp}/bullpen-release-package.XXXXXX")"
       node "$REPO_ROOT/scripts/prepare-bundled-package.mjs" "$REPO_ROOT/$pkg_dir" "$publish_dir"
       cd "$publish_dir"
     fi
@@ -338,9 +338,9 @@ else
     release_fail "publish completed, but npm dist-tags or registry metadata never converged for ${TARGET_PUBLISH_VERSION}"
   fi
 
-  release_info "  Installing paperclipai@$DIST_TAG into a clean prefix..."
-  if ! verify_npm_installable "paperclipai@$DIST_TAG" "$TARGET_PUBLISH_VERSION"; then
-    release_fail "paperclipai@$DIST_TAG did not install cleanly at expected version ${TARGET_PUBLISH_VERSION}"
+  release_info "  Installing bullpen@$DIST_TAG into a clean prefix..."
+  if ! verify_npm_installable "bullpen@$DIST_TAG" "$TARGET_PUBLISH_VERSION"; then
+    release_fail "bullpen@$DIST_TAG did not install cleanly at expected version ${TARGET_PUBLISH_VERSION}"
   fi
   release_info "    ✓ Clean-prefix install resolved ${TARGET_PUBLISH_VERSION}"
 fi
@@ -360,7 +360,7 @@ if [ "$dry_run" = true ]; then
 else
   if [ "$channel" = "canary" ]; then
     release_info "Published canary ${TARGET_PUBLISH_VERSION}."
-    release_info "Install with: npx paperclipai@canary onboard"
+    release_info "Install with: npx bullpen@canary onboard"
     release_info "Next step: git push ${PUBLISH_REMOTE} refs/tags/${tag_name}"
   else
     release_info "Published stable ${TARGET_PUBLISH_VERSION}."

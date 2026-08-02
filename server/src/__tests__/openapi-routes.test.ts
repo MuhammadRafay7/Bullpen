@@ -151,7 +151,7 @@ describe("openapi routes", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.openapi).toBe("3.0.0");
-    expect(res.body.info.title).toBe("Paperclip API");
+    expect(res.body.info.title).toBe("Bullpen API");
     expect(res.body.paths["/api/openapi.json"].get.summary).toBe("Get the generated OpenAPI document");
     expect(res.body.paths["/api/companies/{companyId}/agents"].get.summary).toBe("List agents in a company");
     expect(res.body.paths["/api/agents/{id}/keys"].post.summary).toBe("Create an agent API key");
@@ -237,7 +237,7 @@ describe("openapi routes", () => {
       { BoardSessionAuth: [] },
       { BoardApiKeyAuth: [] },
     ]);
-    expect(spec.paths["/api/plugins/install"].post["x-paperclip-authorization"]).toEqual({
+    expect(spec.paths["/api/plugins/install"].post["x-bullpen-authorization"]).toEqual({
       actor: "board",
       instanceAdmin: true,
     });
@@ -245,7 +245,7 @@ describe("openapi routes", () => {
       { BoardSessionAuth: [] },
       { BoardApiKeyAuth: [] },
     ]);
-    expect(spec.paths["/api/execution-workspaces/{id}/reconcile-branch"].post["x-paperclip-authorization"]).toEqual({
+    expect(spec.paths["/api/execution-workspaces/{id}/reconcile-branch"].post["x-bullpen-authorization"]).toEqual({
       actor: "board",
     });
     expect(spec.paths["/api/companies/{companyId}/cost-events"].post.responses["201"]).toBeDefined();

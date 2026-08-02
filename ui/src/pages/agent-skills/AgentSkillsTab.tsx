@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/lib/router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Search, Store, X } from "lucide-react";
-import type { Agent, AgentDesiredSkillEntry } from "@paperclipai/shared";
+import type { Agent, AgentDesiredSkillEntry } from "@bullpen/shared";
 import { agentsApi } from "../../api/agents";
 import { companySkillsApi } from "../../api/companySkills";
 import { instanceSettingsApi } from "../../api/instanceSettings";
@@ -28,10 +28,10 @@ import { buildAgentSkillSourceMeta } from "./agent-skill-source";
 import { AgentSkillReleasePicker, releaseShortLabel } from "./AgentSkillReleasePicker";
 
 const MATERIALIZATION_NOTE =
-  "Enabled skills are materialized into the stable Paperclip-managed prompt bundle on the agent's next run.";
+  "Enabled skills are materialized into the stable Bullpen-managed prompt bundle on the agent's next run.";
 
-/** Company skill key of the Paperclip core skill that carries beta releases. */
-const PAPERCLIP_CORE_SKILL_KEY = "paperclipai/paperclip/paperclip";
+/** Company skill key of the Bullpen core skill that carries beta releases. */
+const BULLPEN_CORE_SKILL_KEY = "bullpen/bullpen/bullpen";
 
 /** Build the desired-skill sync payload, carrying any active version pins. */
 export function toDesiredSkillPayload(
@@ -93,21 +93,21 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
   });
   const betaSkillsEnabled = experimentalSettings?.enableBetaSkills === true;
 
-  const paperclipCoreSkill = useMemo(
-    () => (companySkills ?? []).find((skill) => skill.key === PAPERCLIP_CORE_SKILL_KEY) ?? null,
+  const bullpenCoreSkill = useMemo(
+    () => (companySkills ?? []).find((skill) => skill.key === BULLPEN_CORE_SKILL_KEY) ?? null,
     [companySkills],
   );
 
-  // Seeded releases (release_id IS NOT NULL) for the paperclip core skill. Only
+  // Seeded releases (release_id IS NOT NULL) for the bullpen core skill. Only
   // fetched when the flag is on and the skill is present in the library.
-  const { data: paperclipVersions } = useQuery({
-    queryKey: queryKeys.companySkills.versions(companyId ?? "", paperclipCoreSkill?.id ?? ""),
-    queryFn: () => companySkillsApi.versions(companyId!, paperclipCoreSkill!.id),
-    enabled: Boolean(companyId && betaSkillsEnabled && paperclipCoreSkill?.id),
+  const { data: bullpenVersions } = useQuery({
+    queryKey: queryKeys.companySkills.versions(companyId ?? "", bullpenCoreSkill?.id ?? ""),
+    queryFn: () => companySkillsApi.versions(companyId!, bullpenCoreSkill!.id),
+    enabled: Boolean(companyId && betaSkillsEnabled && bullpenCoreSkill?.id),
   });
-  const paperclipReleases = useMemo(
-    () => (paperclipVersions ?? []).filter((version) => version.releaseId != null),
-    [paperclipVersions],
+  const bullpenReleases = useMemo(
+    () => (bullpenVersions ?? []).filter((version) => version.releaseId != null),
+    [bullpenVersions],
   );
 
   const syncSkills = useMutation({
@@ -311,12 +311,12 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
       typeof agent.adapterConfig.agent === "string" &&
       agent.adapterConfig.agent === "custom"
     ) {
-      return "Paperclip cannot manage skills for custom ACP commands yet.";
+      return "Bullpen cannot manage skills for custom ACP commands yet.";
     }
     if (agent.adapterType === "openclaw_gateway") {
-      return "Paperclip cannot manage OpenClaw skills here. Visit your OpenClaw instance to manage this agent's skills.";
+      return "Bullpen cannot manage OpenClaw skills here. Visit your OpenClaw instance to manage this agent's skills.";
     }
-    return "Paperclip cannot manage skills for this adapter yet. Manage them in the adapter directly.";
+    return "Bullpen cannot manage skills for this adapter yet. Manage them in the adapter directly.";
   }, [agent.adapterConfig.agent, agent.adapterType, unsupported]);
 
   const hasUnsavedChanges = !sameSkillSelection(skillDraft, lastSavedSkills);
@@ -340,16 +340,16 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
     syncSkills.mutate(toDesiredSkillPayload(skillDraft, nextPins));
   };
 
-  // The release picker only applies to the enabled paperclip core skill while the
+  // The release picker only applies to the enabled bullpen core skill while the
   // beta-skills flag is on and seeded releases exist.
-  const releasePickerActive = betaSkillsEnabled && paperclipReleases.length > 0;
+  const releasePickerActive = betaSkillsEnabled && bullpenReleases.length > 0;
 
   const renderRow = (row: AgentSkillRowData, variant: "enabled" | "available") => {
     const showReleasePicker =
-      releasePickerActive && variant === "enabled" && row.key === PAPERCLIP_CORE_SKILL_KEY;
+      releasePickerActive && variant === "enabled" && row.key === BULLPEN_CORE_SKILL_KEY;
     const pinnedVersionId = versionPins[row.key] ?? null;
     const pinnedRelease = pinnedVersionId
-      ? paperclipReleases.find((release) => release.id === pinnedVersionId) ?? null
+      ? bullpenReleases.find((release) => release.id === pinnedVersionId) ?? null
       : null;
 
     return (
@@ -371,7 +371,7 @@ export function AgentSkillsTab({ agent, companyId }: { agent: Agent; companyId?:
         accessory={
           showReleasePicker ? (
             <AgentSkillReleasePicker
-              releases={paperclipReleases}
+              releases={bullpenReleases}
               value={pinnedVersionId}
               disabled={unsupported || syncSkills.isPending}
               onChange={(versionId) => handleReleaseChange(row.key, versionId)}

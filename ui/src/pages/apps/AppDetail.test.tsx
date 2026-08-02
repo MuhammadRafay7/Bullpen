@@ -75,7 +75,7 @@ vi.mock("@/lib/router", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip" },
+    selectedCompany: { id: "company-1", name: "Bullpen" },
   }),
 }));
 
@@ -377,7 +377,7 @@ describe("AppDetail", () => {
       name: "Google Sheets",
       transport: "local_stdio",
       config: {
-        templateId: "paperclip.google-sheets",
+        templateId: "bullpen.google-sheets",
         sourceTemplateKey: "google-sheets",
         allowedSpreadsheetIds: ["sheet_existing"],
         env: { GOOGLE_SHEETS_ALLOWED_SPREADSHEET_IDS: "sheet_existing" },
@@ -392,11 +392,11 @@ describe("AppDetail", () => {
           tagline: "Read and update selected spreadsheets.",
           description: "Share each sheet with the robot email, then paste the sheet links here.",
           authKind: "none",
-          transportTemplate: { transport: "local_stdio", templateKey: "paperclip.google-sheets" },
+          transportTemplate: { transport: "local_stdio", templateKey: "bullpen.google-sheets" },
           credentialFields: [],
           recommendedDefaults: {},
           urlPatterns: ["https://docs.google.com/spreadsheets/*"],
-          availability: { available: true, robotEmail: "robot@paperclip.iam.gserviceaccount.com" },
+          availability: { available: true, robotEmail: "robot@bullpen.iam.gserviceaccount.com" },
         },
       ],
     });

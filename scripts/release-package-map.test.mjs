@@ -27,8 +27,8 @@ test("release package list only contains CI-enrolled packages", () => {
 test("release package list publishes the installable channel entrypoint last", () => {
   const enabledPackages = getReleasePackages();
 
-  assert.equal(enabledPackages.at(-1)?.name, "paperclipai");
-  assert.ok(enabledPackages.slice(0, -1).some((pkg) => pkg.name === "@paperclipai/server"));
+  assert.equal(enabledPackages.at(-1)?.name, "bullpen");
+  assert.ok(enabledPackages.slice(0, -1).some((pkg) => pkg.name === "@bullpen/server"));
 });
 
 test("release package list keeps runtime workspace dependencies ahead of consumers", () => {
@@ -53,8 +53,8 @@ test("release package list keeps runtime workspace dependencies ahead of consume
 
 test("Hermes release surface publishes the unified built-in package and keeps gateway as a shim", () => {
   const packages = buildReleasePackagePlan();
-  const hermes = packages.find((pkg) => pkg.name === "@paperclipai/hermes-paperclip-adapter");
-  const gatewayShim = packages.find((pkg) => pkg.name === "@paperclipai/adapter-hermes-gateway");
+  const hermes = packages.find((pkg) => pkg.name === "@bullpen/hermes-bullpen-adapter");
+  const gatewayShim = packages.find((pkg) => pkg.name === "@bullpen/adapter-hermes-gateway");
 
   assert.equal(hermes?.dir, "packages/adapters/hermes");
   assert.equal(hermes?.publishFromCi, true);
@@ -68,37 +68,37 @@ test("release package configuration validates successfully", () => {
 
 test("guard flags a publishFromCi:true package depending on a publishFromCi:false package", () => {
   const problems = findUnpublishableWorkspaceEdges([
-    pkg("@paperclipai/server", {
+    pkg("@bullpen/server", {
       publishFromCi: true,
-      dependencies: { "@paperclipai/skills-catalog": "workspace:*" },
+      dependencies: { "@bullpen/skills-catalog": "workspace:*" },
     }),
-    pkg("@paperclipai/skills-catalog", { publishFromCi: false }),
+    pkg("@bullpen/skills-catalog", { publishFromCi: false }),
   ]);
 
   assert.equal(problems.length, 1);
-  assert.match(problems[0], /@paperclipai\/server/);
-  assert.match(problems[0], /@paperclipai\/skills-catalog/);
+  assert.match(problems[0], /@bullpen\/server/);
+  assert.match(problems[0], /@bullpen\/skills-catalog/);
 });
 
 test("guard inspects optional and peer dependency sections too", () => {
   const problems = findUnpublishableWorkspaceEdges([
-    pkg("@paperclipai/server", {
+    pkg("@bullpen/server", {
       publishFromCi: true,
-      optionalDependencies: { "@paperclipai/opt": "workspace:^" },
-      peerDependencies: { "@paperclipai/peer": "workspace:*" },
+      optionalDependencies: { "@bullpen/opt": "workspace:^" },
+      peerDependencies: { "@bullpen/peer": "workspace:*" },
     }),
-    pkg("@paperclipai/opt", { publishFromCi: false }),
-    pkg("@paperclipai/peer", { publishFromCi: false }),
+    pkg("@bullpen/opt", { publishFromCi: false }),
+    pkg("@bullpen/peer", { publishFromCi: false }),
   ]);
 
   assert.equal(problems.length, 2);
 });
 
-test("guard treats a workspace dep on an unknown @paperclipai package as unpublishable", () => {
+test("guard treats a workspace dep on an unknown @bullpen package as unpublishable", () => {
   const problems = findUnpublishableWorkspaceEdges([
-    pkg("@paperclipai/server", {
+    pkg("@bullpen/server", {
       publishFromCi: true,
-      dependencies: { "@paperclipai/private-internal": "workspace:*" },
+      dependencies: { "@bullpen/private-internal": "workspace:*" },
     }),
   ]);
 
@@ -107,11 +107,11 @@ test("guard treats a workspace dep on an unknown @paperclipai package as unpubli
 
 test("guard allows true->true workspace edges", () => {
   const problems = findUnpublishableWorkspaceEdges([
-    pkg("@paperclipai/server", {
+    pkg("@bullpen/server", {
       publishFromCi: true,
-      dependencies: { "@paperclipai/shared": "workspace:*" },
+      dependencies: { "@bullpen/shared": "workspace:*" },
     }),
-    pkg("@paperclipai/shared", { publishFromCi: true }),
+    pkg("@bullpen/shared", { publishFromCi: true }),
   ]);
 
   assert.deepEqual(problems, []);
@@ -119,19 +119,19 @@ test("guard allows true->true workspace edges", () => {
 
 test("guard ignores non-workspace specs, non-internal deps, and edges from off-train packages", () => {
   const problems = findUnpublishableWorkspaceEdges([
-    pkg("@paperclipai/server", {
+    pkg("@bullpen/server", {
       publishFromCi: true,
       dependencies: {
-        "@paperclipai/pinned": "0.3.1",
+        "@bullpen/pinned": "0.3.1",
         zod: "^3.0.0",
       },
     }),
-    pkg("@paperclipai/pinned", { publishFromCi: false }),
-    pkg("@paperclipai/offtrain", {
+    pkg("@bullpen/pinned", { publishFromCi: false }),
+    pkg("@bullpen/offtrain", {
       publishFromCi: false,
-      dependencies: { "@paperclipai/also-off": "workspace:*" },
+      dependencies: { "@bullpen/also-off": "workspace:*" },
     }),
-    pkg("@paperclipai/also-off", { publishFromCi: false }),
+    pkg("@bullpen/also-off", { publishFromCi: false }),
   ]);
 
   assert.deepEqual(problems, []);

@@ -140,9 +140,9 @@ describe("agent test-environment route", () => {
         provider: "daytona",
         providerLeaseId: "provider-lease-1",
         metadata: {
-          remoteCwd: "/home/user/paperclip-workspace",
+          remoteCwd: "/home/user/bullpen-workspace",
           sandboxId: "sandbox-1",
-          sandboxName: "paperclip-probe",
+          sandboxName: "bullpen-probe",
           templateKind: "snapshot",
           templateRef: "snapshot-1",
         },
@@ -153,7 +153,7 @@ describe("agent test-environment route", () => {
       },
     });
     mockEnvironmentRuntime.realizeWorkspace.mockResolvedValue({
-      cwd: "/home/user/paperclip-workspace",
+      cwd: "/home/user/bullpen-workspace",
     });
     mockResolveEnvironmentExecutionTarget.mockResolvedValue(null);
     testEnvironmentSpy.mockResolvedValue({
@@ -244,7 +244,7 @@ describe("agent test-environment route", () => {
     mockResolveEnvironmentExecutionTarget.mockResolvedValueOnce({
       kind: "remote",
       transport: "sandbox",
-      remoteCwd: "/home/user/paperclip-workspace",
+      remoteCwd: "/home/user/bullpen-workspace",
       providerKey: "fake-plugin",
       runner: { execute: vi.fn() },
     });
@@ -297,7 +297,7 @@ describe("agent test-environment route", () => {
         code: "sandbox_test_identity",
         level: "info",
         message: 'Sandbox test identity for "Sandbox QA".',
-        detail: expect.stringContaining("paperclipLeaseId=lease-1"),
+        detail: expect.stringContaining("bullpenLeaseId=lease-1"),
       }),
       expect.objectContaining({
         code: "external_test_hello_probe_passed",
@@ -308,7 +308,7 @@ describe("agent test-environment route", () => {
     expect(res.body.checks[0].detail).toContain("providerLeaseId=provider-lease-1");
     expect(res.body.checks[0].detail).toContain("provider=daytona");
     expect(res.body.checks[0].detail).toContain("sandboxId=sandbox-1");
-    expect(res.body.checks[0].detail).toContain("sandboxName=paperclip-probe");
+    expect(res.body.checks[0].detail).toContain("sandboxName=bullpen-probe");
     expect(res.body.checks[0].detail).toContain("snapshotRef=snapshot-1");
     expect(mockReleaseRunLease).toHaveBeenCalledWith({
       environment: expect.objectContaining({ id: "11111111-1111-4111-8111-111111111111" }),

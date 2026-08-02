@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { and, asc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   agents,
   documents,
@@ -10,8 +10,8 @@ import {
   issueThreadInteractions,
   issues,
   toolActionRequests,
-} from "@paperclipai/db";
-import { trackInteractionResolved } from "@paperclipai/shared/telemetry";
+} from "@bullpen/db";
+import { trackInteractionResolved } from "@bullpen/shared/telemetry";
 import type {
   AcceptIssueThreadInteraction,
   AskUserQuestionsAnswer,
@@ -31,7 +31,7 @@ import type {
   SuggestTasksResultCreatedTask,
   SubmitIssueThreadInteractionVerdicts,
   WithdrawIssueThreadInteraction,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
   acceptIssueThreadInteractionSchema,
   askUserQuestionsPayloadSchema,
@@ -49,7 +49,7 @@ import {
   suggestTasksResultSchema,
   submitIssueThreadInteractionVerdictsSchema,
   withdrawIssueThreadInteractionSchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import { z } from "zod";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { getTelemetryClient } from "../telemetry.js";
@@ -172,7 +172,7 @@ function parseStoredInteractionResult<S extends z.ZodTypeAny>(
   const parsed = schema.safeParse(raw);
   if (parsed.success) return parsed.data;
   console.warn(
-    `[paperclip] Dropping unparseable ${row.kind} interaction result for interaction ${row.id}`,
+    `[bullpen] Dropping unparseable ${row.kind} interaction result for interaction ${row.id}`,
     parsed.error.issues,
   );
   return null;
@@ -531,7 +531,7 @@ async function emitInteractionResolvedTelemetry(
       try {
         roleByAgentId = await fetchCreatorAgentRoleById(db, [interaction]);
       } catch (error) {
-        console.error("[paperclip] Failed to load interaction.resolved creator role", error);
+        console.error("[bullpen] Failed to load interaction.resolved creator role", error);
       }
     }
     const creatorAgentRole = interaction.createdByAgentId
@@ -552,7 +552,7 @@ async function emitInteractionResolvedTelemetry(
       }),
     });
   } catch (error) {
-    console.error("[paperclip] Failed to emit interaction.resolved telemetry", error);
+    console.error("[bullpen] Failed to emit interaction.resolved telemetry", error);
   }
 }
 
@@ -565,7 +565,7 @@ async function emitResolvedInteractionsTelemetry(
   try {
     roleByAgentId = await fetchCreatorAgentRoleById(db, interactions);
   } catch (error) {
-    console.error("[paperclip] Failed to load interaction.resolved creator roles", error);
+    console.error("[bullpen] Failed to load interaction.resolved creator roles", error);
   }
   await Promise.all(interactions.map((interaction) =>
     emitInteractionResolvedTelemetry(db, interaction, { creatorRoleByAgentId: roleByAgentId })

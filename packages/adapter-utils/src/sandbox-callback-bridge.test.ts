@@ -50,8 +50,8 @@ describe("sandbox callback bridge", () => {
           (args[0] === "-c" || args[0] === "-lc") &&
           typeof args[1] === "string"
         ) {
-          env.PAPERCLIP_TEST_STDIN = input.stdin;
-          args[1] = `printf '%s' \"$PAPERCLIP_TEST_STDIN\" | (${args[1]})`;
+          env.BULLPEN_TEST_STDIN = input.stdin;
+          args[1] = `printf '%s' \"$BULLPEN_TEST_STDIN\" | (${args[1]})`;
         }
         try {
           const result = await execFile(command, args, {
@@ -116,7 +116,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("round-trips localhost bridge requests over the sandbox queue without forwarding the bridge token", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-runtime-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-runtime-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -146,7 +146,7 @@ describe("sandbox callback bridge", () => {
       ],
     });
 
-    const queueDir = path.posix.join(prepared.runtimeRootDir, "paperclip-bridge");
+    const queueDir = path.posix.join(prepared.runtimeRootDir, "bullpen-bridge");
     const directories = sandboxCallbackBridgeDirectories(queueDir);
     const bridgeToken = createSandboxCallbackBridgeToken();
     const seenRequests: Array<{
@@ -206,7 +206,7 @@ describe("sandbox callback bridge", () => {
         authorization: `Bearer ${bridgeToken}`,
         accept: "application/json",
         "if-none-match": '"client-cache-key"',
-        "x-paperclip-run-id": "run-bridge-1",
+        "x-bullpen-run-id": "run-bridge-1",
         "x-bridge-debug": "drop-me",
       },
     });
@@ -255,12 +255,12 @@ describe("sandbox callback bridge", () => {
       },
     });
     expect(seenRequests[0]?.headers.authorization).toBeUndefined();
-    expect(seenRequests[0]?.headers["x-paperclip-run-id"]).toBeUndefined();
+    expect(seenRequests[0]?.headers["x-bullpen-run-id"]).toBeUndefined();
 
   });
 
   it("denies non-allowlisted requests by default", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-default-policy-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-default-policy-"));
     cleanupDirs.push(rootDir);
 
     const queueDir = path.posix.join(rootDir, "queue");
@@ -306,7 +306,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("drains already-queued requests on stop", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-drain-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-drain-"));
     cleanupDirs.push(rootDir);
 
     const queueDir = path.posix.join(rootDir, "queue");
@@ -362,7 +362,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("writes fast 503 responses for queued requests that miss the drain deadline", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-drain-timeout-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-drain-timeout-"));
     cleanupDirs.push(rootDir);
 
     const queueDir = path.posix.join(rootDir, "queue");
@@ -424,7 +424,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("handles SSH queue polling failures without emitting an unhandled rejection", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-ssh-failure-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-ssh-failure-"));
     cleanupDirs.push(rootDir);
 
     const queueDir = path.posix.join(rootDir, "queue");
@@ -441,7 +441,7 @@ describe("sandbox callback bridge", () => {
           makeDirs: async () => {},
           listJsonFiles: async () => {
             throw new Error(
-              "list /remote/.paperclip-runtime/gemini/paperclip-bridge/queue/requests failed with exit code 255: kex_exchange_identification: read: Connection reset by peer",
+              "list /remote/.bullpen-runtime/gemini/bullpen-bridge/queue/requests failed with exit code 255: kex_exchange_identification: read: Connection reset by peer",
             );
           },
           readTextFile: async () => {
@@ -472,7 +472,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("serializes remote response writes so stop does not recreate a late orphaned response", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-response-lock-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-response-lock-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -495,7 +495,7 @@ describe("sandbox callback bridge", () => {
       assets: [{ key: "bridge", localDir: bridgeAsset.localDir }],
     });
 
-    const queueDir = path.posix.join(prepared.runtimeRootDir, "paperclip-bridge");
+    const queueDir = path.posix.join(prepared.runtimeRootDir, "bullpen-bridge");
     const directories = sandboxCallbackBridgeDirectories(queueDir);
     const bridgeToken = createSandboxCallbackBridgeToken();
     const seenRequestIds: string[] = [];
@@ -558,13 +558,13 @@ describe("sandbox callback bridge", () => {
     await expect(readdir(directories.responsesDir)).resolves.toEqual([]);
     await expect(
       readdir(directories.responsesDir).then((entries) =>
-        entries.filter((entry) => entry.endsWith(".tmp") || entry.includes(".paperclip-write.lock")),
+        entries.filter((entry) => entry.endsWith(".tmp") || entry.includes(".bullpen-write.lock")),
       ),
     ).resolves.toEqual([]);
   });
 
   it("rejects non-JSON request bodies and full queues at the bridge server", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-server-guards-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-server-guards-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -588,7 +588,7 @@ describe("sandbox callback bridge", () => {
       assets: [{ key: "bridge", localDir: bridgeAsset.localDir }],
     });
 
-    const queueDir = path.posix.join(prepared.runtimeRootDir, "paperclip-bridge");
+    const queueDir = path.posix.join(prepared.runtimeRootDir, "bullpen-bridge");
     const directories = sandboxCallbackBridgeDirectories(queueDir);
     const bridgeToken = createSandboxCallbackBridgeToken();
 
@@ -646,7 +646,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("returns a 502 when the host response times out", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-timeout-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-timeout-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -669,7 +669,7 @@ describe("sandbox callback bridge", () => {
       assets: [{ key: "bridge", localDir: bridgeAsset.localDir }],
     });
 
-    const queueDir = path.posix.join(prepared.runtimeRootDir, "paperclip-bridge");
+    const queueDir = path.posix.join(prepared.runtimeRootDir, "bullpen-bridge");
     const bridgeToken = createSandboxCallbackBridgeToken();
     const bridge = await startSandboxCallbackBridgeServer({
       runner,
@@ -698,7 +698,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("returns a 502 for malformed host response files", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-malformed-response-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-malformed-response-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
@@ -721,7 +721,7 @@ describe("sandbox callback bridge", () => {
       assets: [{ key: "bridge", localDir: bridgeAsset.localDir }],
     });
 
-    const queueDir = path.posix.join(prepared.runtimeRootDir, "paperclip-bridge");
+    const queueDir = path.posix.join(prepared.runtimeRootDir, "bullpen-bridge");
     const directories = sandboxCallbackBridgeDirectories(queueDir);
     const bridgeToken = createSandboxCallbackBridgeToken();
     const bridge = await startSandboxCallbackBridgeServer({
@@ -759,15 +759,15 @@ describe("sandbox callback bridge", () => {
   });
 
   it("reuses an already-uploaded bridge entrypoint when the remote file hash matches", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-sync-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-sync-"));
     cleanupDirs.push(rootDir);
 
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
     const remoteAssetDir = path.posix.join(
       remoteWorkspaceDir,
-      ".paperclip-runtime",
+      ".bullpen-runtime",
       "codex",
-      "paperclip-bridge",
+      "bullpen-bridge",
       "server",
     );
     await mkdir(remoteWorkspaceDir, { recursive: true });
@@ -797,29 +797,29 @@ describe("sandbox callback bridge", () => {
 
     expect(first.uploaded).toBe(true);
     expect(second.uploaded).toBe(false);
-    await expect(readFile(path.posix.join(remoteAssetDir, "paperclip-bridge-server.mjs"), "utf8")).resolves.toBe(expandedSource);
+    await expect(readFile(path.posix.join(remoteAssetDir, "bullpen-bridge-server.mjs"), "utf8")).resolves.toBe(expandedSource);
     await expect(
       readdir(remoteAssetDir).then((entries) =>
         entries.filter(
           (entry) =>
-            entry.endsWith(".paperclip-upload.b64") ||
+            entry.endsWith(".bullpen-upload.b64") ||
             entry.endsWith(".partial") ||
-            entry === ".paperclip-bridge-upload.lock",
+            entry === ".bullpen-bridge-upload.lock",
         ),
       ),
     ).resolves.toEqual([]);
   });
 
   it("rejects a corrupted bridge entrypoint upload without committing a torn remote file", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-sync-corrupt-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-sync-corrupt-"));
     cleanupDirs.push(rootDir);
 
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
     const remoteAssetDir = path.posix.join(
       remoteWorkspaceDir,
-      ".paperclip-runtime",
+      ".bullpen-runtime",
       "codex",
-      "paperclip-bridge",
+      "bullpen-bridge",
       "server",
     );
     await mkdir(remoteWorkspaceDir, { recursive: true });
@@ -851,31 +851,31 @@ describe("sandbox callback bridge", () => {
       }),
     ).rejects.toThrow(/sha mismatch/i);
 
-    await expect(readFile(path.posix.join(remoteAssetDir, "paperclip-bridge-server.mjs"), "utf8")).rejects.toThrow();
+    await expect(readFile(path.posix.join(remoteAssetDir, "bullpen-bridge-server.mjs"), "utf8")).rejects.toThrow();
     await expect(
       readdir(remoteAssetDir).then((entries) =>
         entries.filter(
           (entry) =>
-            entry.endsWith(".paperclip-upload.b64") ||
+            entry.endsWith(".bullpen-upload.b64") ||
             entry.endsWith(".partial") ||
-            entry === ".paperclip-bridge-upload.lock",
+            entry === ".bullpen-bridge-upload.lock",
         ),
       ),
     ).resolves.toEqual([]);
   });
 
-  // The process-session remote script is a static, Paperclip-authored `.mjs`
+  // The process-session remote script is a static, Bullpen-authored `.mjs`
   // written into the sandbox on every bridge start. `syncRemoteTextFileWithHashSkip`
   // (which now backs that write, mirroring the bridge-entrypoint sha256 gate)
   // content-hash-skips it so a warm start where the remote script already matches
   // costs ZERO write execs instead of the prior ~3 (prepare/append/finalize base64
   // upload).
   it("test_process_session_script_skipped_when_remote_hash_matches: warm start with a matching remote hash writes 0 execs", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-hashskip-warm-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-hashskip-warm-"));
     cleanupDirs.push(rootDir);
     const remoteDir = path.join(rootDir, "runtime", "codex", "process-sessions");
-    const remotePath = path.posix.join(remoteDir, "paperclip-process-session-remote.mjs");
-    const lockDir = path.posix.join(remoteDir, ".paperclip-process-session-script.lock");
+    const remotePath = path.posix.join(remoteDir, "bullpen-process-session-remote.mjs");
+    const lockDir = path.posix.join(remoteDir, ".bullpen-process-session-script.lock");
     const body = "console.log('process session remote script v1');\n";
 
     let execCount = 0;
@@ -917,20 +917,20 @@ describe("sandbox callback bridge", () => {
       readdir(remoteDir).then((entries) =>
         entries.filter(
           (entry) =>
-            entry.endsWith(".paperclip-upload.b64") ||
+            entry.endsWith(".bullpen-upload.b64") ||
             entry.endsWith(".partial") ||
-            entry === ".paperclip-process-session-script.lock",
+            entry === ".bullpen-process-session-script.lock",
         ),
       ),
     ).resolves.toEqual([]);
   });
 
   it("test_process_session_script_rewritten_on_hash_mismatch: a mismatched remote hash still rewrites the script", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-hashskip-cold-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-hashskip-cold-"));
     cleanupDirs.push(rootDir);
     const remoteDir = path.join(rootDir, "runtime", "codex", "process-sessions");
-    const remotePath = path.posix.join(remoteDir, "paperclip-process-session-remote.mjs");
-    const lockDir = path.posix.join(remoteDir, ".paperclip-process-session-script.lock");
+    const remotePath = path.posix.join(remoteDir, "bullpen-process-session-remote.mjs");
+    const lockDir = path.posix.join(remoteDir, ".bullpen-process-session-script.lock");
     const body = "console.log('process session remote script v2');\n";
 
     // Pre-seed the remote with a DIFFERENT script (a prior/stale build).
@@ -954,11 +954,11 @@ describe("sandbox callback bridge", () => {
   });
 
   it("fails loud when the hash-skip sync exec errors instead of silently re-uploading", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-hashskip-fail-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-hashskip-fail-"));
     cleanupDirs.push(rootDir);
     const remoteDir = path.join(rootDir, "runtime", "codex", "process-sessions");
-    const remotePath = path.posix.join(remoteDir, "paperclip-process-session-remote.mjs");
-    const lockDir = path.posix.join(remoteDir, ".paperclip-process-session-script.lock");
+    const remotePath = path.posix.join(remoteDir, "bullpen-process-session-remote.mjs");
+    const lockDir = path.posix.join(remoteDir, ".bullpen-process-session-script.lock");
 
     // A runner whose exec fails: the hash-gate cannot be evaluated. The write
     // must surface the failure, never swallow it and re-upload behind a green
@@ -1107,17 +1107,17 @@ describe("sandbox callback bridge", () => {
       timeoutMs: 30_000,
     });
 
-    await client.makeDir("/workspace/.paperclip-runtime/codex/paperclip-bridge/queue");
+    await client.makeDir("/workspace/.bullpen-runtime/codex/bullpen-bridge/queue");
 
     expect(runner.execute).toHaveBeenCalledWith(expect.objectContaining({
       env: {
-        PAPERCLIP_SANDBOX_EXEC_CHANNEL: "bridge",
+        BULLPEN_SANDBOX_EXEC_CHANNEL: "bridge",
       },
     }));
   });
 
   it("creates the bridge queue directories in one directory-creation exec", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-makedirs-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-makedirs-"));
     cleanupDirs.push(rootDir);
 
     const queueDir = path.posix.join(rootDir, "queue");
@@ -1155,7 +1155,7 @@ describe("sandbox callback bridge", () => {
   });
 
   it("falls back to sequential makeDir when the queue client omits makeDirs", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-makedir-fallback-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-bridge-makedir-fallback-"));
     cleanupDirs.push(rootDir);
 
     const queueDir = path.posix.join(rootDir, "queue");

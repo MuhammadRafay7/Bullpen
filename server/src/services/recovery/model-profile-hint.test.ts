@@ -37,7 +37,7 @@ describe("recovery model profile policy", () => {
     expect(scrubRecoveryModelProfileHints({
       taskId: "source-task",
       modelProfile: "cheap",
-      paperclipModelProfile: { requested: "cheap" },
+      bullpenModelProfile: { requested: "cheap" },
       allowDocumentUpdates: false,
     })).toEqual({ taskId: "source-task" });
   });

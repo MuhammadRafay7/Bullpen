@@ -40,7 +40,7 @@ describe("remote managed runtime", () => {
   });
 
   it("restores runtime assets without restoring an in-place SSH workspace", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-remote-runtime-assets-only-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-remote-runtime-assets-only-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const homeDir = path.join(rootDir, "home");
@@ -79,7 +79,7 @@ describe("remote managed runtime", () => {
     expect(prepareWorkspaceForSshExecution).not.toHaveBeenCalled();
     expect(syncDirectoryToSsh).toHaveBeenCalledWith(expect.objectContaining({
       localDir: homeDir,
-      remoteDir: "/app/.paperclip-runtime/codex/home",
+      remoteDir: "/app/.bullpen-runtime/codex/home",
     }));
 
     await prepared.restoreWorkspace();
@@ -87,14 +87,14 @@ describe("remote managed runtime", () => {
     expect(restoreWorkspaceFromSshExecution).not.toHaveBeenCalled();
     expect(runSshCommand).toHaveBeenCalledWith(
       expect.anything(),
-      "base64 < '/app/.paperclip-runtime/codex/home/auth.json'",
+      "base64 < '/app/.bullpen-runtime/codex/home/auth.json'",
       { maxBuffer: 1024 * 1024 },
     );
     expect(restoredAuth).toBe('{"token":"remote"}\n');
   });
 
   it("stages each additional project into its own isolated SSH dir, isolating one failure", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-remote-runtime-additional-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-remote-runtime-additional-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const firstDir = path.join(rootDir, "referenced-first");
@@ -134,21 +134,21 @@ describe("remote managed runtime", () => {
     // Each healthy project staged into its OWN isolated dir under the runtime
     // root; the broken one is skipped, not fatal.
     expect(Object.keys(prepared.additionalSourceDirs).sort()).toEqual(["first", "second"]);
-    expect(prepared.additionalSourceDirs.first).toBe("/app/.paperclip-runtime/codex/project-first");
-    expect(prepared.additionalSourceDirs.second).toBe("/app/.paperclip-runtime/codex/project-second");
+    expect(prepared.additionalSourceDirs.first).toBe("/app/.bullpen-runtime/codex/project-first");
+    expect(prepared.additionalSourceDirs.second).toBe("/app/.bullpen-runtime/codex/project-second");
     expect(prepared.additionalSourceDirs.broken).toBeUndefined();
     expect(syncDirectoryToSsh).toHaveBeenCalledWith(expect.objectContaining({
       localDir: firstDir,
-      remoteDir: "/app/.paperclip-runtime/codex/project-first",
+      remoteDir: "/app/.bullpen-runtime/codex/project-first",
     }));
     expect(syncDirectoryToSsh).toHaveBeenCalledWith(expect.objectContaining({
       localDir: secondDir,
-      remoteDir: "/app/.paperclip-runtime/codex/project-second",
+      remoteDir: "/app/.bullpen-runtime/codex/project-second",
     }));
   });
 
   it("skips an additional project whose localPath is not absolute", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-remote-runtime-relative-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "bullpen-remote-runtime-relative-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const healthyDir = path.join(rootDir, "referenced-healthy");

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, asc, desc, eq, gt, inArray, ne, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@bullpen/db";
 import {
   agents,
   heartbeatRuns,
@@ -20,7 +20,7 @@ import {
   toolProfileEntries,
   toolProfiles,
   toolRateLimitCounters,
-} from "@paperclipai/db";
+} from "@bullpen/db";
 import type {
   ToolAccessDecision,
   ToolAccessDecisionInput,
@@ -39,8 +39,8 @@ import type {
   ToolRedactedValueSummary,
   ToolTrustRuleArgumentFilters,
   ToolRiskLevel,
-} from "@paperclipai/shared";
-import { toolPolicyConditionsSchema } from "@paperclipai/shared";
+} from "@bullpen/shared";
+import { toolPolicyConditionsSchema } from "@bullpen/shared";
 import { badRequest, conflict, notFound, unprocessable } from "../errors.js";
 import { narrowestScopeBindings, profileIdsInBindingOrder } from "./tool-profile-binding-precedence.js";
 import { recordToolRuntimeAuditWriteFailure } from "./tool-runtime-metrics.js";
@@ -512,8 +512,8 @@ function evaluatePolicyConditions(
     if (boolCondition(boundary.remoteHttpOnly) === true && ctx.providerType !== "mcp_remote_http") {
       return conditionGroupFail("trustBoundary", "Policy condition requires a remote HTTP MCP tool.");
     }
-    if (boolCondition(boundary.paperclipSelfOnly) === true && ctx.providerType !== "paperclip_self") {
-      return conditionGroupFail("trustBoundary", "Policy condition requires a Paperclip self tool.");
+    if (boolCondition(boundary.bullpenSelfOnly) === true && ctx.providerType !== "bullpen_self") {
+      return conditionGroupFail("trustBoundary", "Policy condition requires a Bullpen self tool.");
     }
     matchedGroups.push("trustBoundary");
   }

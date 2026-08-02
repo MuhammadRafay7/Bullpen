@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import type { ToolMcpGatewayTokenCreated, ToolMcpGatewayWithTokens } from "@paperclipai/shared";
+import type { ToolMcpGatewayTokenCreated, ToolMcpGatewayWithTokens } from "@bullpen/shared";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

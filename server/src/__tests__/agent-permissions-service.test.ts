@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   agentPermissionsSchema,
   updateAgentPermissionsSchema,
-} from "@paperclipai/shared";
+} from "@bullpen/shared";
 import {
   defaultPermissionsForRole,
   normalizeAgentPermissions,

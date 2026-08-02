@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { BackupRetentionPolicy, RunDatabaseBackupResult } from "@paperclipai/db";
+import type { BackupRetentionPolicy, RunDatabaseBackupResult } from "@bullpen/db";
 import { forbidden } from "../errors.js";
 import { isCloudManagedInstance } from "../middleware/auth.js";
 import { assertInstanceAdmin } from "./authz.js";

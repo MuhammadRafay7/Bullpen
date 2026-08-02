@@ -9,7 +9,7 @@ import type {
   TelemetryState,
 } from "./types.js";
 import { type ResolvedTelemetryCaps, resolveCaps } from "./config.js";
-import { PAPERCLIP_EVENTS } from "./generated/paperclip-telemetry.js";
+import { BULLPEN_EVENTS } from "./generated/bullpen-telemetry.js";
 
 const DEFAULT_ENDPOINTS = [
   "https://telemetry.paperclip.ing/ingest",
@@ -112,11 +112,11 @@ export class TelemetryClient {
   }
 
   /**
-   * Tracks first-party Paperclip telemetry events registered in the generated
+   * Tracks first-party Bullpen telemetry events registered in the generated
    * backend event schema.
    */
   track<K extends TelemetryEventName>(eventName: K, ...args: TrackArgs<K>): void {
-    if (!Object.hasOwn(PAPERCLIP_EVENTS, eventName)) return;
+    if (!Object.hasOwn(BULLPEN_EVENTS, eventName)) return;
     const [dimensions] = args;
     this.enqueue(eventName, dimensions);
   }
@@ -202,7 +202,7 @@ export class TelemetryClient {
   private buildEnvelope(events: TelemetryEvent[], batchId?: string): TelemetryEventEnvelope {
     const state = this.getState();
     return {
-      app: this.config.app ?? "paperclip",
+      app: this.config.app ?? "bullpen",
       schemaVersion: this.config.schemaVersion ?? "1",
       installId: state.installId,
       version: this.version,

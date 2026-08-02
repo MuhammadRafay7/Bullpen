@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CompanyPortabilityPreviewResult } from "@paperclipai/shared";
+import type { CompanyPortabilityPreviewResult } from "@bullpen/shared";
 import {
   buildCompanyDashboardUrl,
   buildDefaultImportAdapterOverrides,
@@ -42,7 +42,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 function company(overrides: Record<string, unknown> = {}) {
   return {
     id: COMPANY_ID,
-    name: "Paperclip",
+    name: "Bullpen",
     description: null,
     status: "active",
     issuePrefix: "PAP",
@@ -71,9 +71,9 @@ describe("company CLI commands", () => {
 
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
-    delete process.env.PAPERCLIP_API_URL;
-    delete process.env.PAPERCLIP_API_KEY;
-    delete process.env.PAPERCLIP_COMPANY_ID;
+    delete process.env.BULLPEN_API_URL;
+    delete process.env.BULLPEN_API_KEY;
+    delete process.env.BULLPEN_COMPANY_ID;
     fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
@@ -95,7 +95,7 @@ describe("company CLI commands", () => {
       "--company-id",
       COMPANY_ID,
       "--api-base",
-      "http://paperclip.test",
+      "http://bullpen.test",
       "--api-key",
       "agent-token",
       "--json",
@@ -103,10 +103,10 @@ describe("company CLI commands", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      `http://paperclip.test/api/companies/${COMPANY_ID}`,
+      `http://bullpen.test/api/companies/${COMPANY_ID}`,
       expect.objectContaining({ method: "GET" }),
     );
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Paperclip" });
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Bullpen" });
   });
 
   it("gets the current company from agent authentication when no company context is set", async () => {
@@ -118,7 +118,7 @@ describe("company CLI commands", () => {
       "company",
       "current",
       "--api-base",
-      "http://paperclip.test",
+      "http://bullpen.test",
       "--api-key",
       "agent-token",
       "--json",
@@ -126,15 +126,15 @@ describe("company CLI commands", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "http://paperclip.test/api/agents/me",
+      "http://bullpen.test/api/agents/me",
       expect.objectContaining({ method: "GET" }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      `http://paperclip.test/api/companies/${COMPANY_ID}`,
+      `http://bullpen.test/api/companies/${COMPANY_ID}`,
       expect.objectContaining({ method: "GET" }),
     );
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Paperclip" });
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject({ id: COMPANY_ID, name: "Bullpen" });
   });
 
   it("lists the scoped agent company when board-wide company listing is denied", async () => {
@@ -147,7 +147,7 @@ describe("company CLI commands", () => {
       "company",
       "list",
       "--api-base",
-      "http://paperclip.test",
+      "http://bullpen.test",
       "--api-key",
       "agent-token",
       "--json",
@@ -155,20 +155,20 @@ describe("company CLI commands", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "http://paperclip.test/api/companies",
+      "http://bullpen.test/api/companies",
       expect.objectContaining({ method: "GET" }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      "http://paperclip.test/api/agents/me",
+      "http://bullpen.test/api/agents/me",
       expect.objectContaining({ method: "GET" }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      `http://paperclip.test/api/companies/${COMPANY_ID}`,
+      `http://bullpen.test/api/companies/${COMPANY_ID}`,
       expect.objectContaining({ method: "GET" }),
     );
-    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject([{ id: COMPANY_ID, name: "Paperclip" }]);
+    expect(JSON.parse(String(logSpy.mock.calls[0]?.[0]))).toMatchObject([{ id: COMPANY_ID, name: "Bullpen" }]);
   });
 
   it("explains that company creation requires board instance-admin authentication under agent auth", async () => {
@@ -183,14 +183,14 @@ describe("company CLI commands", () => {
       "--payload-json",
       "{\"name\":\"Disposable\"}",
       "--api-base",
-      "http://paperclip.test",
+      "http://bullpen.test",
       "--api-key",
       "agent-token",
       "--json",
     ])).rejects.toThrow("exit:1");
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://paperclip.test/api/companies",
+      "http://bullpen.test/api/companies",
       expect.objectContaining({ method: "POST" }),
     );
     const rendered = String(errorSpy.mock.calls[0]?.[0]);
@@ -291,8 +291,8 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
 
 describe("buildCompanyDashboardUrl", () => {
   it("preserves the configured base path when building a dashboard URL", () => {
-    expect(buildCompanyDashboardUrl("https://paperclip.example/app/", "PAP")).toBe(
-      "https://paperclip.example/app/PAP/dashboard",
+    expect(buildCompanyDashboardUrl("https://bullpen.example/app/", "PAP")).toBe(
+      "https://bullpen.example/app/PAP/dashboard",
     );
   });
 });
@@ -517,13 +517,13 @@ describe("renderCompanyImportResult", () => {
       },
       {
         targetLabel: "Imported Co (company-123)",
-        companyUrl: "https://paperclip.example/PAP/dashboard",
+        companyUrl: "https://bullpen.example/PAP/dashboard",
         infoMessages: ["Using claude-local adapter"],
       },
     );
 
     expect(rendered).toContain("Company");
-    expect(rendered).toContain("https://paperclip.example/PAP/dashboard");
+    expect(rendered).toContain("https://bullpen.example/PAP/dashboard");
     expect(rendered).toContain("3 agents total (1 created, 1 updated, 1 skipped)");
     expect(rendered).toContain("3 projects total (1 created, 1 updated, 1 skipped)");
     expect(rendered).toContain("Agent results");
@@ -668,7 +668,7 @@ describe("import selection catalog", () => {
       files: {
         "COMPANY.md": "# Source Co",
         "README.md": "# Readme",
-        ".paperclip.yaml": "schema: paperclip/v1\n",
+        ".bullpen.yaml": "schema: bullpen/v1\n",
         "images/company-logo.png": {
           encoding: "base64",
           data: "",
@@ -704,7 +704,7 @@ describe("import selection catalog", () => {
 
     const selectedFiles = buildSelectedFilesFromImportSelection(catalog, state);
 
-    expect(selectedFiles).toContain(".paperclip.yaml");
+    expect(selectedFiles).toContain(".bullpen.yaml");
     expect(selectedFiles).toContain("projects/alpha/PROJECT.md");
     expect(selectedFiles).toContain("projects/alpha/notes.md");
     expect(selectedFiles).not.toContain("projects/alpha/issues/kickoff/TASK.md");
@@ -768,7 +768,7 @@ describe("import selection catalog", () => {
         envInputs: [],
       },
       files: {
-        ".paperclip.yaml": "schema: paperclip/v1\n",
+        ".bullpen.yaml": "schema: bullpen/v1\n",
       },
       envInputs: [],
       warnings: [],
@@ -786,7 +786,7 @@ describe("import selection catalog", () => {
 
     const selectedFiles = buildSelectedFilesFromImportSelection(catalog, state);
 
-    expect(selectedFiles).toContain(".paperclip.yaml");
+    expect(selectedFiles).toContain(".bullpen.yaml");
     expect(selectedFiles).toHaveLength(1);
   });
 });

@@ -85,7 +85,7 @@ export const patchInstanceExperimentalSettingsSchema = instanceExperimentalSetti
 
 export const managedSettingMetadataSchema = z.object({
   managed: z.literal(true),
-  managedBy: z.literal("paperclip-cloud"),
+  managedBy: z.literal("bullpen-cloud"),
 }).strict();
 
 // Response shape of the experimental settings endpoints: on cloud-managed
