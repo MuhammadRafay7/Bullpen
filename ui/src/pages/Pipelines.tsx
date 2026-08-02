@@ -20,7 +20,7 @@ import type {
   RequestConfirmationInteraction,
   SuggestTasksInteraction,
 } from "@bullpen/shared";
-import { AlertTriangle, ArrowUpDown, ArrowUpRight, BookOpenText, Check, ChevronDown, ChevronRight, ChevronUp, CircleDot, Download, ExternalLink, FileText, GitBranch, Hexagon, Image as ImageIcon, Info, Layers, List, ListTree, Loader2, MessageSquare, MoreHorizontal, Package, Bullpen, Plus, Search, Settings, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowUpDown, ArrowUpRight, BookOpenText, Check, ChevronDown, ChevronRight, ChevronUp, CircleDot, Download, ExternalLink, FileText, GitBranch, Hexagon, Image as ImageIcon, Info, Layers, List, ListTree, Loader2, MessageSquare, MoreHorizontal, Package, Paperclip, Plus, Search, Settings, Trash2, X } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -3984,7 +3984,7 @@ function ItemOutputAttachmentRow({ item }: { item: PipelineCaseAttachmentOutputI
           <img src={item.contentPath} alt={filename} className="h-full w-full object-cover" loading="lazy" />
         </a>
       ) : (
-        <Bullpen className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <Paperclip className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -4065,7 +4065,7 @@ function ItemOutputsSection({
     groups.push({
       key: "attachment",
       label: "Attachments",
-      icon: <Bullpen className="h-4 w-4 text-muted-foreground" />,
+      icon: <Paperclip className="h-4 w-4 text-muted-foreground" />,
       rows: attachments.map((item) => <ItemOutputAttachmentRow key={item.id} item={item} />),
     });
   }

@@ -26,6 +26,10 @@ Use deterministic `caseType` + `key` when a skill may be retried. Repeating
 `POST /api/companies/:companyId/cases` with the same `caseType` and `key`
 upserts the same case instead of creating a duplicate.
 
+Set `status` to match reality at creation time: if you are producing or
+revising the record in this same session, create it as `in_progress`; use
+`draft` only for a stub you are deliberately parking for later.
+
 ## Upsert Semantics
 
 `POST /api/companies/:companyId/cases` creates or upserts a case.
@@ -38,7 +42,7 @@ Request:
   "key": "launch-announcement",
   "title": "Launch announcement",
   "summary": "Draft launch post for operators.",
-  "status": "draft",
+  "status": "in_progress",
   "fields": {
     "slug": "launch-announcement",
     "target_audience": "operators"
@@ -168,8 +172,8 @@ Roles:
 - `work`: an issue/run that changed the case
 - `reference`: related issue context
 
-Agent run writes auto-link the run's issue when Paperclip can resolve it from
-the run JWT or `X-Paperclip-Run-Id`. Creation/upsert writes use `origin`; later
+Agent run writes auto-link the run's issue when Bullpen can resolve it from
+the run JWT or `X-Bullpen-Run-Id`. Creation/upsert writes use `origin`; later
 document, patch, and attachment writes use `work` when no link already exists.
 You do not need to manually link the current issue before writing the case.
 
@@ -229,12 +233,12 @@ Content-Type: application/json
 
 {
   "caseType": "blog_post",
-  "key": "paperclip-cases-launch",
-  "title": "Introducing Paperclip Cases",
+  "key": "bullpen-cases-launch",
+  "title": "Introducing Bullpen Cases",
   "summary": "Blog post explaining the cases surface for agent outputs.",
   "status": "in_progress",
   "fields": {
-    "slug": "paperclip-cases-launch",
+    "slug": "bullpen-cases-launch",
     "target_audience": "AI company operators",
     "publish_url": null
   }
@@ -248,9 +252,9 @@ PUT /api/cases/PAP-C42/documents/body
 Content-Type: application/json
 
 {
-  "title": "Introducing Paperclip Cases",
+  "title": "Introducing Bullpen Cases",
   "format": "markdown",
-  "body": "# Introducing Paperclip Cases\n\n..."
+  "body": "# Introducing Bullpen Cases\n\n..."
 }
 ```
 
@@ -262,12 +266,12 @@ Content-Type: application/json
 
 {
   "caseType": "image_assets",
-  "key": "paperclip-cases-launch:image-assets",
-  "title": "Image assets for Introducing Paperclip Cases",
+  "key": "bullpen-cases-launch:image-assets",
+  "title": "Image assets for Introducing Bullpen Cases",
   "parentCaseId": "parent-case-uuid",
   "status": "in_progress",
   "fields": {
-    "slug": "paperclip-cases-launch",
+    "slug": "bullpen-cases-launch",
     "required_assets": ["hero", "social-card"],
     "publish_url": null
   }
@@ -284,9 +288,9 @@ Content-Type: application/json
 {
   "status": "in_review",
   "fields": {
-    "slug": "paperclip-cases-launch",
+    "slug": "bullpen-cases-launch",
     "target_audience": "AI company operators",
-    "publish_url": "https://example.com/blog/paperclip-cases-launch"
+    "publish_url": "https://example.com/blog/bullpen-cases-launch"
   }
 }
 ```
